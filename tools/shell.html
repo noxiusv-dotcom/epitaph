@@ -1,0 +1,307 @@
+<title>Epitaph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* =====================================================================
+   EPITAPH — carved stone, ash and gilt.
+   Headings are inscriptions: Cinzel, letter-spaced, the way a name is cut
+   into a marker. Body is plain and readable because rules text has to be.
+   ===================================================================== */
+:root{
+  --stone-0:#0d0f12;        /* the dark between markers */
+  --stone-1:#14171c;        /* panel */
+  --stone-2:#1c2026;        /* raised panel */
+  --stone-3:#252a32;        /* input, chip */
+  --line:#2f353e;
+  --line-soft:#232830;
+
+  --ash:#e8e4dc;            /* primary text: bone, not white */
+  --ash-dim:#a8a49c;
+  --ash-mute:#6e6a64;
+
+  --gilt:#c9a227;           /* the lettering on the marker */
+  --gilt-deep:#9c7d18;
+  --gilt-glow:rgba(201,162,39,.14);
+  --verdigris:#5e9e8a;      /* aged copper: good news */
+  --rust:#b5503c;           /* iron rot: bad news */
+
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --stone-0:#e9e5dd; --stone-1:#f3f0e9; --stone-2:#fbf9f4; --stone-3:#ffffff;
+    --line:#d2ccc0; --line-soft:#e0dbd1;
+    --ash:#1b1916; --ash-dim:#55504a; --ash-mute:#8a8479;
+    --gilt:#8a6d12; --gilt-deep:#6d5510; --gilt-glow:rgba(138,109,18,.10);
+    --verdigris:#3f7a66; --rust:#9c402d;
+    --shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 18px rgba(0,0,0,.08);
+  }
+}
+[data-theme="light"]{
+  --stone-0:#e9e5dd; --stone-1:#f3f0e9; --stone-2:#fbf9f4; --stone-3:#ffffff;
+  --line:#d2ccc0; --line-soft:#e0dbd1;
+  --ash:#1b1916; --ash-dim:#55504a; --ash-mute:#8a8479;
+  --gilt:#8a6d12; --gilt-deep:#6d5510; --gilt-glow:rgba(138,109,18,.10);
+  --verdigris:#3f7a66; --rust:#9c402d;
+  --shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 18px rgba(0,0,0,.08);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--stone-0);
+  color:var(--ash);
+  font:15px/1.55 "Inter",system-ui,-apple-system,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+  overflow-wrap:anywhere;
+}
+body.locked{overflow:hidden}
+
+/* ---- inscriptional headings ---- */
+h1,h2,h3,.inscribed{
+  font-family:"Cinzel",Georgia,serif;
+  font-weight:600;
+  letter-spacing:.06em;
+  margin:0;
+}
+h1{font-size:23px;letter-spacing:.11em}
+h2{font-size:17px}
+h3{font-size:16px;letter-spacing:.08em}
+.eyebrow{
+  font-family:"Cinzel",Georgia,serif;
+  font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ash-mute);
+}
+.lead{color:var(--ash-dim);font-size:13.5px;margin:6px 0 0;line-height:1.55}
+.quiet{color:var(--ash-mute);font-size:12.5px}
+.mono{font-family:"Space Mono",ui-monospace,monospace}
+.serif{font-family:"Spectral",Georgia,serif}
+
+/* ---- the masthead, cut like a marker ---- */
+header{
+  position:sticky;top:0;z-index:40;
+  background:linear-gradient(180deg,var(--stone-1),var(--stone-0));
+  border-bottom:1px solid var(--line);
+}
+.masthead{max-width:860px;margin:0 auto;padding:13px 16px 0;display:flex;align-items:center;gap:12px}
+.sigil{
+  width:34px;height:34px;flex:none;border-radius:7px;
+  border:1px solid var(--gilt-deep);background:var(--stone-2);
+  display:grid;place-items:center;color:var(--gilt);
+}
+.brand{min-width:0;flex:1}
+.brand h1{line-height:1.1}
+.brand .sub{
+  font-family:"Cinzel",Georgia,serif;font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ash-mute);margin-top:3px;
+}
+.iconbtn{
+  width:34px;height:34px;flex:none;border-radius:8px;border:1px solid var(--line);
+  background:var(--stone-2);color:var(--ash-dim);display:grid;place-items:center;cursor:pointer;
+}
+.iconbtn:hover{color:var(--ash);border-color:var(--gilt-deep)}
+
+/* ---- the two halves of the app ---- */
+nav.ways{max-width:860px;margin:12px auto 0;padding:0 16px;display:flex;gap:8px}
+.way{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 12px;border-radius:var(--r-md) var(--r-md) 0 0;
+  border:1px solid var(--line);border-bottom:none;
+  background:var(--stone-1);color:var(--ash-mute);cursor:pointer;
+  font-family:"Cinzel",Georgia,serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+}
+.way.on{background:var(--stone-2);color:var(--gilt);border-color:var(--gilt-deep)}
+.way svg{width:15px;height:15px}
+
+main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
+
+/* ---- surfaces ---- */
+.slab{
+  background:var(--stone-1);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:15px;box-shadow:var(--shadow);
+}
+.slab + .slab{margin-top:13px}
+.rule{flex:1;height:1px;background:var(--line);opacity:.8}
+.head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:999px;border:1px solid var(--line);
+  background:var(--stone-2);color:var(--ash-dim);font-size:11.5px;white-space:nowrap;
+}
+.chip.gilt{color:var(--gilt);border-color:var(--gilt-deep);background:var(--gilt-glow)}
+.chip.good{color:var(--verdigris);border-color:var(--verdigris)}
+.chip.bad{color:var(--rust);border-color:var(--rust)}
+
+.btn{
+  font:inherit;font-size:13px;padding:9px 16px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--stone-2);color:var(--ash);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+}
+.btn:hover{border-color:var(--gilt-deep)}
+.btn.primary{background:var(--gilt);border-color:var(--gilt);color:#17130a;font-weight:600}
+.btn.primary:hover{background:var(--gilt-deep);border-color:var(--gilt-deep)}
+.btn.ghost{background:transparent}
+.btn.sm{font-size:12px;padding:6px 12px}
+.btn.danger{color:var(--rust);border-color:var(--rust)}
+.btn:disabled{opacity:.4;cursor:default}
+
+.input{
+  width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--stone-3);color:var(--ash);
+}
+.input:focus{outline:none;border-color:var(--gilt-deep)}
+.field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ash-mute);margin-bottom:5px;font-family:"Cinzel",Georgia,serif}
+
+/* ---- the roster: each of the Unburied on their own marker ---- */
+.markers{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.marker{
+  position:relative;text-align:left;width:100%;
+  background:var(--stone-1);border:1px solid var(--line);
+  border-radius:var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
+  padding:14px 14px 12px;cursor:pointer;color:inherit;font:inherit;
+  box-shadow:var(--shadow);
+}
+.marker:hover{border-color:var(--gilt-deep)}
+.marker.benched{opacity:.55}
+.marker::before{
+  content:"";position:absolute;left:14px;right:14px;top:6px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gilt-deep),transparent);opacity:.5;
+}
+.m-name{font-family:"Cinzel",Georgia,serif;font-size:15px;letter-spacing:.05em;
+  margin-bottom:2px;display:block}
+.m-epithet{font-family:"Spectral",Georgia,serif;font-style:italic;color:var(--gilt);
+  font-size:12.5px;margin-bottom:8px;display:block}
+.m-role{color:var(--ash-mute);font-size:12px;margin-bottom:9px;display:block}
+.m-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:10px 0}
+.m-stat{text-align:center;padding:6px 2px;border-radius:var(--r-sm);
+  background:var(--stone-2);border:1px solid var(--line-soft)}
+.m-stat b{display:block;font-size:14px;font-family:"Space Mono",monospace}
+.m-stat span{display:block;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ash-mute);margin-top:2px}
+.m-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:9px}
+.m-cost{position:absolute;top:12px;right:14px;font-family:"Space Mono",monospace;
+  font-size:15px;color:var(--gilt)}
+.m-cost small{display:block;font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ash-mute);font-family:"Cinzel",serif;text-align:right}
+
+.marker.add{display:grid;place-items:center;min-height:132px;border-style:dashed;
+  color:var(--ash-mute);gap:6px}
+.marker.add .plus{font-size:26px;color:var(--gilt);line-height:1}
+.marker.add span{font-family:"Cinzel",serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+.empty{text-align:center;padding:36px 18px;color:var(--ash-mute)}
+.empty .big{font-family:"Cinzel",serif;font-size:15px;letter-spacing:.08em;color:var(--ash-dim);margin-bottom:6px}
+
+/* ---- the band's own heading ---- */
+.band{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.band-name{
+  font-family:"Cinzel",Georgia,serif;font-size:21px;letter-spacing:.05em;
+  background:transparent;border:none;border-bottom:1px solid var(--line);
+  color:var(--ash);padding:2px 0;min-width:180px;flex:1;
+}
+.band-name:focus{outline:none;border-color:var(--gilt)}
+.gauge{margin-top:11px}
+.gauge-line{display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--ash-mute)}
+.gauge-line b{font-family:"Space Mono",monospace;font-size:19px;color:var(--ash)}
+.gauge-line b.over{color:var(--rust)}
+.bar{height:3px;border-radius:2px;background:var(--stone-3);margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gilt);transition:width .25s}
+.bar i.over{background:var(--rust)}
+
+/* ---- overlays ---- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.66);opacity:0;pointer-events:none;
+  transition:opacity .2s;z-index:50;backdrop-filter:blur(2px)}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;max-height:92vh;overflow:auto;
+  background:var(--stone-1);border-top:1px solid var(--gilt-deep);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;transform:translateY(102%);
+  transition:transform .26s cubic-bezier(.3,.8,.3,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.sheet.show{transform:none}
+.sheet-in{max-width:860px;margin:0 auto;padding:16px 16px 22px}
+.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.sheet-head .eyebrow{flex:1}
+
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);z-index:90;
+  background:var(--stone-2);border:1px solid var(--gilt-deep);color:var(--ash);
+  padding:9px 15px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;box-shadow:var(--shadow);
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---- the error page the app shows rather than guessing at rules ---- */
+.fatal{max-width:620px;margin:56px auto;padding:22px}
+.fatal h2{color:var(--rust);margin-bottom:10px}
+.fatal ul{color:var(--ash-dim);font-size:13.5px;line-height:1.7}
+
+@media (max-width:540px){
+  .markers{grid-template-columns:1fr}
+  main{padding:14px 13px 80px}
+  h1{font-size:20px}
+}
+
+/* ---- the editor ---- */
+.sheet.two{z-index:70}
+.scrim.two{z-index:65}
+.sheet-actions{display:flex;gap:9px;margin-top:16px;align-items:center}
+.sheet-actions .btn.primary{margin-left:auto}
+.srow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.srow:last-child{border-bottom:none}
+.srow-l{flex:1;min-width:0}
+.srow-l b{display:block;font-size:13.5px;font-weight:600}
+.srow-l span{display:block;font-size:11.5px;color:var(--ash-mute);margin-top:1px}
+.srow-r{display:flex;align-items:center;gap:10px}
+.srow-hint{font-size:11.5px;color:var(--ash-mute);min-width:52px;text-align:right}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--stone-2)}
+.stepper button{width:30px;height:30px;border:0;background:none;color:var(--ash-dim);cursor:pointer;font-size:16px;line-height:1}
+.stepper button:hover:not(:disabled){color:var(--gilt)}
+.stepper button:disabled{opacity:.3;cursor:default}
+.stepper span{min-width:44px;text-align:center;font-family:"Space Mono",monospace;font-size:13px}
+.stepper.sm button{width:24px;height:24px;font-size:14px}
+.stepper.sm span{min-width:24px;font-size:12px}
+
+.grow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.grow:last-of-type{border-bottom:none}
+.grow-main{flex:1;min-width:0}
+.grow-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.grow-sub{font-size:12px;color:var(--ash-mute);margin-top:2px;line-height:1.45;white-space:pre-line}
+.grow-r{display:flex;align-items:center;gap:8px;flex:none}
+.grow-r .mono{font-size:12.5px;color:var(--gilt)}
+.grow-r .mono.neg,.cost-row b.neg{color:var(--verdigris)}
+.tiny{background:none;border:0;color:var(--ash-mute);cursor:pointer;font-size:14px;line-height:1;padding:2px}
+.tiny:hover{color:var(--gilt)}
+.mods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px}
+.mod{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 7px;border-radius:999px;
+  border:1px solid var(--line);background:var(--stone-2);color:var(--ash-dim)}
+.mod b{color:var(--gilt)}
+.mod button{background:none;border:0;color:var(--ash-mute);cursor:pointer;font-size:12px;line-height:1;padding:0}
+.mod-add{font:inherit;font-size:11px;padding:2px 7px;border-radius:999px;border:1px dashed var(--line);
+  background:transparent;color:var(--ash-mute);max-width:180px}
+.cost-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px;
+  border-bottom:1px solid var(--line-soft)}
+.cost-row:last-of-type{border-bottom:none}
+.cost-row span{color:var(--ash-dim)}
+.cost-row b{font-size:13px}
+
+.picks{display:flex;flex-direction:column;gap:7px}
+.pick{display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;padding:11px 12px;
+  border-radius:var(--r-md);border:1px solid var(--line);background:var(--stone-2);color:inherit;
+  font:inherit;cursor:pointer}
+.pick:hover:not(:disabled){border-color:var(--gilt-deep)}
+.pick.on{border-color:var(--gilt);background:var(--gilt-glow)}
+.pick.no{opacity:.55;cursor:default}
+.pick-main{flex:1;min-width:0}
+.pick-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pick-desc{font-size:12px;color:var(--ash-mute);margin-top:3px;line-height:1.45;white-space:pre-line}
+.pick-eg{font-family:"Spectral",Georgia,serif;font-style:italic;font-size:11.5px;color:var(--ash-mute);margin-top:4px;opacity:.85}
+.pick-no{font-size:11.5px;color:var(--rust);margin-top:5px}
+.pick-cost{font-size:13px;color:var(--gilt);flex:none}
+.pick-cost.neg{color:var(--verdigris)}
+</style>

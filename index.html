@@ -1,0 +1,4738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f12">
+<title>Epitaph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* =====================================================================
+   EPITAPH — carved stone, ash and gilt.
+   Headings are inscriptions: Cinzel, letter-spaced, the way a name is cut
+   into a marker. Body is plain and readable because rules text has to be.
+   ===================================================================== */
+:root{
+  --stone-0:#0d0f12;        /* the dark between markers */
+  --stone-1:#14171c;        /* panel */
+  --stone-2:#1c2026;        /* raised panel */
+  --stone-3:#252a32;        /* input, chip */
+  --line:#2f353e;
+  --line-soft:#232830;
+
+  --ash:#e8e4dc;            /* primary text: bone, not white */
+  --ash-dim:#a8a49c;
+  --ash-mute:#6e6a64;
+
+  --gilt:#c9a227;           /* the lettering on the marker */
+  --gilt-deep:#9c7d18;
+  --gilt-glow:rgba(201,162,39,.14);
+  --verdigris:#5e9e8a;      /* aged copper: good news */
+  --rust:#b5503c;           /* iron rot: bad news */
+
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --stone-0:#e9e5dd; --stone-1:#f3f0e9; --stone-2:#fbf9f4; --stone-3:#ffffff;
+    --line:#d2ccc0; --line-soft:#e0dbd1;
+    --ash:#1b1916; --ash-dim:#55504a; --ash-mute:#8a8479;
+    --gilt:#8a6d12; --gilt-deep:#6d5510; --gilt-glow:rgba(138,109,18,.10);
+    --verdigris:#3f7a66; --rust:#9c402d;
+    --shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 18px rgba(0,0,0,.08);
+  }
+}
+[data-theme="light"]{
+  --stone-0:#e9e5dd; --stone-1:#f3f0e9; --stone-2:#fbf9f4; --stone-3:#ffffff;
+  --line:#d2ccc0; --line-soft:#e0dbd1;
+  --ash:#1b1916; --ash-dim:#55504a; --ash-mute:#8a8479;
+  --gilt:#8a6d12; --gilt-deep:#6d5510; --gilt-glow:rgba(138,109,18,.10);
+  --verdigris:#3f7a66; --rust:#9c402d;
+  --shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 18px rgba(0,0,0,.08);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--stone-0);
+  color:var(--ash);
+  font:15px/1.55 "Inter",system-ui,-apple-system,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+  overflow-wrap:anywhere;
+}
+body.locked{overflow:hidden}
+
+/* ---- inscriptional headings ---- */
+h1,h2,h3,.inscribed{
+  font-family:"Cinzel",Georgia,serif;
+  font-weight:600;
+  letter-spacing:.06em;
+  margin:0;
+}
+h1{font-size:23px;letter-spacing:.11em}
+h2{font-size:17px}
+h3{font-size:16px;letter-spacing:.08em}
+.eyebrow{
+  font-family:"Cinzel",Georgia,serif;
+  font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ash-mute);
+}
+.lead{color:var(--ash-dim);font-size:13.5px;margin:6px 0 0;line-height:1.55}
+.quiet{color:var(--ash-mute);font-size:12.5px}
+.mono{font-family:"Space Mono",ui-monospace,monospace}
+.serif{font-family:"Spectral",Georgia,serif}
+
+/* ---- the masthead, cut like a marker ---- */
+header{
+  position:sticky;top:0;z-index:40;
+  background:linear-gradient(180deg,var(--stone-1),var(--stone-0));
+  border-bottom:1px solid var(--line);
+}
+.masthead{max-width:860px;margin:0 auto;padding:13px 16px 0;display:flex;align-items:center;gap:12px}
+.sigil{
+  width:34px;height:34px;flex:none;border-radius:7px;
+  border:1px solid var(--gilt-deep);background:var(--stone-2);
+  display:grid;place-items:center;color:var(--gilt);
+}
+.brand{min-width:0;flex:1}
+.brand h1{line-height:1.1}
+.brand .sub{
+  font-family:"Cinzel",Georgia,serif;font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ash-mute);margin-top:3px;
+}
+.iconbtn{
+  width:34px;height:34px;flex:none;border-radius:8px;border:1px solid var(--line);
+  background:var(--stone-2);color:var(--ash-dim);display:grid;place-items:center;cursor:pointer;
+}
+.iconbtn:hover{color:var(--ash);border-color:var(--gilt-deep)}
+
+/* ---- the two halves of the app ---- */
+nav.ways{max-width:860px;margin:12px auto 0;padding:0 16px;display:flex;gap:8px}
+.way{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 12px;border-radius:var(--r-md) var(--r-md) 0 0;
+  border:1px solid var(--line);border-bottom:none;
+  background:var(--stone-1);color:var(--ash-mute);cursor:pointer;
+  font-family:"Cinzel",Georgia,serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+}
+.way.on{background:var(--stone-2);color:var(--gilt);border-color:var(--gilt-deep)}
+.way svg{width:15px;height:15px}
+
+main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
+
+/* ---- surfaces ---- */
+.slab{
+  background:var(--stone-1);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:15px;box-shadow:var(--shadow);
+}
+.slab + .slab{margin-top:13px}
+.rule{flex:1;height:1px;background:var(--line);opacity:.8}
+.head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:999px;border:1px solid var(--line);
+  background:var(--stone-2);color:var(--ash-dim);font-size:11.5px;white-space:nowrap;
+}
+.chip.gilt{color:var(--gilt);border-color:var(--gilt-deep);background:var(--gilt-glow)}
+.chip.good{color:var(--verdigris);border-color:var(--verdigris)}
+.chip.bad{color:var(--rust);border-color:var(--rust)}
+
+.btn{
+  font:inherit;font-size:13px;padding:9px 16px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--stone-2);color:var(--ash);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+}
+.btn:hover{border-color:var(--gilt-deep)}
+.btn.primary{background:var(--gilt);border-color:var(--gilt);color:#17130a;font-weight:600}
+.btn.primary:hover{background:var(--gilt-deep);border-color:var(--gilt-deep)}
+.btn.ghost{background:transparent}
+.btn.sm{font-size:12px;padding:6px 12px}
+.btn.danger{color:var(--rust);border-color:var(--rust)}
+.btn:disabled{opacity:.4;cursor:default}
+
+.input{
+  width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--stone-3);color:var(--ash);
+}
+.input:focus{outline:none;border-color:var(--gilt-deep)}
+.field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ash-mute);margin-bottom:5px;font-family:"Cinzel",Georgia,serif}
+
+/* ---- the roster: each of the Unburied on their own marker ---- */
+.markers{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.marker{
+  position:relative;text-align:left;width:100%;
+  background:var(--stone-1);border:1px solid var(--line);
+  border-radius:var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
+  padding:14px 14px 12px;cursor:pointer;color:inherit;font:inherit;
+  box-shadow:var(--shadow);
+}
+.marker:hover{border-color:var(--gilt-deep)}
+.marker.benched{opacity:.55}
+.marker::before{
+  content:"";position:absolute;left:14px;right:14px;top:6px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gilt-deep),transparent);opacity:.5;
+}
+.m-name{font-family:"Cinzel",Georgia,serif;font-size:15px;letter-spacing:.05em;
+  margin-bottom:2px;display:block}
+.m-epithet{font-family:"Spectral",Georgia,serif;font-style:italic;color:var(--gilt);
+  font-size:12.5px;margin-bottom:8px;display:block}
+.m-role{color:var(--ash-mute);font-size:12px;margin-bottom:9px;display:block}
+.m-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:10px 0}
+.m-stat{text-align:center;padding:6px 2px;border-radius:var(--r-sm);
+  background:var(--stone-2);border:1px solid var(--line-soft)}
+.m-stat b{display:block;font-size:14px;font-family:"Space Mono",monospace}
+.m-stat span{display:block;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ash-mute);margin-top:2px}
+.m-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:9px}
+.m-cost{position:absolute;top:12px;right:14px;font-family:"Space Mono",monospace;
+  font-size:15px;color:var(--gilt)}
+.m-cost small{display:block;font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ash-mute);font-family:"Cinzel",serif;text-align:right}
+
+.marker.add{display:grid;place-items:center;min-height:132px;border-style:dashed;
+  color:var(--ash-mute);gap:6px}
+.marker.add .plus{font-size:26px;color:var(--gilt);line-height:1}
+.marker.add span{font-family:"Cinzel",serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+.empty{text-align:center;padding:36px 18px;color:var(--ash-mute)}
+.empty .big{font-family:"Cinzel",serif;font-size:15px;letter-spacing:.08em;color:var(--ash-dim);margin-bottom:6px}
+
+/* ---- the band's own heading ---- */
+.band{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.band-name{
+  font-family:"Cinzel",Georgia,serif;font-size:21px;letter-spacing:.05em;
+  background:transparent;border:none;border-bottom:1px solid var(--line);
+  color:var(--ash);padding:2px 0;min-width:180px;flex:1;
+}
+.band-name:focus{outline:none;border-color:var(--gilt)}
+.gauge{margin-top:11px}
+.gauge-line{display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--ash-mute)}
+.gauge-line b{font-family:"Space Mono",monospace;font-size:19px;color:var(--ash)}
+.gauge-line b.over{color:var(--rust)}
+.bar{height:3px;border-radius:2px;background:var(--stone-3);margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gilt);transition:width .25s}
+.bar i.over{background:var(--rust)}
+
+/* ---- overlays ---- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.66);opacity:0;pointer-events:none;
+  transition:opacity .2s;z-index:50;backdrop-filter:blur(2px)}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;max-height:92vh;overflow:auto;
+  background:var(--stone-1);border-top:1px solid var(--gilt-deep);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;transform:translateY(102%);
+  transition:transform .26s cubic-bezier(.3,.8,.3,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.sheet.show{transform:none}
+.sheet-in{max-width:860px;margin:0 auto;padding:16px 16px 22px}
+.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.sheet-head .eyebrow{flex:1}
+
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);z-index:90;
+  background:var(--stone-2);border:1px solid var(--gilt-deep);color:var(--ash);
+  padding:9px 15px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;box-shadow:var(--shadow);
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---- the error page the app shows rather than guessing at rules ---- */
+.fatal{max-width:620px;margin:56px auto;padding:22px}
+.fatal h2{color:var(--rust);margin-bottom:10px}
+.fatal ul{color:var(--ash-dim);font-size:13.5px;line-height:1.7}
+
+@media (max-width:540px){
+  .markers{grid-template-columns:1fr}
+  main{padding:14px 13px 80px}
+  h1{font-size:20px}
+}
+
+/* ---- the editor ---- */
+.sheet.two{z-index:70}
+.scrim.two{z-index:65}
+.sheet-actions{display:flex;gap:9px;margin-top:16px;align-items:center}
+.sheet-actions .btn.primary{margin-left:auto}
+.srow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.srow:last-child{border-bottom:none}
+.srow-l{flex:1;min-width:0}
+.srow-l b{display:block;font-size:13.5px;font-weight:600}
+.srow-l span{display:block;font-size:11.5px;color:var(--ash-mute);margin-top:1px}
+.srow-r{display:flex;align-items:center;gap:10px}
+.srow-hint{font-size:11.5px;color:var(--ash-mute);min-width:52px;text-align:right}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--stone-2)}
+.stepper button{width:30px;height:30px;border:0;background:none;color:var(--ash-dim);cursor:pointer;font-size:16px;line-height:1}
+.stepper button:hover:not(:disabled){color:var(--gilt)}
+.stepper button:disabled{opacity:.3;cursor:default}
+.stepper span{min-width:44px;text-align:center;font-family:"Space Mono",monospace;font-size:13px}
+.stepper.sm button{width:24px;height:24px;font-size:14px}
+.stepper.sm span{min-width:24px;font-size:12px}
+
+.grow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.grow:last-of-type{border-bottom:none}
+.grow-main{flex:1;min-width:0}
+.grow-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.grow-sub{font-size:12px;color:var(--ash-mute);margin-top:2px;line-height:1.45;white-space:pre-line}
+.grow-r{display:flex;align-items:center;gap:8px;flex:none}
+.grow-r .mono{font-size:12.5px;color:var(--gilt)}
+.grow-r .mono.neg,.cost-row b.neg{color:var(--verdigris)}
+.tiny{background:none;border:0;color:var(--ash-mute);cursor:pointer;font-size:14px;line-height:1;padding:2px}
+.tiny:hover{color:var(--gilt)}
+.mods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px}
+.mod{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 7px;border-radius:999px;
+  border:1px solid var(--line);background:var(--stone-2);color:var(--ash-dim)}
+.mod b{color:var(--gilt)}
+.mod button{background:none;border:0;color:var(--ash-mute);cursor:pointer;font-size:12px;line-height:1;padding:0}
+.mod-add{font:inherit;font-size:11px;padding:2px 7px;border-radius:999px;border:1px dashed var(--line);
+  background:transparent;color:var(--ash-mute);max-width:180px}
+.cost-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px;
+  border-bottom:1px solid var(--line-soft)}
+.cost-row:last-of-type{border-bottom:none}
+.cost-row span{color:var(--ash-dim)}
+.cost-row b{font-size:13px}
+
+.picks{display:flex;flex-direction:column;gap:7px}
+.pick{display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;padding:11px 12px;
+  border-radius:var(--r-md);border:1px solid var(--line);background:var(--stone-2);color:inherit;
+  font:inherit;cursor:pointer}
+.pick:hover:not(:disabled){border-color:var(--gilt-deep)}
+.pick.on{border-color:var(--gilt);background:var(--gilt-glow)}
+.pick.no{opacity:.55;cursor:default}
+.pick-main{flex:1;min-width:0}
+.pick-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pick-desc{font-size:12px;color:var(--ash-mute);margin-top:3px;line-height:1.45;white-space:pre-line}
+.pick-eg{font-family:"Spectral",Georgia,serif;font-style:italic;font-size:11.5px;color:var(--ash-mute);margin-top:4px;opacity:.85}
+.pick-no{font-size:11.5px;color:var(--rust);margin-top:5px}
+.pick-cost{font-size:13px;color:var(--gilt);flex:none}
+.pick-cost.neg{color:var(--verdigris)}
+</style>
+
+</head>
+
+<body>
+<header>
+  <div class="masthead">
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+           stroke-linecap="round" stroke-linejoin="round" width="19" height="19">
+        <path d="M6 21V9a6 6 0 0 1 12 0v12"/><path d="M4 21h16"/><path d="M12 12v5"/><path d="M9.5 14.5h5"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <h1>Epitaph</h1>
+      <div class="sub" id="rsVer">loading</div>
+    </div>
+    <button class="iconbtn" id="btnTheme" aria-label="Light or dark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="17" height="17">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>
+      </svg>
+    </button>
+  </div>
+  <nav class="ways">
+    <button class="way on" data-way="unburied">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 21V9a6 6 0 0 1 12 0v12"/><path d="M4 21h16"/></svg>
+      Your Unburied
+    </button>
+    <button class="way" data-way="realm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg>
+      The Realm
+    </button>
+  </nav>
+</header>
+
+<main>
+  <section id="viewUnburied">
+    <div id="bandHead"></div>
+    <div class="markers" id="roster" style="margin-top:16px"></div>
+  </section>
+
+  <section id="viewRealm" hidden>
+    <div class="slab">
+      <div class="head"><span class="eyebrow">The Realm</span><span class="rule"></span></div>
+      <p class="lead">The shared table: a scenario, and whoever is running it.
+         Not built yet — this is where the generator and the host will live.</p>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="sheet-in" id="sheetIn"></div></div>
+<div class="scrim two" id="scrim2"></div>
+<div class="sheet two" id="sheet2" role="dialog" aria-modal="true"><div class="sheet-in" id="sheet2In"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="application/json" id="rulesetJSON">
+{
+  "meta": {
+    "name": "Epitaph",
+    "version": "0.10.5",
+    "status": "0.9 plus flaws (drawbacks that give points back) for any character; flaw prices are guesses for the simulator",
+    "units": {
+      "distance": "cm",
+      "temperature": "C"
+    },
+    "principles": [
+      "one throw per action: all dice for an action are thrown together and read at once",
+      "every test: roll the stat die, 4+ succeeds, 8+ is a Critical",
+      "modifiers step dice up or down, never add numbers",
+      "XP, points and Cash share one price scale"
+    ],
+    "terms": {
+      "band": "Unburied",
+      "bandPlural": "Unburied",
+      "bandUsage": "always plural and capitalised: \"your Unburied are sealed\"; use \"side\" in rules that apply to players and enemies alike",
+      "nickname": "epithet",
+      "gameName": "Epitaph",
+      "powerTierMinor": "Murmur",
+      "powerTierMajor": "Reckoning",
+      "tierIdsUnchanged": "power tier ids stay \"knack\" and \"signature\""
+    },
+    "reskinNote": "A model may display its own name for any gear it carries; the stats and cost always come from the id. `examples` is fiction only and never affects play."
+  },
+  "dice": {
+    "ladder": [
+      "d4",
+      "d6",
+      "d8",
+      "d10",
+      "d12"
+    ],
+    "target": 4,
+    "critical": 8,
+    "belowMin": "fail",
+    "aboveMax": "roll two d12, keep higher",
+    "stepsCancel": true,
+    "opposed": "both roll, higher wins, tie = nothing",
+    "riskDie": "d6",
+    "fateDie": "d20",
+    "lootDie": "d100"
+  },
+  "stats": [
+    {
+      "key": "fight",
+      "name": "Fight",
+      "type": "die",
+      "default": "d6",
+      "min": "d4",
+      "max": "d12",
+      "stepUpCosts": [
+        6,
+        8,
+        10
+      ],
+      "stepDownCost": 3
+    },
+    {
+      "key": "aim",
+      "name": "Aim",
+      "type": "die",
+      "default": "d6",
+      "min": "d4",
+      "max": "d12",
+      "stepUpCosts": [
+        6,
+        8,
+        10
+      ],
+      "stepDownCost": 3
+    },
+    {
+      "key": "will",
+      "name": "Will",
+      "type": "die",
+      "default": "d6",
+      "min": "d4",
+      "max": "d12",
+      "stepUpCosts": [
+        4,
+        5,
+        6
+      ],
+      "stepDownCost": 2
+    },
+    {
+      "key": "wits",
+      "name": "Wits",
+      "type": "die",
+      "default": "d6",
+      "min": "d4",
+      "max": "d12",
+      "stepUpCosts": [
+        4,
+        5,
+        6
+      ],
+      "stepDownCost": 2
+    },
+    {
+      "key": "move",
+      "name": "Move",
+      "type": "cm",
+      "default": 12,
+      "min": 4,
+      "max": 30,
+      "step": 2,
+      "costPerStep": 2
+    },
+    {
+      "key": "wounds",
+      "name": "Health",
+      "type": "number",
+      "default": 5,
+      "min": 1,
+      "max": 21,
+      "downRefunds": [
+        10,
+        8,
+        4
+      ],
+      "downRefundNote": "5th refunds 10, 4th refunds 8, each below refunds 4",
+      "upStep": 2,
+      "upCostPerStep": 22,
+      "upNote": "Health above the starting value is bought in steps of 2 (5 -> 7 -> 9). Against 2-damage weapons an odd single point bought nothing. Fate results and scars still move Health by 1."
+    },
+    {
+      "key": "armour",
+      "name": "Armour",
+      "type": "saveDie",
+      "default": null,
+      "fromGear": true
+    },
+    {
+      "key": "actions",
+      "name": "Actions",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 4,
+      "upCosts": [
+        12,
+        18
+      ]
+    },
+    {
+      "key": "size",
+      "name": "Size",
+      "type": "enum",
+      "default": "man",
+      "values": [
+        "small",
+        "man",
+        "large",
+        "huge"
+      ],
+      "costs": {
+        "small": -3,
+        "man": 0,
+        "large": 8,
+        "huge": 18
+      },
+      "note": "large holds objectives as 2 models, huge as 3; a model does not block line of sight to anything its own size or smaller; huge takes cover only from huge terrain",
+      "effects": {
+        "small": "counts as half a model when holding objectives (two Small = one); cannot use Heavy or Two-handed weapons",
+        "man": "baseline",
+        "large": "counts as 2 when holding objectives; blocks sight to Man and Small models behind it",
+        "huge": "counts as 3 when holding objectives; blocks sight to everything smaller; takes cover only from Huge terrain"
+      },
+      "verified": "judgement, not measurement; 0.9 gave Small a real drawback (it previously refunded 3 points for nothing)"
+    }
+  ],
+  "baseCost": 38,
+  "startingHP": 5,
+  "hpStep": 2,
+  "hpCost": 22,
+  "minModelCost": 10,
+  "minModelCostRule": "about a quarter of baseCost",
+  "surcharge": {
+    "freeUpgrades": 3,
+    "perPriorUpgrade": 1,
+    "countsAsUpgrade": [
+      "statStepUp",
+      "healthStep",
+      "action",
+      "trait",
+      "ability",
+      "power"
+    ],
+    "excluded": [
+      "gear",
+      "downgrades",
+      "resistances",
+      "vulnerabilities",
+      "size"
+    ],
+    "formula": "upgrade number n (counting all prior upgrades on the model) costs list price for n <= freeUpgrades, else list price + (n - 1)",
+    "example": "4th upgrade +3, 5th +4, 6th +5",
+    "excludedNote": "round 8: a 9-upgrade themed creature paid 25 points of surcharge on 104 of parts, a 24% tax purely for being interesting. Resistances, vulnerabilities and size are what make a creature a creature rather than a min-maxed fighter, so they no longer count toward the upgrade number. Stat stacking is still taxed exactly as before.",
+    "healthStepNote": "one 2-Health step counts as one upgrade",
+    "excludedRuling": "confirmed by co-design in 0.9"
+  },
+  "activation": {
+    "pointsPerActivation": 70,
+    "minActivations": 1,
+    "maxActivations": 4,
+    "appliesTo": [
+      "character",
+      "bigModel",
+      "squad"
+    ],
+    "squads": {
+      "rule": "activations = ceil(size/3), no points cap",
+      "eachActivation": "up to 3 models of the squad that have not acted this round, owner chooses; each activation has its own Actions including its own one Attack action for those models",
+      "eachModelOncePerRound": true,
+      "lastActivationMayBeSmaller": true,
+      "bestSizes": [
+        3,
+        6,
+        9
+      ],
+      "coherencyAndMoraleShared": true
+    },
+    "groups": "side with more activations acts ceil(more/fewer) units per turn; recount at round start",
+    "attackActionsPerActivation": 1,
+    "reactionsPerRound": {
+      "per": "unit",
+      "count": 1
+    }
+  },
+  "round": {
+    "steps": [
+      "tempo",
+      "activations",
+      "end"
+    ],
+    "tempo": [
+      "gain nerve",
+      "leaders roll opposed Wits; winner chooses who activates first; leaderless rolls d4"
+    ],
+    "end": [
+      "scenario events",
+      "break tests if a threshold was crossed",
+      "clear unused Ready",
+      "models that did not push this round remove 1 Strain (models that pushed keep theirs)"
+    ]
+  },
+  "nerve": {
+    "perRound": 2,
+    "leaderStandingBonus": 1,
+    "underdogBonus": 1,
+    "underdogRule": "checked at Tempo: strictly more points of models lost than the enemy; a tie gives no bonus",
+    "cap": 6,
+    "spends": [
+      {
+        "id": "reroll",
+        "cost": 1,
+        "desc": "Reroll one of your dice."
+      },
+      {
+        "id": "cancelBurnoutOrBacklash",
+        "cost": 1,
+        "desc": "Cancel a Burnout or a Backlash."
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "move",
+      "name": "Move",
+      "desc": "Move up to Move in cm."
+    },
+    {
+      "id": "charge",
+      "name": "Charge",
+      "desc": "Move into contact; first melee attack this activation steps up and deals +1 damage.",
+      "stepUp": 1,
+      "bonusDamage": 1
+    },
+    {
+      "id": "attack",
+      "name": "Attack",
+      "desc": "One melee or ranged attack. Once per activation.",
+      "limitPerActivation": 1
+    },
+    {
+      "id": "aim",
+      "name": "Aim",
+      "desc": "Next ranged attack this activation steps up.",
+      "stepUp": 1
+    },
+    {
+      "id": "power",
+      "name": "Power",
+      "desc": "Use a knack or cast a signature. Once per activation.",
+      "limitPerActivation": 1
+    },
+    {
+      "id": "interact",
+      "name": "Interact",
+      "desc": "Objective, door, search, disarm, pick up, drag or Stabilise a Down friend."
+    },
+    {
+      "id": "recover",
+      "name": "Recover",
+      "desc": "Remove 1 Strain, or Shaken, or Pinned."
+    },
+    {
+      "id": "hold",
+      "name": "Hold",
+      "desc": "End the activation early. (Gain a Ready token if no Attack was made.)"
+    }
+  ],
+  "reactions": {
+    "trigger": [
+      "an enemy in sight finishes a Move or Charge within 30 cm (any direction, including moving away)",
+      "an enemy declares an attack against this unit"
+    ],
+    "range": 30,
+    "cost": "Ready token only",
+    "list": [
+      {
+        "id": "snapShot",
+        "name": "Snap shot",
+        "desc": "One ranged attack, stepped down, resolved before the enemy's attack.",
+        "stepDown": 1
+      },
+      {
+        "id": "dodge",
+        "name": "Dodge",
+        "desc": "Move up to 5 cm; the attack uses the new position.",
+        "distance": 5
+      },
+      {
+        "id": "brace",
+        "name": "Brace",
+        "desc": "When charged: first melee roll steps up; charger gets no Charge bonus."
+      }
+    ],
+    "readyAccess": [
+      "a unit that ends its activation without making an Attack gains a Ready token (squad: any of its activations)",
+      "Vigilant: starts each round with a Ready token"
+    ]
+  },
+  "strain": {
+    "pushes": [
+      {
+        "id": "digIn",
+        "name": "Dig in",
+        "strain": 1,
+        "desc": "Step up one die; declare before throwing."
+      },
+      {
+        "id": "sprint",
+        "name": "Sprint",
+        "strain": 1,
+        "desc": "One Move action goes 6 cm further.",
+        "distance": 6
+      },
+      {
+        "id": "hardHit",
+        "name": "Hard hit",
+        "strain": 1,
+        "desc": "A successful attack deals +1 damage."
+      },
+      {
+        "id": "lastGasp",
+        "name": "Last gasp",
+        "strain": 2,
+        "desc": "One extra action this activation, not an Attack."
+      }
+    ],
+    "riskDieInThrow": true,
+    "burnoutRule": "riskDie < strainAfterPush",
+    "burnoutEffect": {
+      "damage": 1,
+      "armourSave": false,
+      "strainResetTo": 0,
+      "actionStillHappens": true
+    },
+    "autoBurnoutAt": 6,
+    "restDecay": {
+      "amount": 1,
+      "onlyIfNoPushThisRound": true
+    },
+    "backlashStrainTriggersBurnout": false
+  },
+  "movement": {
+    "engagedRange": 2,
+    "breakOff": "each enemy left may make one free melee attack, no reaction",
+    "difficultMultiplier": 2,
+    "climbMultiplier": 2,
+    "climbTestAbove": 10,
+    "freeJump": 5,
+    "maxJump": 10,
+    "fall": {
+      "safe": 5,
+      "damagePer": 10,
+      "armourSave": false,
+      "thenPinned": true
+    },
+    "leavingContact": {
+      "rule": "leaving contact on your own legs gives every enemy left a free melee attack; being moved out by something else does not",
+      "freeAttacks": [
+        "voluntary Break off",
+        "Shaken moving away",
+        "Dread level 3 flee",
+        "withdrawal after breaking"
+      ],
+      "noFreeAttacks": [
+        "Push",
+        "Force weapon effect",
+        "Upheaval",
+        "any power or effect that moves a model against its will"
+      ]
+    }
+  },
+  "shooting": {
+    "coverStepDown": 1,
+    "coverRule": "touching a Cover piece between target and shooter, or at least half the target hidden",
+    "longShot": {
+      "maxMultiplier": 2,
+      "stepDown": 1
+    },
+    "obscuringDepth": 5,
+    "intoMelee": "on a miss, hits a random other model in that fight"
+  },
+  "melee": {
+    "opposed": true,
+    "hitRule": "higher roll hits only if it is also 4+; tie or higher-under-4 = nothing",
+    "defenderHitsBack": true,
+    "outnumber": {
+      "stepUpPerExtraModel": 1,
+      "maxSteps": 2,
+      "reducedBy": "each extra pair of arms on the defender cancels one step"
+    }
+  },
+  "damage": {
+    "armourSave": "one save die per point of damage, thrown with the attack; each 4+ cancels 1",
+    "criticalIgnoresArmour": true,
+    "atZero": "Down",
+    "marked": [
+      "taken Down by a Critical",
+      "Finished"
+    ],
+    "aroundDown": [
+      {
+        "id": "stabilise",
+        "by": "friend in contact",
+        "action": "interact",
+        "effect": "Fate with advantage"
+      },
+      {
+        "id": "drag",
+        "by": "friend in contact",
+        "action": "interact",
+        "effect": "move together up to half Move"
+      },
+      {
+        "id": "finish",
+        "by": "enemy in contact",
+        "action": "attack",
+        "effect": "no roll; becomes Marked; can't be Stabilised"
+      }
+    ],
+    "healedFromDown": "stands with its Health restored and is Pinned"
+  },
+  "conditions": [
+    {
+      "id": "down",
+      "desc": "0 Health. Can't act or react."
+    },
+    {
+      "id": "marked",
+      "desc": "Rolls Fate with disadvantage."
+    },
+    {
+      "id": "stabilised",
+      "desc": "Rolls Fate with advantage."
+    },
+    {
+      "id": "shaken",
+      "desc": "Next activation: only Move away or into cover, or Recover. Can't react."
+    },
+    {
+      "id": "pinned",
+      "desc": "Attacks against it step down. Can't Move until Recover."
+    },
+    {
+      "id": "burning",
+      "desc": "1 damage each End step until an action is spent to put it out."
+    },
+    {
+      "id": "ready",
+      "desc": "May react once. Lost at End step."
+    },
+    {
+      "id": "laidUp",
+      "desc": "Misses the next battle."
+    },
+    {
+      "id": "tainted",
+      "desc": "1 damage at each End step for 2 rounds. An action cannot put it out; a Healing kit or Restore ends it."
+    }
+  ],
+  "morale": {
+    "shaken": {
+      "squadTrigger": "drops to half starting models or fewer (once per battle)",
+      "characterTrigger": "a friend within 10 cm goes Down and no other friend within 10 cm",
+      "test": "will"
+    },
+    "break": {
+      "thresholds": [
+        0.5,
+        0.75
+      ],
+      "measure": "fraction of starting points Down, removed or fled",
+      "test": "will",
+      "tester": "Leader, else highest-cost standing model",
+      "onFail": "withdraw next round; battle ends after that round",
+      "result": "the broken side withdraws for one round and the battle ends; the winner is decided by victory points (see scenario.victory); breaking gives the enemy the rout bonus"
+    },
+    "voluntaryWithdraw": "counts as breaking; Down models in contact with a friend count as Stabilised"
+  },
+  "squads": {
+    "minSize": 3,
+    "maxSize": 10,
+    "coherency": 5,
+    "activations": "see activation.squads",
+    "overkillCarries": false,
+    "blastHitsEachModel": true,
+    "fateRollPerModelsLost": 2,
+    "sharedStrain": true,
+    "cost": "per-model cost (including surcharge from the shared profile) x size, then minus squadDiscount; floor applies per model before the discount",
+    "attack": "one Attack action: every activating model that can attack rolls once against one target unit; each model rolls its own dice",
+    "rapid": "Rapid gives each model two attacks, both stepped down",
+    "squadDiscount": 0.05,
+    "discountNote": "round 5: 5% fair at sizes 3/5/10 (52-58%) with ceil(size/3) activations; very steep - leave alone",
+    "surcharge": "counted once on the squad's shared profile (its upgrade count), then that surcharged price is paid per model"
+  },
+  "sizes": {
+    "values": [
+      "small",
+      "man",
+      "large",
+      "huge"
+    ],
+    "usedFor": [
+      "hold objectives: small counts half, large 2, huge 3",
+      "line of sight: same size or smaller does not block",
+      "cover: huge models only get cover from huge terrain",
+      "small: no Heavy or Two-handed weapons"
+    ]
+  },
+  "keywords": [
+    {
+      "id": "close",
+      "desc": "Can shoot while Engaged. No long shots."
+    },
+    {
+      "id": "weak",
+      "desc": "Attacks with it step down."
+    },
+    {
+      "id": "parry",
+      "desc": "Wins melee ties."
+    },
+    {
+      "id": "rend",
+      "desc": "Ignores armour on every hit."
+    },
+    {
+      "id": "reach",
+      "desc": "Engages and attacks from 5 cm.",
+      "value": 5
+    },
+    {
+      "id": "rapid",
+      "desc": "One Attack action makes two attacks, both stepped down."
+    },
+    {
+      "id": "twoHanded",
+      "desc": "No shield or second weapon."
+    },
+    {
+      "id": "heavy",
+      "desc": "Can't shoot in an activation it Moved or Charged; no Snap shot."
+    },
+    {
+      "id": "spread",
+      "desc": "Steps up at half range or less."
+    },
+    {
+      "id": "blast",
+      "desc": "Every model within X cm of the target point is attacked separately.",
+      "param": "radius"
+    },
+    {
+      "id": "burn",
+      "desc": "On a hit, target is Burning."
+    },
+    {
+      "id": "stun",
+      "desc": "On a Critical, target loses its next action. Never the only keyword of a weapon d6 models carry."
+    },
+    {
+      "id": "quiet",
+      "desc": "Shooting doesn't reveal a hidden shooter."
+    },
+    {
+      "id": "limited",
+      "desc": "N uses per battle.",
+      "param": "uses"
+    },
+    {
+      "id": "overcharge",
+      "desc": "Hard hit costs no Strain; a natural 1 breaks the weapon for the battle."
+    }
+  ],
+  "traits": [
+    {
+      "id": "leader",
+      "name": "Leader",
+      "cost": 6,
+      "desc": "+1 Nerve each Tempo while standing. One per side. Rolls initiative and break tests.",
+      "unique": true
+    },
+    {
+      "id": "tough",
+      "name": "Tough",
+      "cost": 8,
+      "desc": "Once per battle, when it would go Down, it stays at 1 Health."
+    },
+    {
+      "id": "quick",
+      "name": "Quick",
+      "cost": 4,
+      "desc": "Move +4 cm."
+    },
+    {
+      "id": "sureFooted",
+      "name": "Sure-footed",
+      "cost": 3,
+      "desc": "Ignores Difficult ground and climbing tests."
+    },
+    {
+      "id": "vigilant",
+      "name": "Vigilant",
+      "cost": 3,
+      "desc": "Starts each round with a Ready token.",
+      "verified": "round 6: 58% at 3 before Ready access was opened; re-check, value likely lower now"
+    },
+    {
+      "id": "fearsome",
+      "name": "Fearsome",
+      "cost": 8,
+      "desc": "Enemies within 10 cm step down Will tests; enemies charging it get no Charge bonus."
+    },
+    {
+      "id": "stealthy",
+      "name": "Stealthy",
+      "cost": 5,
+      "desc": "Can't be targeted from beyond 30 cm while in cover."
+    },
+    {
+      "id": "brute",
+      "name": "Brute",
+      "cost": 10,
+      "desc": "+1 melee damage."
+    },
+    {
+      "id": "marksman",
+      "name": "Marksman",
+      "cost": 6,
+      "desc": "Long shots don't step down."
+    },
+    {
+      "id": "hardy",
+      "name": "Hardy",
+      "cost": 5,
+      "desc": "Its first push each round gives no Strain."
+    },
+    {
+      "id": "adept",
+      "name": "Adept",
+      "cost": 8,
+      "desc": "Throw two Risk dice when casting; keep the higher."
+    },
+    {
+      "id": "channeller",
+      "name": "Channeller",
+      "cost": 10,
+      "desc": "Its Risk die for signatures is a d8."
+    },
+    {
+      "id": "unfeeling",
+      "name": "Unfeeling",
+      "cost": 4,
+      "desc": "Never Shaken; can't be Stabilised."
+    },
+    {
+      "id": "flyer",
+      "name": "Flyer",
+      "cost": 10,
+      "desc": "Ignores terrain while moving; must end on a surface."
+    },
+    {
+      "id": "swarm",
+      "name": "Swarm",
+      "cost": 2,
+      "costPer": "model",
+      "squadOnly": true,
+      "desc": "Outnumber can step up three times instead of two."
+    },
+    {
+      "id": "scavenger",
+      "name": "Scavenger",
+      "cost": 4,
+      "desc": "+1d6 Cash after each battle it takes part in."
+    },
+    {
+      "id": "medic",
+      "name": "Medic",
+      "cost": 6,
+      "desc": "Stabilise from 5 cm; models it Stabilises may reroll a natural 1 on Fate."
+    },
+    {
+      "id": "insubstantial",
+      "name": "Insubstantial",
+      "cost": 12,
+      "desc": "Attacks step down against it unless the weapon has Rend. Ignores terrain when it moves.",
+      "verified": "round 8: defensive half measures ~8 on a line board; the terrain half cannot be measured there, so 12 is provisional pending table play. Kept at 12 in 0.9; first thing to watch at the table."
+    },
+    {
+      "id": "resistFire",
+      "name": "Resist fire",
+      "cost": 4,
+      "desc": "Never Burning. Fire weapon effects do nothing to it.",
+      "element": "fire"
+    },
+    {
+      "id": "resistCold",
+      "name": "Resist cold",
+      "cost": 3,
+      "desc": "Frost weapon effects do nothing to it. Ignores Cold.",
+      "element": "cold"
+    },
+    {
+      "id": "resistShock",
+      "name": "Resist shock",
+      "cost": 3,
+      "desc": "Shock weapon effects do nothing to it.",
+      "element": "shock"
+    },
+    {
+      "id": "resistToxic",
+      "name": "Resist toxic",
+      "cost": 4,
+      "desc": "Never Tainted. Toxic weapon effects do nothing to it.",
+      "element": "toxic"
+    },
+    {
+      "id": "resistAcid",
+      "name": "Resist acid",
+      "cost": 3,
+      "desc": "Acid weapon effects do nothing to it.",
+      "element": "acid"
+    },
+    {
+      "id": "frailFire",
+      "name": "Vulnerable to fire",
+      "cost": -5,
+      "desc": "Fire effects always apply, and attacks with a Fire effect step up against it.",
+      "element": "fire"
+    },
+    {
+      "id": "frailCold",
+      "name": "Vulnerable to cold",
+      "cost": -4,
+      "desc": "Frost effects always apply, and attacks with a Frost effect step up against it.",
+      "element": "cold"
+    },
+    {
+      "id": "frailShock",
+      "name": "Vulnerable to shock",
+      "cost": -4,
+      "desc": "Shock effects always apply, and attacks with a Shock effect step up against it.",
+      "element": "shock"
+    },
+    {
+      "id": "frailToxic",
+      "name": "Vulnerable to toxic",
+      "cost": -5,
+      "desc": "Toxic effects always apply, and attacks with a Toxic effect step up against it.",
+      "element": "toxic"
+    },
+    {
+      "id": "frailAcid",
+      "name": "Vulnerable to acid",
+      "cost": -4,
+      "desc": "Acid effects always apply, and attacks with an Acid effect step up against it.",
+      "element": "acid"
+    },
+    {
+      "id": "aura",
+      "name": "Burning aura",
+      "cost": 9,
+      "desc": "At the End step, every enemy model engaged with it takes 1 damage, no save."
+    },
+    {
+      "id": "regenerate",
+      "name": "Regenerate",
+      "cost": 10,
+      "desc": "At the End step, restore 1 Health, unless it took damage this round from something it is Vulnerable to."
+    },
+    {
+      "id": "construct",
+      "name": "Construct",
+      "cost": 6,
+      "desc": "Never Shaken and cannot be Stabilised. Rolls no Fate after a battle — instead it is repaired for free. Immune to Toxic."
+    },
+    {
+      "id": "mindless",
+      "name": "Mindless",
+      "cost": -4,
+      "desc": "Cannot spend or benefit from Nerve (no rerolls or cancels for it). Cannot be the Leader, carry objectives, or use Interact actions.",
+      "verified": "0.9: was -6 with \"adds nothing to Nerve\", but Nerve is per side, so that half cost nothing; replaced with a real drawback and repriced"
+    },
+    {
+      "id": "extraArms",
+      "name": "Extra arms",
+      "cost": 12,
+      "costPer": "pair",
+      "max": 2,
+      "desc": "+2 hands per purchase (max two purchases: 4 or 6 arms). Extra hands carry more gear (e.g. a Heavy melee weapon and a Shield). Flurry is built in: if it carries 2 or more melee weapons, its melee Attack makes one attack with each, all stepped down, up to 3 attacks with four arms or 4 with six. This replaces Rapid for that Attack and still counts as its one Attack action. Its Flurry attacks may be split between any enemies it is Engaged with (declared before the throw). Each extra pair of arms cancels one Outnumber step for enemies attacking it (six arms: none; a Swarm squad keeps its third step).",
+      "verified": "new in 0.10.2 (Extra arms and Flurry merged); 12 per pair is a guess; 0.10.4 added split attacks and Outnumber cancelling - likely worth more than 12"
+    }
+  ],
+  "abilities": [
+    {
+      "id": "rally",
+      "name": "Rally",
+      "cost": 5,
+      "desc": "Action: remove Shaken from a friendly unit within 15 cm."
+    },
+    {
+      "id": "command",
+      "name": "Command",
+      "cost": 10,
+      "desc": "Action: a friendly unit within 15 cm that has already activated takes one non-Attack action now. Once per round."
+    },
+    {
+      "id": "calledShot",
+      "name": "Called shot",
+      "cost": 6,
+      "desc": "Attack that steps down; on a hit ignore armour or pick any System regardless of its condition."
+    },
+    {
+      "id": "taunt",
+      "name": "Taunt",
+      "cost": 4,
+      "desc": "Action: an enemy within 20 cm passes Will or its next activation must target this model if able."
+    },
+    {
+      "id": "trapwise",
+      "name": "Trapwise",
+      "cost": 3,
+      "desc": "Action: reveal every suspicion marker within 20 cm without triggering it; traps it reveals are disarmed on a Wits test step-up."
+    },
+    {
+      "id": "ambush",
+      "name": "Ambush",
+      "cost": 6,
+      "desc": "Deploy anywhere in cover more than 30 cm from enemies, after both sides deploy."
+    },
+    {
+      "id": "dive",
+      "name": "Dive",
+      "cost": 4,
+      "desc": "Dodge reaction moves 10 cm."
+    },
+    {
+      "id": "frenzy",
+      "name": "Frenzy",
+      "cost": 5,
+      "desc": "Once per battle: its melee Attack this activation makes 3 attacks; then gain 2 Strain."
+    }
+  ],
+  "weapons": [
+    {
+      "id": "bareHands",
+      "name": "Unarmed",
+      "cost": 0,
+      "type": "melee",
+      "range": null,
+      "damage": 1,
+      "keywords": [
+        "weak"
+      ],
+      "examples": [
+        "fists",
+        "a feeble bite",
+        "flailing limbs"
+      ]
+    },
+    {
+      "id": "knife",
+      "name": "Light melee weapon",
+      "cost": 1,
+      "type": "melee",
+      "range": null,
+      "damage": 1,
+      "keywords": [
+        "close",
+        "quiet"
+      ],
+      "examples": [
+        "knife",
+        "teeth",
+        "claws",
+        "shiv",
+        "bone shard"
+      ]
+    },
+    {
+      "id": "handWeapon",
+      "name": "Melee weapon",
+      "cost": 3,
+      "type": "melee",
+      "range": null,
+      "damage": 1,
+      "keywords": [
+        "parry"
+      ],
+      "examples": [
+        "sword",
+        "axe",
+        "club",
+        "pincer",
+        "heavy tail"
+      ]
+    },
+    {
+      "id": "greatWeapon",
+      "name": "Heavy melee weapon",
+      "cost": 10,
+      "type": "melee",
+      "range": null,
+      "damage": 2,
+      "keywords": [
+        "twoHanded"
+      ],
+      "examples": [
+        "greatsword",
+        "maul",
+        "wrecking claw",
+        "tree limb"
+      ]
+    },
+    {
+      "id": "polearm",
+      "name": "Reach weapon",
+      "cost": 5,
+      "type": "melee",
+      "range": null,
+      "damage": 1,
+      "keywords": [
+        "twoHanded",
+        "reach"
+      ],
+      "examples": [
+        "spear",
+        "halberd",
+        "tentacle",
+        "whip",
+        "lashing tongue"
+      ]
+    },
+    {
+      "id": "pairedBlades",
+      "name": "Paired melee weapons",
+      "cost": 5,
+      "type": "melee",
+      "range": null,
+      "damage": 1,
+      "keywords": [
+        "rapid"
+      ],
+      "examples": [
+        "twin knives",
+        "two claws",
+        "a flurry of limbs"
+      ]
+    },
+    {
+      "id": "sidearm",
+      "name": "Short-range weapon",
+      "cost": 4,
+      "type": "ranged",
+      "range": 25,
+      "damage": 1,
+      "keywords": [
+        "close"
+      ],
+      "examples": [
+        "pistol",
+        "dart tube",
+        "venom spit",
+        "sling"
+      ]
+    },
+    {
+      "id": "carbine",
+      "name": "Medium-range rapid weapon",
+      "cost": 6,
+      "type": "ranged",
+      "range": 40,
+      "damage": 1,
+      "keywords": [
+        "rapid"
+      ],
+      "examples": [
+        "carbine",
+        "repeating bow",
+        "spine volley"
+      ]
+    },
+    {
+      "id": "rifle",
+      "name": "Long-range weapon",
+      "cost": 11,
+      "type": "ranged",
+      "range": 60,
+      "damage": 2,
+      "keywords": [],
+      "examples": [
+        "rifle",
+        "longbow",
+        "acid spit",
+        "rail spike"
+      ]
+    },
+    {
+      "id": "longRifle",
+      "name": "Long-range piercing weapon",
+      "cost": 16,
+      "type": "ranged",
+      "range": 90,
+      "damage": 2,
+      "keywords": [
+        "heavy",
+        "rend"
+      ],
+      "examples": [
+        "long rifle",
+        "harpoon gun",
+        "bone lance"
+      ]
+    },
+    {
+      "id": "scattergun",
+      "name": "Short-range spread weapon",
+      "cost": 10,
+      "type": "ranged",
+      "range": 20,
+      "damage": 2,
+      "keywords": [
+        "spread",
+        "close"
+      ],
+      "examples": [
+        "shotgun",
+        "scattergun",
+        "quill burst",
+        "gout of spores"
+      ]
+    },
+    {
+      "id": "heavyGun",
+      "name": "Heavy support weapon",
+      "cost": 22,
+      "type": "ranged",
+      "range": 60,
+      "damage": 3,
+      "keywords": [
+        "heavy",
+        "rapid"
+      ],
+      "examples": [
+        "machine gun",
+        "ballista",
+        "swarm launcher"
+      ]
+    },
+    {
+      "id": "bow",
+      "name": "Medium-range quiet weapon",
+      "cost": 5,
+      "type": "ranged",
+      "range": 45,
+      "damage": 1,
+      "keywords": [
+        "quiet"
+      ],
+      "examples": [
+        "bow",
+        "crossbow",
+        "blowgun",
+        "silent quill"
+      ]
+    },
+    {
+      "id": "grenade",
+      "name": "Thrown explosive",
+      "cost": 6,
+      "type": "ranged",
+      "range": 20,
+      "damage": 2,
+      "keywords": [
+        "blast",
+        "limited"
+      ],
+      "params": {
+        "blast": 5,
+        "limited": 1
+      },
+      "examples": [
+        "grenade",
+        "firepot",
+        "burst sac",
+        "unstable core"
+      ]
+    },
+    {
+      "id": "flamer",
+      "name": "Short-range burning weapon",
+      "cost": 10,
+      "type": "ranged",
+      "range": 20,
+      "damage": 1,
+      "keywords": [
+        "burn",
+        "spread",
+        "close"
+      ],
+      "examples": [
+        "flamethrower",
+        "breath of fire",
+        "caustic spray"
+      ]
+    }
+  ],
+  "armour": [
+    {
+      "id": "padded",
+      "name": "Light armour",
+      "cost": 4,
+      "save": "d4",
+      "moveMod": 0,
+      "examples": [
+        "padded coat",
+        "thick hide",
+        "hardened skin"
+      ]
+    },
+    {
+      "id": "plated",
+      "name": "Medium armour",
+      "cost": 14,
+      "save": "d6",
+      "moveMod": -2,
+      "examples": [
+        "plate",
+        "chitin",
+        "riveted scrap",
+        "bark"
+      ]
+    },
+    {
+      "id": "heavyPlate",
+      "name": "Heavy armour",
+      "cost": 18,
+      "save": "d8",
+      "moveMod": -4,
+      "noSprint": true,
+      "examples": [
+        "heavy plate",
+        "carapace",
+        "siege shell",
+        "stone rind"
+      ]
+    },
+    {
+      "id": "shield",
+      "name": "Shield",
+      "cost": 4,
+      "save": null,
+      "desc": "Melee attacks against the bearer step down. Uses a hand.",
+      "examples": [
+        "shield",
+        "buckler",
+        "a raised claw",
+        "slab of wreckage"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "medkit",
+      "name": "Healing kit",
+      "cost": 5,
+      "desc": "Interact: restore 1 Health on a model in contact.",
+      "limited": 2,
+      "examples": [
+        "medkit",
+        "poultice",
+        "repair spray"
+      ]
+    },
+    {
+      "id": "stim",
+      "name": "Stimulant",
+      "cost": 4,
+      "desc": "Free: remove all Strain.",
+      "limited": 1,
+      "examples": [
+        "stim",
+        "tincture",
+        "overclock jolt"
+      ]
+    },
+    {
+      "id": "smoke",
+      "name": "Obscuring cloud",
+      "cost": 3,
+      "desc": "Action: 10 cm Obscuring cloud within 15 cm until End step.",
+      "limited": 1,
+      "examples": [
+        "smoke grenade",
+        "ink burst",
+        "spore cloud",
+        "fog"
+      ]
+    },
+    {
+      "id": "grapple",
+      "name": "Climbing gear",
+      "cost": 3,
+      "desc": "Climbing doesn't count double.",
+      "examples": [
+        "grapple",
+        "hooks",
+        "grasping limbs"
+      ]
+    },
+    {
+      "id": "scope",
+      "name": "Sight",
+      "cost": 4,
+      "desc": "Aim steps up twice for long shots.",
+      "examples": [
+        "scope",
+        "keen eye",
+        "targeting lens"
+      ]
+    },
+    {
+      "id": "toolkit",
+      "name": "Tools",
+      "cost": 3,
+      "desc": "Interact tests step up.",
+      "examples": [
+        "toolkit",
+        "deft fingers",
+        "cutting torch"
+      ]
+    },
+    {
+      "id": "lamp",
+      "name": "Light source",
+      "cost": 1,
+      "desc": "Bearer and models within 5 cm are lit; bearer ignores Dark.",
+      "examples": [
+        "lamp",
+        "torch",
+        "glowing core"
+      ]
+    },
+    {
+      "id": "anchor",
+      "name": "Backlash ward",
+      "cost": 6,
+      "desc": "Once per battle, a Catastrophe becomes an Overload.",
+      "examples": [
+        "anchor charm",
+        "grounding rod",
+        "warding sigil"
+      ]
+    },
+    {
+      "id": "coldKit",
+      "name": "Cold protection",
+      "cost": 2,
+      "desc": "Ignore Cold.",
+      "examples": [
+        "cold gear",
+        "thick fur",
+        "heated core"
+      ]
+    },
+    {
+      "id": "waterRig",
+      "name": "Heat protection",
+      "cost": 2,
+      "desc": "Ignore Heat.",
+      "examples": [
+        "water rig",
+        "coolant sacs",
+        "damp hide"
+      ]
+    }
+  ],
+  "powers": [
+    {
+      "id": "push",
+      "name": "Push",
+      "tier": "knack",
+      "cost": 6,
+      "range": 20,
+      "resist": "will",
+      "desc": "Move a model up to 5 cm.",
+      "tags": [
+        "control",
+        "movement"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "ward",
+      "name": "Ward",
+      "tier": "knack",
+      "cost": 6,
+      "range": 15,
+      "desc": "A friend's next hit taken loses 1 damage.",
+      "tags": [
+        "buff"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "glimpse",
+      "name": "Glimpse",
+      "tier": "knack",
+      "cost": 4,
+      "range": 30,
+      "desc": "Reveal every suspicion marker within 30 cm without triggering it, and any hidden models there.",
+      "tags": [
+        "utility"
+      ],
+      "targets": "point",
+      "countsAsAttack": false
+    },
+    {
+      "id": "spark",
+      "name": "Spark",
+      "tier": "knack",
+      "cost": 8,
+      "range": 30,
+      "desc": "Ranged attack using Will, 1 damage, ignores cover.",
+      "tags": [
+        "damage"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": true
+    },
+    {
+      "id": "hex",
+      "name": "Hex",
+      "tier": "knack",
+      "cost": 6,
+      "range": 20,
+      "resist": "will",
+      "desc": "An enemy steps down its next roll.",
+      "tags": [
+        "debuff"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "knit",
+      "name": "Knit",
+      "tier": "knack",
+      "cost": 8,
+      "range": 10,
+      "desc": "Restore 1 Health on a friend. Once per target per battle.",
+      "tags": [
+        "heal"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "blast",
+      "name": "Blast",
+      "tier": "signature",
+      "cost": 16,
+      "range": 45,
+      "verified": "round 5: -7 to -17 at 22; 16 provisional; a once-per-battle damage power will always trail a rifle",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "2 damage to one model.",
+          "damage": 2
+        },
+        {
+          "level": 2,
+          "desc": "2 damage, Blast 5.",
+          "damage": 2,
+          "blast": 5
+        },
+        {
+          "level": 3,
+          "desc": "3 damage, Blast 8.",
+          "damage": 3,
+          "blast": 8
+        }
+      ],
+      "tags": [
+        "damage"
+      ],
+      "targets": "point",
+      "countsAsAttack": true
+    },
+    {
+      "id": "surge",
+      "name": "Surge",
+      "tier": "signature",
+      "cost": 12,
+      "range": 15,
+      "verified": "flagged: value is positional/attritional; line board cannot measure; test on a real table",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "One friendly unit takes a non-Attack action now."
+        },
+        {
+          "level": 2,
+          "desc": "Two friendly units."
+        },
+        {
+          "level": 3,
+          "desc": "Every friendly unit within 15 cm."
+        }
+      ],
+      "tags": [
+        "buff"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "step",
+      "name": "Step",
+      "tier": "signature",
+      "cost": 8,
+      "range": 45,
+      "verified": "round 5: -8 at 10; 8 provisional",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "Caster teleports 15 cm."
+        },
+        {
+          "level": 2,
+          "desc": "Caster or a friend teleports 30 cm."
+        },
+        {
+          "level": 3,
+          "desc": "Any point in sight within range, bringing one friend in contact."
+        }
+      ],
+      "tags": [
+        "movement"
+      ],
+      "targets": "self",
+      "countsAsAttack": false
+    },
+    {
+      "id": "dread",
+      "name": "Dread",
+      "tier": "signature",
+      "cost": 12,
+      "range": 45,
+      "resist": "will",
+      "verified": "rounds 4-5: on the control line at 12",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "One enemy unit tests Will or is Shaken."
+        },
+        {
+          "level": 2,
+          "desc": "All enemies within 15 cm."
+        },
+        {
+          "level": 3,
+          "desc": "All enemies within 30 cm; failures also flee 10 cm."
+        }
+      ],
+      "tags": [
+        "control",
+        "debuff"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "bind",
+      "name": "Bind",
+      "tier": "signature",
+      "cost": 12,
+      "range": 45,
+      "resist": "will",
+      "verified": "rounds 4-5: on the control line at 12",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "Target can't Move on its next activation."
+        },
+        {
+          "level": 2,
+          "desc": "Until the end of the next round."
+        },
+        {
+          "level": 3,
+          "desc": "And can't act at all if it fails Will."
+        }
+      ],
+      "tags": [
+        "control"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "restore",
+      "name": "Restore",
+      "tier": "signature",
+      "cost": 12,
+      "range": 45,
+      "verified": "flagged: value is positional/attritional; line board cannot measure; test on a real table",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "Restore 2 Health."
+        },
+        {
+          "level": 2,
+          "desc": "Stand a Down model with 1 Health."
+        },
+        {
+          "level": 3,
+          "desc": "Stand and Stabilise every Down friend within 10 cm of the caster."
+        }
+      ],
+      "tags": [
+        "heal"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false
+    },
+    {
+      "id": "mark",
+      "name": "Mark",
+      "tier": "knack",
+      "cost": 6,
+      "range": 30,
+      "tags": [
+        "debuff"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": false,
+      "resist": "will",
+      "desc": "The next attack against the target this round steps up.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "quicken",
+      "name": "Quicken",
+      "tier": "knack",
+      "cost": 5,
+      "range": 15,
+      "tags": [
+        "movement",
+        "buff"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false,
+      "desc": "The target's next Move this round goes 5 cm further.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "steady",
+      "name": "Steady",
+      "tier": "knack",
+      "cost": 5,
+      "range": 15,
+      "tags": [
+        "buff"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false,
+      "desc": "The target removes 1 Strain.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "veil",
+      "name": "Veil",
+      "tier": "knack",
+      "cost": 7,
+      "range": 15,
+      "tags": [
+        "buff",
+        "utility"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false,
+      "desc": "The target counts as in cover until the caster's next activation.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "snuff",
+      "name": "Snuff",
+      "tier": "knack",
+      "cost": 5,
+      "range": 30,
+      "tags": [
+        "utility"
+      ],
+      "targets": "point",
+      "countsAsAttack": false,
+      "desc": "A 10 cm circle is Dark until the End step, or put out one Burning model.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "jolt",
+      "name": "Jolt",
+      "tier": "knack",
+      "cost": 6,
+      "range": 2,
+      "tags": [
+        "damage",
+        "debuff"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": true,
+      "desc": "An enemy in contact takes 1 damage and loses its Ready token.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "tether",
+      "name": "Tether",
+      "tier": "knack",
+      "cost": 5,
+      "range": 20,
+      "tags": [
+        "control"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": false,
+      "resist": "will",
+      "desc": "The target can't react until the end of the round.",
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "chain",
+      "name": "Chain",
+      "tier": "signature",
+      "cost": 18,
+      "range": 45,
+      "tags": [
+        "damage"
+      ],
+      "targets": "enemyUnit",
+      "countsAsAttack": true,
+      "levels": [
+        {
+          "level": 1,
+          "desc": "1 damage to one enemy, then 1 damage to another enemy within 10 cm of it.",
+          "damage": 1,
+          "jumps": 1
+        },
+        {
+          "level": 2,
+          "desc": "As level 1, jumping twice.",
+          "damage": 1,
+          "jumps": 2
+        },
+        {
+          "level": 3,
+          "desc": "2 damage, jumping three times.",
+          "damage": 2,
+          "jumps": 3
+        }
+      ],
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "kindle",
+      "name": "Kindle",
+      "tier": "signature",
+      "cost": 12,
+      "range": 15,
+      "tags": [
+        "buff"
+      ],
+      "targets": "friendlyUnit",
+      "countsAsAttack": false,
+      "levels": [
+        {
+          "level": 1,
+          "desc": "One friendly unit removes Shaken and all Strain."
+        },
+        {
+          "level": 2,
+          "desc": "Every friendly unit within 15 cm."
+        },
+        {
+          "level": 3,
+          "desc": "As level 2, and each of them gains a Ready token."
+        }
+      ],
+      "verified": "new in 0.8; unpriced guess"
+    },
+    {
+      "id": "upheaval",
+      "name": "Upheaval",
+      "tier": "signature",
+      "cost": 14,
+      "range": 45,
+      "tags": [
+        "control",
+        "damage"
+      ],
+      "targets": "point",
+      "countsAsAttack": true,
+      "countsAsAttackNote": "only at level 3, where it deals damage",
+      "levels": [
+        {
+          "level": 1,
+          "desc": "A 10 cm circle becomes Difficult ground for the rest of the battle."
+        },
+        {
+          "level": 2,
+          "desc": "As level 1, and every model in it is Pinned."
+        },
+        {
+          "level": 3,
+          "desc": "A 20 cm circle; Pinned, and 1 damage (no save) to each model in it.",
+          "damage": 1
+        }
+      ],
+      "verified": "new in 0.8; unpriced guess"
+    }
+  ],
+  "casting": {
+    "knack": "one Power action, no roll; unwilling target may resist with Will 4+",
+    "signature": {
+      "throw": [
+        "will",
+        "risk"
+      ],
+      "success": "will >= 4",
+      "bonus": "will >= 8: pick one listed bonus",
+      "backlash": "risk <= level",
+      "perBattle": 1,
+      "defaultRange": 45
+    },
+    "backlash": [
+      {
+        "risk": 1,
+        "condition": "level 3 and Will failed",
+        "id": "catastrophe",
+        "effect": "Caster Down and Marked; harmful power hits everything within 8 cm of caster."
+      },
+      {
+        "risk": 1,
+        "condition": "otherwise",
+        "id": "overload",
+        "effect": "Caster takes damage = level, no save. Power works if Will succeeded."
+      },
+      {
+        "risk": 2,
+        "id": "drain",
+        "effect": "Caster gains 2 Strain, loses remaining actions. Power works if Will succeeded."
+      },
+      {
+        "risk": 3,
+        "id": "flicker",
+        "effect": "Caster gains 1 Strain. Power works if Will succeeded."
+      }
+    ],
+    "attackRule": "a power whose countsAsAttack is true uses up the activation's one Attack (for Upheaval, only at level 3)"
+  },
+  "bigModels": {
+    "systemSchema": {
+      "name": "",
+      "wounds": 0,
+      "save": "d6",
+      "working": "",
+      "broken": "",
+      "condition": ""
+    },
+    "keySystem": "core",
+    "onKeySystemBroken": "disabled",
+    "freeReadyEachRound": true,
+    "setPiece": {
+      "damageable": false,
+      "systemTask": {
+        "test": "wits",
+        "successesNeeded": 2,
+        "attempts": "one Interact per model per activation, aimed at one chosen System",
+        "teamwork": "several models may work the same System; successes persist for the battle",
+        "overflow": "a System is disabled the moment it reaches its successes; extra successes from that Interact are lost, not carried to another System"
+      },
+      "coreCondition": "for set pieces, the Core can only be worked once another System is disabled; \"from behind\" applies only to damageable big models"
+    },
+    "example": [
+      {
+        "name": "Legs",
+        "wounds": 4,
+        "save": "d6",
+        "working": "Move 10 cm",
+        "broken": "Move 0",
+        "condition": null
+      },
+      {
+        "name": "Gun arm",
+        "wounds": 3,
+        "save": "d6",
+        "working": "heavy ranged weapon",
+        "broken": "weapon lost",
+        "condition": null
+      },
+      {
+        "name": "Sensor dome",
+        "wounds": 2,
+        "save": "d4",
+        "working": "Aim d8",
+        "broken": "Aim d4",
+        "condition": "attacker within 15 cm or Aimed"
+      },
+      {
+        "name": "Core",
+        "wounds": 5,
+        "save": "d8",
+        "working": null,
+        "broken": "disabled",
+        "condition": "another System broken, or from behind"
+      }
+    ]
+  },
+  "injuries": [
+    {
+      "roll": [
+        1,
+        1
+      ],
+      "id": "dead",
+      "name": "Dead",
+      "effect": "Gone. Gear returns to the stash.",
+      "scar": false,
+      "epithetHooks": []
+    },
+    {
+      "roll": [
+        2,
+        2
+      ],
+      "id": "mortalWound",
+      "name": "Mortal wound",
+      "effect": "Dies unless surgery is paid this camp.",
+      "surgery": {
+        "costRule": "half the model's points, min 10"
+      },
+      "scar": false
+    },
+    {
+      "roll": [
+        3,
+        3
+      ],
+      "id": "lostLeg",
+      "name": "Lost leg",
+      "effect": "Move -4 cm, can't Sprint.",
+      "mods": {
+        "move": -4,
+        "noSprint": true
+      },
+      "scar": true,
+      "mend": {
+        "cost": 6,
+        "effect": "Move -2 cm; Difficult ground costs triple."
+      },
+      "replace": [
+        "mechanicalLeg",
+        "arcaneLeg"
+      ],
+      "epithetHooks": [
+        "limp",
+        "peg",
+        "one-legged",
+        "stride"
+      ]
+    },
+    {
+      "roll": [
+        4,
+        4
+      ],
+      "id": "lostArm",
+      "name": "Lost arm",
+      "effect": "No two-handed weapons or shields; Fight steps down.",
+      "mods": {
+        "fight": -1,
+        "noTwoHanded": true,
+        "noShield": true
+      },
+      "scar": true,
+      "mend": {
+        "cost": 6,
+        "effect": "Hook or strap: shields allowed again; Fight still steps down."
+      },
+      "replace": [
+        "mechanicalArm",
+        "arcaneArm"
+      ],
+      "epithetHooks": [
+        "hook",
+        "one-arm",
+        "half-hand"
+      ]
+    },
+    {
+      "roll": [
+        5,
+        5
+      ],
+      "id": "lostEye",
+      "name": "Lost eye",
+      "effect": "Aim steps down.",
+      "mods": {
+        "aim": -1
+      },
+      "scar": true,
+      "mend": {
+        "cost": 5,
+        "effect": "Eyepatch: no effect on shots within 20 cm."
+      },
+      "replace": [
+        "mechanicalEye",
+        "arcaneEye"
+      ],
+      "epithetHooks": [
+        "eye",
+        "dark",
+        "blind side",
+        "patch"
+      ]
+    },
+    {
+      "roll": [
+        6,
+        6
+      ],
+      "id": "shaken",
+      "name": "Shaken to the core",
+      "effect": "Will steps down.",
+      "mods": {
+        "will": -1
+      },
+      "scar": true,
+      "mend": {
+        "cost": 8,
+        "effect": "Will restored; first Shaken test each battle steps down."
+      },
+      "replace": [],
+      "epithetHooks": [
+        "haunted",
+        "quiet",
+        "twitch"
+      ]
+    },
+    {
+      "roll": [
+        7,
+        7
+      ],
+      "id": "crushedRibs",
+      "name": "Crushed ribs",
+      "effect": "-1 Health.",
+      "mods": {
+        "wounds": -1
+      },
+      "scar": true,
+      "mend": {
+        "cost": 8,
+        "effect": "Health restored; can't use Last gasp."
+      },
+      "replace": [
+        "mechanicalFrame"
+      ],
+      "epithetHooks": [
+        "broken",
+        "rattle",
+        "iron-ribbed"
+      ]
+    },
+    {
+      "roll": [
+        8,
+        8
+      ],
+      "id": "badKnee",
+      "name": "Bad knee",
+      "effect": "Starts every battle with 1 Strain.",
+      "mods": {
+        "startStrain": 1
+      },
+      "scar": true,
+      "mend": {
+        "cost": 4,
+        "effect": "Starts with 1 Strain only in Cold."
+      },
+      "replace": [
+        "mechanicalLeg"
+      ],
+      "epithetHooks": [
+        "creak",
+        "slow"
+      ]
+    },
+    {
+      "roll": [
+        9,
+        10
+      ],
+      "id": "laidUp",
+      "name": "Laid up",
+      "effect": "Misses the next battle.",
+      "scar": false
+    },
+    {
+      "roll": [
+        11,
+        15
+      ],
+      "id": "walkedItOff",
+      "name": "Walked it off",
+      "effect": "No lasting effect.",
+      "scar": false
+    },
+    {
+      "roll": [
+        16,
+        16
+      ],
+      "id": "wiser",
+      "name": "Bruised but wiser",
+      "effect": "+1 XP.",
+      "xp": 1,
+      "scar": false
+    },
+    {
+      "roll": [
+        17,
+        17
+      ],
+      "id": "grudge",
+      "name": "Grudge",
+      "effect": "Steps up all attacks against whoever took it Down, or their faction.",
+      "scar": false,
+      "epithetHooks": [
+        "uses the stored titleHook",
+        "vengeance"
+      ],
+      "stores": "titleHook of the model that took this character Down"
+    },
+    {
+      "roll": [
+        18,
+        18
+      ],
+      "id": "hardened",
+      "name": "Hardened",
+      "effect": "+1 Wound, once per character.",
+      "mods": {
+        "wounds": 1
+      },
+      "oncePerCharacter": true,
+      "scar": false
+    },
+    {
+      "roll": [
+        19,
+        19
+      ],
+      "id": "closeCall",
+      "name": "Close call",
+      "effect": "Next time it would go Down, it stays at 1 Wound instead.",
+      "scar": false,
+      "epithetHooks": [
+        "lucky",
+        "twice-born",
+        "cheat-death"
+      ]
+    },
+    {
+      "roll": [
+        20,
+        20
+      ],
+      "id": "newOutlook",
+      "name": "New outlook",
+      "effect": "Step up Will or Wits (player's choice); prompt a new epithet.",
+      "choice": [
+        "will",
+        "wits"
+      ],
+      "promptEpithet": true,
+      "scar": false
+    }
+  ],
+  "fateRules": {
+    "rollers": [
+      "Down at end of battle",
+      "Marked at any point"
+    ],
+    "advantage": "stabilised: roll two d20 keep higher",
+    "disadvantage": "marked: roll two d20 keep lower",
+    "cancel": true,
+    "scenarioOverrides": "see scenario.fateOverrides"
+  },
+  "squadFate": [
+    {
+      "roll": [
+        1,
+        5
+      ],
+      "effect": "One lost model is dead; replace with Cash at per-model cost."
+    },
+    {
+      "roll": [
+        6,
+        10
+      ],
+      "effect": "One model laid up; squad fields one fewer next battle."
+    },
+    {
+      "roll": [
+        11,
+        17
+      ],
+      "effect": "No effect."
+    },
+    {
+      "roll": [
+        18,
+        19
+      ],
+      "effect": "Squad gains 2 XP.",
+      "xp": 2
+    },
+    {
+      "roll": [
+        20,
+        20
+      ],
+      "effect": "Squad gains a trait worth up to 5 points, free.",
+      "freeTraitMaxCost": 5
+    }
+  ],
+  "replacements": [
+    {
+      "id": "mechanicalLeg",
+      "family": "mechanical",
+      "cost": 25,
+      "reputation": 3,
+      "effect": "Penalty removed; +2 cm Move.",
+      "catch": "Natural 1 on any Move-related test: Move 0 for the rest of the battle."
+    },
+    {
+      "id": "arcaneLeg",
+      "family": "arcane",
+      "cost": 40,
+      "reputation": 10,
+      "effect": "Penalty removed; ignores Difficult ground.",
+      "catch": "Starts each battle with 1 Strain."
+    },
+    {
+      "id": "mechanicalArm",
+      "family": "mechanical",
+      "cost": 25,
+      "reputation": 3,
+      "effect": "Fight restored; +1 melee damage.",
+      "catch": "Natural 1 on Fight: arm jams for the rest of the battle."
+    },
+    {
+      "id": "arcaneArm",
+      "family": "arcane",
+      "cost": 40,
+      "reputation": 10,
+      "effect": "Fight restored; melee attacks have Rend.",
+      "catch": "Will test after each battle or gain Laid up."
+    },
+    {
+      "id": "mechanicalEye",
+      "family": "mechanical",
+      "cost": 25,
+      "reputation": 3,
+      "effect": "Aim restored; ignores Dark.",
+      "catch": "Storm: Aim steps down."
+    },
+    {
+      "id": "arcaneEye",
+      "family": "arcane",
+      "cost": 40,
+      "reputation": 10,
+      "effect": "Aim restored; sees hidden models within 20 cm.",
+      "catch": "Enemy casters within 30 cm step up powers against it."
+    },
+    {
+      "id": "mechanicalFrame",
+      "family": "mechanical",
+      "cost": 25,
+      "reputation": 3,
+      "effect": "Wound restored; +1 Wound.",
+      "catch": "Move -2 cm."
+    }
+  ],
+  "epithets": {
+    "promptOn": [
+      "scar gained",
+      "replacement fitted",
+      "newOutlook"
+    ],
+    "suggestions": 3,
+    "inputs": [
+      "injury epithetHooks",
+      "scenario location",
+      "what took the character Down"
+    ],
+    "playerMay": [
+      "accept",
+      "write own",
+      "keep name"
+    ]
+  },
+  "campaign": {
+    "awards": {
+      "xp": {
+        "participate": 1,
+        "takeEnemyDown": 1,
+        "takeEnemyDownMax": 2,
+        "objectiveAction": 1,
+        "win": 1
+      },
+      "reputation": {
+        "win": 1,
+        "hardOrExtremeWin": 1,
+        "withdrawOrBreak": -1
+      },
+      "cash": {
+        "winPayoutPctOfGameSize": 0.06,
+        "lossFactor": 0.5,
+        "difficultyMultiplier": true,
+        "cacheRoll": "d100 loot per cache"
+      }
+    },
+    "advancementCosts": {
+      "rule": "XP buys any upgrade at its points cost, including surcharge",
+      "statStep": "stats[].stepUpCosts",
+      "wound": 12,
+      "trait": "traits[].cost",
+      "ability": "abilities[].cost",
+      "power": "powers[].cost"
+    },
+    "currencyConversion": "1 Cash buys 1 point of gear or hired model; sell gear for half; Cash cannot buy XP",
+    "campActions": [
+      {
+        "id": "train",
+        "desc": "Spend XP on an upgrade."
+      },
+      {
+        "id": "treat",
+        "desc": "Pay Cash to Mend or Replace a scar."
+      },
+      {
+        "id": "work",
+        "desc": "Earn 2d6 Cash."
+      },
+      {
+        "id": "scout",
+        "desc": "Next scenario: choose deployment side or reroll one event."
+      },
+      {
+        "id": "rest",
+        "desc": "End Laid up early."
+      }
+    ],
+    "sealed": true,
+    "liability": {
+      "rawScars": 4,
+      "check": "d6 each camp",
+      "quitsOn": 1
+    },
+    "reputationLevels": [
+      {
+        "min": -99,
+        "max": -1,
+        "name": "Disreputable",
+        "unlocks": [
+          "hires +25% Cash",
+          "Easy and Standard contracts only"
+        ],
+        "id": "disreputable"
+      },
+      {
+        "min": 0,
+        "max": 2,
+        "name": "Unknown",
+        "unlocks": [
+          "common gear",
+          "basic hires",
+          "crude mends"
+        ],
+        "id": "unknown"
+      },
+      {
+        "min": 3,
+        "max": 5,
+        "name": "Known",
+        "unlocks": [
+          "payouts +10%",
+          "mechanical replacements"
+        ],
+        "id": "known"
+      },
+      {
+        "min": 6,
+        "max": 9,
+        "name": "Respected",
+        "unlocks": [
+          "rare gear",
+          "hires with a signature power",
+          "choose between two offered scenarios"
+        ],
+        "id": "respected"
+      },
+      {
+        "min": 10,
+        "max": 14,
+        "name": "Renowned",
+        "unlocks": [
+          "arcane replacements",
+          "payouts +25%"
+        ],
+        "id": "renowned"
+      },
+      {
+        "min": 15,
+        "max": 999,
+        "name": "Legendary",
+        "unlocks": [
+          "elite hires",
+          "once per campaign: name your own contract"
+        ],
+        "id": "legendary"
+      }
+    ],
+    "bandActions": [
+      "buy",
+      "sell",
+      "hire",
+      "dismiss",
+      "surgery"
+    ],
+    "hire": {
+      "baseProfile": {
+        "fight": "d6",
+        "aim": "d6",
+        "will": "d6",
+        "wits": "d6",
+        "move": 12,
+        "wounds": 5,
+        "actions": 2
+      },
+      "baseCost": 38,
+      "costRule": "Cash equal to the recruit's points; same price mid-campaign as at the start",
+      "includesGear": false,
+      "upgradesAtHire": "a recruit may be hired already upgraded (stat steps, traits, powers) at points cost, up to the Reputation cap",
+      "maxCostByReputation": {
+        "disreputable": 50,
+        "unknown": 60,
+        "known": 90,
+        "respected": 140,
+        "renowned": 220,
+        "legendary": null
+      },
+      "disreputableSurcharge": 0.25,
+      "replacementForDead": {
+        "costModifier": 0,
+        "keepsGear": true,
+        "keepsXP": false,
+        "note": "gear of the dead returns to the stash and can be handed on"
+      },
+      "squads": "new squad models are hired at per-model cost; squads can be topped up to their starting size at camp"
+    }
+  },
+  "scenario": {
+    "difficulty": [
+      {
+        "id": "easy",
+        "enemyPct": 0.75,
+        "reward": 0.75
+      },
+      {
+        "id": "standard",
+        "enemyPct": 1.0,
+        "reward": 1.0
+      },
+      {
+        "id": "hard",
+        "enemyPct": 1.25,
+        "reward": 1.5
+      },
+      {
+        "id": "extreme",
+        "enemyPct": 1.5,
+        "reward": 2.0
+      }
+    ],
+    "campaignBase": "the Unburied's current total points",
+    "lengths": [
+      {
+        "id": "quick",
+        "rounds": 4
+      },
+      {
+        "id": "standard",
+        "rounds": 6
+      },
+      {
+        "id": "long",
+        "rounds": 8
+      },
+      {
+        "id": "forced",
+        "rounds": null
+      }
+    ],
+    "tableStandard": {
+      "blockedShotsTarget": 0.35,
+      "deploymentGapCm": [
+        55,
+        60
+      ],
+      "mayBreakIfStated": true
+    },
+    "budget": {
+      "rule": "counted inside the enemy points: enemy points = game size x difficulty; up to maxPct of those may be spent on non-model elements instead of models",
+      "maxPct": 0.3,
+      "costs": [
+        {
+          "id": "trapVisible",
+          "cost": 7,
+          "desc": "Wits test or 2 damage.",
+          "limit": "traps of both kinds: one per 150 points of game size"
+        },
+        {
+          "id": "trapHidden",
+          "cost": 15,
+          "limit": "traps of both kinds: one per 150 points of game size"
+        },
+        {
+          "id": "hazardZone",
+          "cost": 4,
+          "per": "10 cm across",
+          "effect": "1 damage, no armour save, on entering or ending a move in it",
+          "limit": "one per 100 points of game size",
+          "note": "strengthened in 0.7 (was 1 Strain); price untested"
+        },
+        {
+          "id": "environment",
+          "cost": 15,
+          "limit": "one per scenario"
+        },
+        {
+          "id": "eventMinor",
+          "cost": 7
+        },
+        {
+          "id": "eventMajor",
+          "cost": 31,
+          "plus": "reinforcements' own points"
+        },
+        {
+          "id": "hiddenUnit",
+          "cost": 5,
+          "plus": "unit's own points"
+        },
+        {
+          "id": "setPiece",
+          "cost": 35,
+          "per": "System",
+          "note": "round 6: 15 far too cheap (crew 22-28%); 35-40 fair for 1 weapon System; attack surcharge untested",
+          "attackSurcharge": 25,
+          "attackSurchargeRule": "+25 for each System that attacks, beyond the first"
+        },
+        {
+          "id": "cache",
+          "cost": 0,
+          "limit": "one per 250 points of game size"
+        }
+      ],
+      "note": "round 6 prices; environment capped at one; set pieces priced by what their Systems do",
+      "capScope": "per scenario, of the enemy points after difficulty",
+      "breakTests": "scenario elements and set pieces never count toward the enemy points used for break thresholds",
+      "reveal": {
+        "visible": "placed at deployment",
+        "hidden": "revealed when triggered, searched, or revealed by Glimpse/Trapwise within range",
+        "setPiece": "always visible; its Systems and tasks are shown at deployment"
+      }
+    },
+    "environment": [
+      {
+        "id": "heat",
+        "trigger": ">= 40 C",
+        "effect": "Sprint costs 2 Strain."
+      },
+      {
+        "id": "cold",
+        "trigger": "<= -10 C",
+        "effect": "A model that doesn't Move in its activation gains 1 Strain."
+      },
+      {
+        "id": "dark",
+        "effect": "Line of sight 20 cm unless target is lit or viewer carries a light."
+      },
+      {
+        "id": "storm",
+        "effect": "No long shots; Obscuring blocks all sight through it."
+      },
+      {
+        "id": "custom",
+        "effect": "Scenario-written Hazard with a matching Fate override."
+      }
+    ],
+    "protocols": {
+      "evaluate": "top to bottom; do the first line whose condition is true",
+      "targetTieBreak": [
+        "nearest",
+        "fewest Wounds left"
+      ],
+      "conditions": [
+        "wounded",
+        "shaken",
+        "enemyWithin(cm)",
+        "enemyCasterInSight",
+        "enemyDownWithin(cm)",
+        "objectiveContested",
+        "alone",
+        "outnumbering",
+        "roundAtLeast(n)"
+      ],
+      "orders": [
+        "advanceOn(target)",
+        "charge(target)",
+        "shoot(target)",
+        "finish(target)",
+        "hold(point)",
+        "guard(model|point)",
+        "retreatToCover",
+        "usePower(id,level)",
+        "flee",
+        "search(nearest cache)",
+        "interact(objective)"
+      ],
+      "reactionRule": "one line, e.g. snapShot within 20 cm",
+      "example": [
+        {
+          "if": "shaken",
+          "then": "retreatToCover"
+        },
+        {
+          "if": "enemyDownWithin(15)",
+          "then": "finish(nearest Down enemy)"
+        },
+        {
+          "if": "enemyCasterInSight",
+          "then": "charge(caster)"
+        },
+        {
+          "if": "outnumbering",
+          "then": "charge(nearest)"
+        },
+        {
+          "if": "else",
+          "then": "search(nearest cache)"
+        }
+      ]
+    },
+    "victory": {
+      "scoring": "per round: victory points (VP) are scored in every End step, not only at the end",
+      "objectiveTypes": [
+        {
+          "id": "hold",
+          "desc": "Control point. End step: the side with more standing models within 5 cm scores 1 VP (squad models count individually; Large counts 2, Huge 3).",
+          "vpPerRound": 1,
+          "radius": 5
+        },
+        {
+          "id": "claim",
+          "desc": "Interact once to take it; scores claimVP once when claimed, again if still held at the end.",
+          "claimVP": 1,
+          "endVP": 1
+        },
+        {
+          "id": "carry",
+          "desc": "A model picks it up (Interact) and carries it; scores when carried off a named table edge.",
+          "vp": 3,
+          "dropsWhenDown": true
+        },
+        {
+          "id": "search",
+          "desc": "Search caches (Interact, Wits test); each success scores 1 VP and a d100 loot roll.",
+          "vp": 1
+        },
+        {
+          "id": "disable",
+          "desc": "Disable a set piece or big model.",
+          "vp": 3
+        },
+        {
+          "id": "target",
+          "desc": "Take a named enemy model Down.",
+          "vp": 3,
+          "modelRef": "a model with named: true, or a model id given by the scenario"
+        },
+        {
+          "id": "survive",
+          "desc": "Score each End step your named model is standing.",
+          "vpPerRound": 1,
+          "modelRef": "a model with named: true, or a model id given by the scenario"
+        },
+        {
+          "id": "extract",
+          "desc": "Each model that leaves by the named edge scores 1 VP (max = scenario sets).",
+          "vp": 1
+        }
+      ],
+      "casualties": {
+        "enabled": "scenario choice",
+        "vp": 1,
+        "per": "full 100 points of enemy models taken Down",
+        "timing": "running total of enemy points taken Down, divided by 100 and rounded down once at the end of the battle"
+      },
+      "routBonusVP": 1,
+      "wipeBonusVP": 1,
+      "brokenSide": "scores nothing in its withdrawal round and drops anything it carries",
+      "winner": "most VP when the battle ends; tie = side with more points of models standing; still tied = draw",
+      "rewards": "win payout to the winner, loss payout (half) to the loser, draw = 75% each",
+      "schema": {
+        "objectives": [
+          {
+            "type": "hold",
+            "name": "",
+            "position": "",
+            "vpPerRound": 1
+          }
+        ],
+        "lengthId": "standard",
+        "casualties": false
+      },
+      "routBonusTiming": "once, when the side breaks",
+      "holdTie": "equal counts: nobody scores that objective this round",
+      "note": "round 5: at rout 2 / wipe 3 objective crews won 30%; 1/1 gives ~39% with a weak objective AI, likely higher in real play"
+    },
+    "modes": [
+      {
+        "id": "coop",
+        "desc": "Players share a table against an AI-run enemy.",
+        "enemyRun": "protocols"
+      },
+      {
+        "id": "pvp",
+        "desc": "Two sides fight; no AI enemy.",
+        "enemyRun": "player",
+        "elementsBudget": "10% of game size, neutral: traps and hazards hurt both sides"
+      },
+      {
+        "id": "solo",
+        "desc": "One side, AI enemy.",
+        "enemyRun": "protocols"
+      }
+    ],
+    "players": {
+      "min": 1,
+      "max": 4,
+      "affects": [
+        "enemyPoints",
+        "objectiveCount",
+        "cacheCount"
+      ],
+      "rules": {
+        "enemyPoints": "coop/solo: sum of all players' band points x difficulty",
+        "objectiveCount": "battle type's base count +1 per player beyond the first",
+        "cacheCount": "one per 250 points of total player points"
+      }
+    },
+    "themes": [
+      {
+        "id": "ruin",
+        "desc": "A dead settlement, collapsed and picked over.",
+        "suggestedEnvironment": [
+          "dark",
+          "storm"
+        ],
+        "fateOverrides": [
+          {
+            "roll": [
+              7,
+              7
+            ],
+            "id": "buried",
+            "name": "Half-buried",
+            "effect": "-1 Wound.",
+            "mods": {
+              "wounds": -1
+            }
+          }
+        ]
+      },
+      {
+        "id": "wilds",
+        "desc": "Open country, weather and beasts.",
+        "suggestedEnvironment": [
+          "heat",
+          "cold",
+          "storm"
+        ],
+        "fateOverrides": [
+          {
+            "roll": [
+              4,
+              4
+            ],
+            "id": "mauled",
+            "name": "Mauled arm",
+            "effect": "No two-handed weapons or shields; Fight steps down.",
+            "mods": {
+              "fight": -1,
+              "noTwoHanded": true,
+              "noShield": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "under",
+        "desc": "Tunnels, cellars, a buried place.",
+        "suggestedEnvironment": [
+          "dark"
+        ],
+        "fateOverrides": [
+          {
+            "roll": [
+              5,
+              5
+            ],
+            "id": "dustEye",
+            "name": "Dust-blind eye",
+            "effect": "Aim steps down.",
+            "mods": {
+              "aim": -1
+            }
+          }
+        ]
+      },
+      {
+        "id": "machine",
+        "desc": "A working facility that does not want you here.",
+        "suggestedEnvironment": [
+          "heat"
+        ],
+        "fateOverrides": [
+          {
+            "roll": [
+              3,
+              3
+            ],
+            "id": "crushedLeg",
+            "name": "Crushed in the works",
+            "effect": "Move -4 cm, can't Sprint.",
+            "mods": {
+              "move": -4,
+              "noSprint": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "sacred",
+        "desc": "Somewhere old and watched.",
+        "suggestedEnvironment": [
+          "dark"
+        ],
+        "fateOverrides": [
+          {
+            "roll": [
+              6,
+              6
+            ],
+            "id": "touched",
+            "name": "Something followed you out",
+            "effect": "Will steps down.",
+            "mods": {
+              "will": -1
+            }
+          }
+        ]
+      },
+      {
+        "id": "frontier",
+        "desc": "A settlement that still has people in it.",
+        "suggestedEnvironment": [],
+        "fateOverrides": []
+      }
+    ],
+    "battleTypes": [
+      {
+        "id": "raid",
+        "objectives": [
+          "claim",
+          "extract"
+        ],
+        "baseObjectives": 2,
+        "desc": "Get in, take it, get out.",
+        "suggestedLength": "quick"
+      },
+      {
+        "id": "holdGround",
+        "objectives": [
+          "hold",
+          "survive"
+        ],
+        "baseObjectives": 3,
+        "desc": "Stand somewhere and keep standing.",
+        "suggestedLength": "long"
+      },
+      {
+        "id": "hunt",
+        "objectives": [
+          "target",
+          "disable"
+        ],
+        "baseObjectives": 1,
+        "desc": "Something specific must die.",
+        "suggestedLength": "standard"
+      },
+      {
+        "id": "scavenge",
+        "objectives": [
+          "search",
+          "carry"
+        ],
+        "baseObjectives": 3,
+        "desc": "The table is the prize.",
+        "suggestedLength": "standard"
+      },
+      {
+        "id": "escort",
+        "objectives": [
+          "carry",
+          "survive"
+        ],
+        "baseObjectives": 1,
+        "desc": "Something fragile has to cross.",
+        "suggestedLength": "standard"
+      },
+      {
+        "id": "mystery",
+        "objectives": [],
+        "baseObjectives": 2,
+        "desc": "You do not know yet.",
+        "sealed": true,
+        "sealedRule": "the generator picks objectives from any battle type but keeps them secret; they are revealed in the End step of round 2 (or earlier if a scenario event says so). Until then, casualty VP are scored instead."
+      }
+    ],
+    "fateOverrides": {
+      "shape": {
+        "roll": [
+          4,
+          4
+        ],
+        "id": "",
+        "name": "",
+        "effect": "",
+        "mods": {}
+      },
+      "rule": "a scenario lists overrides by roll; each replaces the default row with the same roll range; rows not listed use the default table; a theme's overrides are defaults the scenario may keep or replace"
+    },
+    "secrets": {
+      "desc": "Hidden things live in the app, not on the table. The table only shows numbered suspicion markers.",
+      "markers": {
+        "count": "about one per 100 points of game size, max 8",
+        "placement": "the generator names a spot for each (next to a terrain piece the player owns)",
+        "decoysMin": 1,
+        "contents": [
+          "trapVisible",
+          "trapHidden",
+          "cache",
+          "hiddenUnit",
+          "ambushTrigger",
+          "objective",
+          "nothing"
+        ]
+      },
+      "trigger": "a model that ends a move within 5 cm of an unrevealed marker resolves it: the player taps the marker number and the app reveals and applies the result",
+      "reveal": {
+        "by": [
+          "glimpse",
+          "trapwise",
+          "any ability or item that reveals"
+        ],
+        "effect": "reveals each marker in range without triggering it; decoys are removed, traps become visible (can be avoided or disarmed), hidden units are placed",
+        "input": "player tells the app who used it and which marker numbers are in range"
+      },
+      "search": "a cache pays out only when a model in contact uses Interact on it (Wits test)",
+      "disarm": "a revealed trap in contact can be disarmed with Interact (Wits test; Tools step up)",
+      "paperFallback": "without the app: shuffle face-down cards (Trap, Cache, Nothing, Ambush, ...) under the numbered markers and flip them in the same situations",
+      "pvp": "markers are neutral; either side can trigger or reveal them"
+    }
+  },
+  "testLog": [
+    {
+      "round": 1,
+      "result": "armour cliff fixed with save dice; melee needs 4+; activation groups; Wounds and damage-2 repriced"
+    },
+    {
+      "round": 2,
+      "result": "one throw per action; Strain in throw, burnout below Strain; powers one throw; break at 1/2 and 3/4"
+    },
+    {
+      "round": 3,
+      "result": "one Attack per activation + Wounds 5 + 55-60 cm deployment + ~35% blocked = ~5.3 rounds, ~20% wipes; activations by cost; floor 10; armour 4/14/18; Blast 30"
+    },
+    {
+      "round": 4,
+      "result": "engine reads this file only; Nerve balance-neutral; Dread/Bind correct at 12; squads weak as one activation -> activations by points capped at ceil(size/3); 20% budget on top of enemy -> counted inside enemy; objectives inert -> per-round VP; Vigilant 3, Leader 6, Blast 22, Step 10, burnout/backlash cancels 1 Nerve"
+    },
+    {
+      "round": 5,
+      "result": "VP decides 90-94% of games; squad discount 5%; rout/wipe 1/1; traps and major events repriced up, hazards/environment down; Ready token is the only way to react; Hit the dirt and recast removed; Blast 16, Step 8; Vigilant 3 and cancel-Burnout at 1 confirmed"
+    },
+    {
+      "round": 6,
+      "result": "rout/wipe 1/1 confirmed 49/49 with better objective AI; set pieces 35/System; trapVisible 7, eventMinor 7, eventMajor 31, environment 15 capped at one; hazard zones strengthened; Ready tokens opened up (no Attack = Ready)"
+    },
+    {
+      "untested": [
+        "Ready from not attacking, and Vigilant value after that",
+        "strengthened hazard zone at 4",
+        "set-piece attack surcharge"
+      ],
+      "playtestOnly": [
+        "Blast template catches",
+        "Surge and Restore",
+        "cover and 35% blocked-shot standard",
+        "Reach, Break off, coherency, Drag",
+        "Ambush, Stealthy, Flyer, Step L3",
+        "blast on squads",
+        "carry, extract, target objectives",
+        "fun: pacing, Strain feel, one-throw readability"
+      ]
+    },
+    {
+      "round": "0.8",
+      "result": "no balance changes; added titles, 7 knacks and 3 signatures (unpriced), hire, scenario modes/players/themes/battleTypes, named models, Fate overrides as data, squad surcharge rule"
+    },
+    {
+      "round": "0.9",
+      "result": "folded in app revisions 0.8.1-0.8.4 (Health name, power tiers, Insubstantial, generic gear and reskins, weapon effects, Tainted, elements, resist/vulnerable, aura, Regenerate, Construct, Mindless, Size); surcharge exclusion confirmed; Health sold in steps of 2 at 22; vulnerability refunds capped; Mindless -4 with a real drawback; Small given a drawback; tiers renamed Murmur/Reckoning",
+      "toSimulate": [
+        "Health in steps of 2 at 22 (confirm 22 is fair vs one step)",
+        "vulnerability refund cap",
+        "Mindless at -4",
+        "the ten 0.8 powers (unpriced)",
+        "weapon effects at 3-6 if the harness can resolve them in bulk (e.g. a whole squad with Fire)"
+      ],
+      "toPlaytest": [
+        "Insubstantial 12",
+        "Toxic 6",
+        "Size 8/18 and Small -3"
+      ]
+    },
+    {
+      "round": "0.10",
+      "result": "added flaws and starting scars (unpriced)",
+      "toSimulate": [
+        "flaw prices and the refund cap",
+        "game length vs band size",
+        "optimised-build search"
+      ]
+    },
+    {
+      "round": "0.10.2",
+      "result": "added hands (default 2) and Extra arms with built-in Flurry (unpriced); 0.10.5 added suspicion markers for all hidden elements",
+      "toSimulate": [
+        "weapon effects single and stacked, on Rapid/Blast/Flurry/squads",
+        "Extra arms at 12 per pair, with and without stacked weapon effects",
+        "worst case: six arms, four melee weapons, Fire+Toxic+Acid on each, vs cheap d4 models and vs d6/d8 fighters",
+        "Extra arms with split Flurry and Outnumber cancelling vs squads and swarms"
+      ]
+    }
+  ],
+  "modelProfile": {
+    "fields": {
+      "id": "",
+      "name": "",
+      "kind": "character|squad|bigModel|setPiece",
+      "size": "man",
+      "squadSize": null,
+      "stats": {
+        "fight": "d6",
+        "aim": "d6",
+        "will": "d6",
+        "wits": "d6",
+        "move": 12,
+        "wounds": 5,
+        "actions": 2
+      },
+      "armour": null,
+      "weapons": [],
+      "items": [],
+      "traits": [],
+      "abilities": [],
+      "powers": [],
+      "systems": [],
+      "protocol": [],
+      "reaction": null,
+      "campaign": {
+        "xp": 0,
+        "scars": [],
+        "replacements": [],
+        "epithet": null,
+        "grudges": []
+      },
+      "named": false,
+      "titleHook": null,
+      "boss": false,
+      "titles": [],
+      "hands": 2
+    },
+    "cost": "computed by the app from the price list; never stored by hand",
+    "notes": {
+      "named": "true marks a specific model that target/survive objectives can point at; a scenario may also name a model by id",
+      "titleHook": "root word a title is built from (wolf -> Wolfsbane, Wolf-Ender); also stored by a Grudge",
+      "boss": "title-worthy; any bigModel or setPiece counts as boss automatically"
+    }
+  },
+  "titles": {
+    "desc": "A title is earned by killing something big and is permanent. It comes from the enemy that died; an epithet comes from an injury.",
+    "promptOn": [
+      "bigModelDisabled",
+      "setPieceDisabled",
+      "targetObjectiveKilled",
+      "namedEnemyKilled"
+    ],
+    "eligible": "the model that dealt the final damage or completed the final task; if a squad, the squad",
+    "suggestions": 3,
+    "inputs": [
+      "enemy titleHook",
+      "enemy name",
+      "scenario location",
+      "how it died"
+    ],
+    "forms": [
+      {
+        "id": "suffix",
+        "example": "Peter Wolfsbane"
+      },
+      {
+        "id": "epithet",
+        "example": "Peter the Wolf-Ender"
+      },
+      {
+        "id": "ofThePlace",
+        "example": "Peter of the Drowned Mill"
+      }
+    ],
+    "max": 2,
+    "playerMay": [
+      "accept",
+      "write own",
+      "decline"
+    ],
+    "grudgeLink": "a Grudge (Fate 17) stores the titleHook of whoever took the character Down; if the character later kills a model with that titleHook, the grudge is settled and a title is offered with that hook",
+    "effect": "narrative only; no stat change"
+  },
+  "powerTags": [
+    "damage",
+    "debuff",
+    "buff",
+    "control",
+    "heal",
+    "utility",
+    "movement"
+  ],
+  "powerTiers": [
+    {
+      "id": "knack",
+      "name": "Murmur",
+      "short": "Minor",
+      "blurb": "One Power action. No roll, no risk, and you may use it every round.",
+      "order": 1
+    },
+    {
+      "id": "signature",
+      "name": "Reckoning",
+      "short": "Major",
+      "blurb": "Once a battle. Roll Will 4+ to make it work, and the Risk die can backfire on you.",
+      "order": 2
+    }
+  ],
+  "weaponMods": [
+    {
+      "id": "fire",
+      "name": "Fire",
+      "cost": 5,
+      "element": "fire",
+      "desc": "On a hit, the target is Burning.",
+      "examples": [
+        "flaming brand",
+        "breath of cinders",
+        "white-hot rounds"
+      ]
+    },
+    {
+      "id": "toxic",
+      "name": "Toxic",
+      "cost": 6,
+      "element": "toxic",
+      "desc": "On a hit, the target is Tainted. No effect on Constructs.",
+      "examples": [
+        "venom",
+        "poisoned edge",
+        "spore barbs"
+      ],
+      "verified": "priced by fit to the weapon list, not by play; watch at the table"
+    },
+    {
+      "id": "acid",
+      "name": "Acid",
+      "cost": 4,
+      "element": "acid",
+      "desc": "On a hit, the target's armour save steps down for the rest of the battle (does not stack; below d4 means no save).",
+      "examples": [
+        "acid sacs",
+        "caustic slime",
+        "digestive spit"
+      ]
+    },
+    {
+      "id": "frost",
+      "name": "Frost",
+      "cost": 4,
+      "element": "cold",
+      "desc": "On a hit, the target may not Charge on its next activation and its Move is 4 cm shorter for that activation.",
+      "examples": [
+        "hoarfrost",
+        "chilling touch",
+        "freezing spray"
+      ]
+    },
+    {
+      "id": "shock",
+      "name": "Shock",
+      "cost": 3,
+      "element": "shock",
+      "desc": "On a Critical, the target loses its next action.",
+      "examples": [
+        "arc coils",
+        "static discharge",
+        "stinging jolt"
+      ]
+    },
+    {
+      "id": "force",
+      "name": "Force",
+      "cost": 3,
+      "element": "air",
+      "desc": "On a hit, push the target 5 cm directly away.",
+      "examples": [
+        "thunderclap",
+        "gust",
+        "concussive slam"
+      ]
+    },
+    {
+      "id": "keen",
+      "name": "Keen",
+      "cost": 6,
+      "element": null,
+      "desc": "Ignores armour on every hit (Rend).",
+      "examples": [
+        "monomolecular edge",
+        "armour-piercing",
+        "obsidian barb"
+      ]
+    }
+  ],
+  "weaponModRules": {
+    "appliesTo": "one weapon on one model; buy it again for another weapon",
+    "stacking": "a weapon may carry several different effects (e.g. Acid + Toxic + Fire) but never the same one twice; each is paid separately",
+    "cost": "added to the weapon's cost; gear, so never surcharged",
+    "pricing": "round 8: fitted against the 15-weapon list (damage ~4.2/pt, range ~0.7/10cm, rms 0.89). Effects below the harness's 8-point resolution, so priced by that fit rather than measured in battle.",
+    "squads": "paid per model, like the weapon itself",
+    "multiHit": "effects apply per hit, but conditions do not stack (see conditionRules), so extra copies across several weapons add little against one target; the main risk is spreading them across many targets (Blast, squads)"
+  },
+  "elements": [
+    {
+      "id": "fire",
+      "name": "Fire"
+    },
+    {
+      "id": "cold",
+      "name": "Cold"
+    },
+    {
+      "id": "shock",
+      "name": "Shock"
+    },
+    {
+      "id": "toxic",
+      "name": "Toxic"
+    },
+    {
+      "id": "acid",
+      "name": "Acid"
+    },
+    {
+      "id": "air",
+      "name": "Air"
+    },
+    {
+      "id": "arcane",
+      "name": "Arcane"
+    }
+  ],
+  "traitTags": {
+    "resistances": [
+      "resistFire",
+      "resistCold",
+      "resistShock",
+      "resistToxic",
+      "resistAcid"
+    ],
+    "vulnerabilities": [
+      "frailFire",
+      "frailCold",
+      "frailShock",
+      "frailToxic",
+      "frailAcid"
+    ]
+  },
+  "vulnerabilityRefundCap": {
+    "rule": "refunds from Vulnerable traits can never exceed what the model spends on resistances, Burning aura, Regenerate and weapon effects of other elements; a weakness offsets a nature, it is not free points",
+    "why": "otherwise a player takes Vulnerable to an element nobody at the table uses and banks the refund"
+  },
+  "elementsNote": "arcane has no resistance, weakness or weapon effect yet; reserved for powers",
+  "flaws": {
+    "desc": "Drawbacks any character can take for points back. A starting scar is a flaw with backstory.",
+    "refundCap": {
+      "maxFlaws": 2,
+      "maxRefund": 10,
+      "rule": "per model; weakness refunds are capped separately (vulnerabilityRefundCap)",
+      "squads": "a squad flaw applies to every model and refunds per model"
+    },
+    "mustBite": "every flaw must matter in ordinary play; the simulator flags any flaw that changes win rate by less than its refund",
+    "surcharge": "flaws are downgrades, so they never count toward the surcharge",
+    "list": [
+      {
+        "id": "coward",
+        "name": "Coward",
+        "cost": -4,
+        "desc": "Will tests step down when no friend is within 10 cm."
+      },
+      {
+        "id": "hothead",
+        "name": "Hothead",
+        "cost": -3,
+        "desc": "At the start of its activation, if an enemy is within 15 cm and it is not Engaged, it must Charge that enemy unless it passes a Will test."
+      },
+      {
+        "id": "slowReflexes",
+        "name": "Slow reflexes",
+        "cost": -3,
+        "desc": "Never gains a Ready token, so it can never react."
+      },
+      {
+        "id": "clumsy",
+        "name": "Clumsy",
+        "cost": -3,
+        "desc": "Interact tests step down; a failed climb or jump test means it falls."
+      },
+      {
+        "id": "shortSighted",
+        "name": "Short-sighted",
+        "cost": -3,
+        "desc": "No long shots; ranged attacks beyond 30 cm step down."
+      },
+      {
+        "id": "loner",
+        "name": "Loner",
+        "cost": -3,
+        "desc": "Friendly murmurs and reckonings do not affect it, and it never counts toward Outnumber."
+      },
+      {
+        "id": "bloodthirsty",
+        "name": "Bloodthirsty",
+        "cost": -3,
+        "desc": "If a Down enemy is in contact, its Attack must Finish that enemy."
+      },
+      {
+        "id": "unlucky",
+        "name": "Unlucky",
+        "cost": -3,
+        "desc": "Its side cannot spend Nerve on its rolls."
+      },
+      {
+        "id": "greedy",
+        "name": "Greedy",
+        "cost": -2,
+        "desc": "Campaign: takes 2 Cash from the band after every battle it fights in, or leaves."
+      },
+      {
+        "id": "wanted",
+        "name": "Wanted",
+        "cost": -2,
+        "desc": "Campaign: the scenario AI may add a bounty hunter aimed at this model (paid from the scenario budget)."
+      }
+    ],
+    "startingScars": {
+      "desc": "A recruit may start with one scar from Fate rows 3-8 as a flaw. It can be Mended or Replaced at camp like any other scar, and feeds the epithet prompt from the start.",
+      "refunds": {
+        "lostLeg": -6,
+        "lostArm": -6,
+        "lostEye": -4,
+        "shaken": -3,
+        "crushedRibs": -5,
+        "badKnee": -3
+      },
+      "note": "refund replaces the normal stat-downgrade refund for that scar; counts toward the flaw cap"
+    }
+  },
+  "hands": {
+    "default": 2,
+    "rule": "Each model has hands (default 2). Weapons and a Shield need hands to be carried: one each, two for Two-handed. A model may carry any gear its hands allow, but still makes one Attack action per activation.",
+    "noHands": "a model with 0 hands (a worm, a turret) uses only natural weapons reskinned as Light or Unarmed, and cannot Interact that needs handling, unless given Tools"
+  },
+  "conditionRules": {
+    "stacking": "conditions never stack: a model is either Burning/Tainted/Pinned or not. Applying a condition it already has only restarts its duration.",
+    "acid": "Acid armour step-down does not stack"
+  }
+}
+</script>
+<script>
+/* ---- core-rules.js ---- */
+/* ===================================================================
+   RULESET LOADER — the JSON is the single source of truth.
+   Nothing about the game is written in this file: dice, costs, gear,
+   traits, powers, injuries and scenario rules all come from the ruleset.
+   Everything is keyed by id; `name` is only ever a label to display.
+   =================================================================== */
+const RS_REQUIRED = ["meta","dice","stats","baseCost","minModelCost","surcharge",
+  "activation","nerve","actions","reactions","strain","movement","shooting","melee",
+  "damage","conditions","morale","squads","keywords","traits","abilities","weapons",
+  "armour","items","powers","casting","injuries","campaign","scenario"];
+
+let RS = null;            // the loaded ruleset
+let RSX = null;           // indexes derived from it
+let RS_ERRORS = [];
+
+function rsFail(msg){ RS_ERRORS.push(msg); }
+
+function loadRuleset(json){
+  /* Validates loudly: a missing section or an unknown id is a hard error, not a
+     silent default. Returns null and fills RS_ERRORS when the file is unusable. */
+  RS_ERRORS = [];
+  let r;
+  try { r = (typeof json === "string") ? JSON.parse(json) : json; }
+  catch(e){ rsFail("The ruleset is not valid JSON: " + e.message); return null; }
+
+  RS_REQUIRED.forEach(k => { if(r[k] === undefined) rsFail("missing section: " + k); });
+  if(RS_ERRORS.length) return null;
+
+  const ver = String(r.meta.version || "");
+  if(!/^\d+\.\d+(\.\d+)?$/.test(ver)) rsFail('meta.version must look like "0.8" or "0.8.1", got "' + ver + '"');
+
+  // --- indexes, keyed by id
+  const byId = (list, what) => {
+    const m = {};
+    (list || []).forEach(x => {
+      if(!x || !x.id) return rsFail(what + ": an entry has no id");
+      if(m[x.id]) rsFail(what + ": duplicate id " + x.id);
+      m[x.id] = x;
+    });
+    return m;
+  };
+  const X = {
+    ladder: (r.dice.ladder || []).map(d => +String(d).slice(1)),
+    stat:   byId((r.stats || []).map(x => Object.assign({id:x.key}, x)), "stats"),
+    trait:  byId(r.traits, "traits"),
+    ability:byId(r.abilities, "abilities"),
+    weapon: byId(r.weapons, "weapons"),
+    armour: byId(r.armour, "armour"),
+    item:   byId(r.items, "items"),
+    power:  byId(r.powers, "powers"),
+    keyword:byId(r.keywords, "keywords"),
+    cond:   byId(r.conditions, "conditions"),
+    objective: byId((r.scenario.victory || {}).objectiveTypes, "scenario.victory.objectiveTypes"),
+    element:byId((r.scenario.budget || {}).costs, "scenario.budget.costs"),
+    difficulty: byId(r.scenario.difficulty, "scenario.difficulty"),
+    length: byId(r.scenario.lengths, "scenario.lengths")
+  };
+  if(!X.ladder.length) rsFail("dice.ladder is empty");
+
+  // --- cross-references: every id a rule points at must exist
+  (r.weapons || []).forEach(w => (w.keywords || []).forEach(k => {
+    if(!X.keyword[k]) rsFail("weapon " + w.id + " uses unknown keyword " + k); }));
+  (r.injuries || []).forEach(inj => (inj.replace || []).forEach(rep => {
+    if(!(r.replacements || []).some(x => x.id === rep))
+      rsFail("injury " + inj.id + " points at unknown replacement " + rep); }));
+  ["fight","aim","will","wits","move","wounds","actions"].forEach(k => {
+    if(!X.stat[k]) rsFail("stats is missing the " + k + " entry"); });
+
+  if(RS_ERRORS.length) return null;
+  RS = r; RSX = X;
+  return r;
+}
+
+/* ---- dice helpers, all from the ladder in the file ---- */
+/* The four attributes that are dice. Move, Health, Actions and Size are
+   numbers or a list, and are handled on their own terms. */
+const DIE_STATS = ["fight", "aim", "will", "wits"];
+function dieNum(d){ return +String(d || "").slice(1) || 0; }
+function dieName(n){ return "d" + n; }
+function dieIndex(d){ return RSX.ladder.indexOf(dieNum(d)); }
+function dieStep(d, n){
+  const i = dieIndex(d) + n;
+  if(i < 0) return null;                       // below the ladder: the test fails
+  return dieName(RSX.ladder[Math.min(i, RSX.ladder.length - 1)]);
+}
+function statDefault(key){ return RSX.stat[key] ? RSX.stat[key].default : null; }
+
+/* ---- the cost engine, straight from the file ----
+   baseCost + stat steps + Wounds + actions + traits/abilities/powers, with the
+   surcharge applied in purchase order (the first `freeUpgrades` are clean, then
+   each upgrade adds +(n-1)); gear and downgrades are excluded from the surcharge;
+   never below minModelCost. */
+function upgradeList(p){
+  const ups = [];                              // [{label, cost}] in purchase order
+  let flat = 0;
+  ["fight","aim","will","wits"].forEach(k => {
+    const st = RSX.stat[k];
+    const cur = dieIndex(p[k] || st.default), base = dieIndex(st.default);
+    for(let i = base; i < cur; i++) ups.push({label: st.name + " " + dieName(RSX.ladder[i+1]), cost: st.stepUpCosts[i - base]});
+    for(let i = cur; i < base; i++) flat -= st.stepDownCost;
+  });
+  const mv = RSX.stat.move;
+  const dm = (p.move === undefined ? mv.default : p.move) - mv.default;
+  flat += (dm / mv.step) * mv.costPerStep;
+  const wst = RSX.stat.wounds;
+  const w = (p.wounds === undefined ? wst.default : p.wounds);
+  const hStep = wst.upStep || 1, hCost = (wst.upCostPerStep !== undefined ? wst.upCostPerStep : wst.upCostEach);
+  for(let v = wst.default + hStep; v <= w; v += hStep) ups.push({label: wst.name + " " + v, cost: hCost});
+  const odd = (w - wst.default) % hStep;      // a Fate result or a scar can leave an odd point
+  if(w > wst.default && odd) ups.push({label: wst.name + " " + w, cost: Math.round(hCost / hStep)});
+  for(let i = 0; i < wst.default - w; i++) flat -= wst.downRefunds[Math.min(i, wst.downRefunds.length - 1)];
+  const ast = RSX.stat.actions;
+  const a = (p.actions === undefined ? ast.default : p.actions);
+  for(let i = ast.default; i < a; i++) ups.push({label: "Action " + (i+1), cost: ast.upCosts[i - ast.default]});
+  /* Resistances, vulnerabilities and Size are what make a creature a creature rather
+     than a min-maxed fighter. The surcharge exists to stop stat stacking, so these are
+     paid flat and never count toward the upgrade number. */
+  const freeOfSurcharge = new Set([].concat((RS.traitTags||{}).resistances||[], (RS.traitTags||{}).vulnerabilities||[]));
+  (p.traits || []).forEach(id => {
+    const o = RSX.trait[id]; if(!o) return rsFail("unknown trait " + id);
+    if(freeOfSurcharge.has(id)) flat += o.cost; else ups.push({label:o.name, cost:o.cost});
+  });
+  const sz = RSX.stat.size;
+  if(sz && p.size && p.size !== sz.default) flat += (sz.costs||{})[p.size] || 0;
+
+  /* A weakness offsets a nature; it is not free points. Refunds from Vulnerable traits
+     cannot exceed what the model spent on resistances, Burning aura, Regenerate and
+     weapon effects — otherwise you take Vulnerable to an element nobody uses and bank it. */
+  const vulnIds = new Set(((RS.traitTags||{}).vulnerabilities)||[]);
+  const resIds  = new Set(((RS.traitTags||{}).resistances)||[]);
+  let vulnRefund = 0, natureSpend = 0;
+  (p.traits || []).forEach(id => {
+    const o = RSX.trait[id]; if(!o) return;
+    if(vulnIds.has(id)) vulnRefund += -o.cost;
+    else if(resIds.has(id) || id === "aura" || id === "regenerate") natureSpend += o.cost;
+  });
+  (p.weaponMods || []).forEach(id => { const m = RSX.wmod[id]; if(m) natureSpend += m.cost; });
+  if(vulnRefund > natureSpend) flat += (vulnRefund - natureSpend);   // claw back the excess
+
+  /* Flaws: capped in number and in total refund, and never surcharged. */
+  const fc = (RS.flaws || {}).refundCap || {};
+  const maxF = fc.maxFlaws === undefined ? 99 : fc.maxFlaws;
+  let flawRefund = 0;
+  (p.flaws || []).slice(0, maxF).forEach(id => { const o = (CAT.flaw||{})[id]; if(o) flawRefund += -o.cost; });
+  if(fc.maxRefund !== undefined) flawRefund = Math.min(flawRefund, fc.maxRefund);
+  flat -= flawRefund;
+  (p.abilities || []).forEach(id => { const o = RSX.ability[id]; if(!o) return rsFail("unknown ability " + id); ups.push({label:o.name, cost:o.cost}); });
+  (p.powers || []).forEach(id => { const o = RSX.power[id]; if(!o) return rsFail("unknown power " + id); ups.push({label:o.name, cost:o.cost}); });
+  return {ups, flat};
+}
+function gearCost(p){
+  let g = 0;
+  (p.weapons || []).forEach(id => { const o = RSX.weapon[id]; if(o) g += o.cost; });
+  (p.weaponMods || []).forEach(id => { const o = RSX.wmod[id]; if(o) g += o.cost; });
+  if(p.armour){ const o = RSX.armour[p.armour]; if(o) g += o.cost; }
+  (p.items || []).forEach(id => { const o = RSX.item[id]; if(o) g += o.cost; });
+  return g;
+}
+function modelCost(p){
+  const {ups, flat} = upgradeList(p);
+  const sc = RS.surcharge;
+  let total = RS.baseCost + flat;
+  ups.forEach((u, i) => {
+    const n = i + 1;
+    total += u.cost + (n > sc.freeUpgrades ? (n - 1) * sc.perPriorUpgrade : 0);
+  });
+  return Math.max(RS.minModelCost, Math.round(total + gearCost(p)));
+}
+function costBreakdown(p){
+  const {ups, flat} = upgradeList(p);
+  const sc = RS.surcharge;
+  const rows = [{label: "Base", cost: RS.baseCost}];
+  if(flat) rows.push({label: "Move, size, downgrades and resistances", cost: flat});
+  ups.forEach((u, i) => {
+    const n = i + 1, extra = n > sc.freeUpgrades ? (n - 1) * sc.perPriorUpgrade : 0;
+    rows.push({label: u.label + (extra ? " (+" + extra + " surcharge)" : ""), cost: u.cost + extra});
+  });
+  const g = gearCost(p);
+  if(g){
+    const mods = (p.weaponMods || []).reduce((n, id) => n + ((RSX.wmod[id] || {}).cost || 0), 0);
+    if(mods){ rows.push({label: "Gear", cost: g - mods}); rows.push({label: "Weapon effects", cost: mods}); }
+    else rows.push({label: "Gear", cost: g});
+  }
+  return {rows, total: modelCost(p)};
+}
+/* squads: per-model cost x size, less the discount; the floor applies per model first */
+function squadCost(p, size){
+  const per = Math.max(RS.minModelCost, modelCost(p));
+  return Math.round(per * size * (1 - (RS.squads.squadDiscount || 0)));
+}
+function unitCostOf(u){
+  return (u.size && u.size > 1) ? squadCost(u, u.size) : modelCost(u);
+}
+/* activations: 1 per full pointsPerActivation, capped; squads by size */
+function activationsOf(u){
+  const a = RS.activation;
+  if(u.size && u.size >= RS.squads.minSize) return Math.max(1, Math.ceil(u.size / 3));
+  const n = Math.floor(unitCostOf(u) / a.pointsPerActivation);
+  return Math.max(a.minActivations, Math.min(a.maxActivations, n));
+}
+
+
+/* ---- app.js ---- */
+/* =====================================================================
+   EPITAPH
+   Two halves. YOUR UNBURIED live on this device and are yours alone.
+   THE REALM is the shared table: scenarios, and the person hosting them.
+
+   The ruleset JSON is the only place the game is written down. Nothing
+   about dice, costs, gear or rules is hard-coded below; if a value is not
+   in the file, the app does not know it.
+   ===================================================================== */
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, m =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const signed = n => (n >= 0 ? "+" : "−") + Math.abs(n);
+
+/* ---------------------------------------------------------------- state */
+const STORE_KEY = "ep_bands_v1";
+let store = {bands: [], activeId: null, way: "unburied"};
+
+function load(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if(raw && Array.isArray(raw.bands)) store = Object.assign(store, raw);
+  }catch(e){}
+  if(!store.bands.length) store.bands = [newBand("The Unburied")];
+  if(!store.bands.some(b => b.id === store.activeId)) store.activeId = store.bands[0].id;
+  store.bands.forEach(mendBand);
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
+
+function newBand(name){
+  return {id: uid(), name: name || "The Unburied", budget: 500, members: [], sealed: false};
+}
+function band(){ return store.bands.find(b => b.id === store.activeId) || store.bands[0]; }
+
+/* A model is only ever what the ruleset says a model is. Anything missing is
+   filled from the file, never from a number written in this app. */
+function newMember(){
+  const h = ((RS.campaign || {}).hire || {}).baseProfile || {};
+  const m = {
+    id: uid(), name: "", epithet: "", role: "", story: "",
+    fielded: true, count: 1,
+    move: h.move !== undefined ? h.move : statDefault("move"),
+    wounds: h.wounds !== undefined ? h.wounds : statDefault("wounds"),
+    actions: h.actions !== undefined ? h.actions : statDefault("actions"),
+    size: statDefault("size"),
+    traits: [], abilities: [], powers: [], flaws: [],
+    weapons: [], armour: [], items: [], skins: {}
+  };
+  DIE_STATS.forEach(k => m[k] = h[k] || statDefault(k));
+  return m;
+}
+/* Older saves, or a ruleset that has moved on, should not crash the app. */
+function mendBand(b){
+  b.members = (b.members || []).map(m => {
+    const base = newMember();
+    const out = Object.assign(base, m);
+    out.id = m.id || base.id;
+    DIE_STATS.forEach(k => { if(!RSX.ladder.includes(dieNum(out[k]))) out[k] = statDefault(k); });
+    ["traits","abilities","powers","flaws"].forEach(k =>
+      out[k] = (out[k] || []).filter(id => catOf(k)[id]));
+    out.weapons = (out.weapons || []).filter(e => RSX.weapon[e.id])
+      .map(e => ({id: e.id, qty: Math.max(1, e.qty || 1), mods: (e.mods || []).filter(x => RSX.wmod[x])}));
+    out.armour = (out.armour || []).filter(id => RSX.armour[id.id || id]).map(id => id.id || id).slice(0, 1);
+    out.items = (out.items || []).filter(e => RSX.item[e.id]).map(e => ({id: e.id, qty: Math.max(1, e.qty || 1)}));
+    return out;
+  });
+  return b;
+}
+
+/* ---------------------------------------------------------------- catalogues
+   Everything a player can pick comes from the ruleset, indexed by id. */
+let CAT = {};
+function catOf(kind){ return CAT[kind] || {}; }
+function buildCatalogues(){
+  const kw = ids => (ids || []).map(k => k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase())).join(" · ");
+  const map = (list, shape) => {
+    const o = {};
+    (list || []).forEach(x => o[x.id] = Object.assign(
+      {id: x.id, name: x.name, cost: x.cost, examples: x.examples || null},
+      shape ? shape(x) : {desc: x.desc || ""}));
+    return o;
+  };
+  const tier = {};
+  (RS.powerTiers || []).forEach(t => tier[t.id] = t);
+  const order = id => (tier[id] && tier[id].order) || 99;
+
+  CAT.traits    = map(RS.traits);
+  CAT.abilities = map(RS.abilities);
+  CAT.flaws     = map((RS.flaws || {}).list || []);
+  CAT.items     = map(RS.items, x => ({desc: x.desc + (x.limited ? "  (" + x.limited + " use" + (x.limited > 1 ? "s" : "") + ")" : "")}));
+  CAT.armour    = map(RS.armour, x => ({
+    desc: [x.save ? "Save " + x.save : "", x.moveMod ? "Move " + signed(x.moveMod) + "cm" : "", x.desc || ""]
+            .filter(Boolean).join(" · ")
+  }));
+  CAT.weapons   = map(RS.weapons, x => ({
+    kind: x.type, range: x.range, damage: x.damage,
+    desc: [x.type === "melee" ? "Melee" : "Ranged",
+           x.range ? x.range + "cm" : null,
+           x.damage + " dmg",
+           kw(x.keywords) || null].filter(Boolean).join(" · ")
+  }));
+  CAT.powers    = map(RS.powers.slice().sort((a, b) =>
+      (order(a.tier) - order(b.tier)) || (a.cost - b.cost) || a.name.localeCompare(b.name)),
+    x => {
+      const t = tier[x.tier] || {short: x.tier, name: x.tier, blurb: ""};
+      return {tier: x.tier,
+        desc: [t.short + " (" + t.name + ")", (x.tags || []).join(", "), x.range ? x.range + "cm" : null]
+                .filter(Boolean).join(" · ") + "\n" + t.blurb +
+              (x.levels ? "\n" + x.levels.map(l => "L" + l.level + " " + l.desc).join("  ") : (x.desc ? "\n" + x.desc : ""))};
+    });
+  CAT.mods = map(RS.weaponMods || []);
+  RSX.wmod = CAT.mods;
+}
+
+/* ---------------------------------------------------------------- costing
+   The cost engine lives in core-rules and takes the ruleset's own shape,
+   so the app's shape is translated once, here, and nowhere else. */
+function profileOf(m){
+  const p = {
+    move: m.move, wounds: m.wounds, actions: m.actions, size: m.size,
+    traits: m.traits || [], abilities: m.abilities || [],
+    powers: m.powers || [], flaws: m.flaws || [],
+    weapons: [], weaponMods: [], items: [], armour: (m.armour || [])[0] || null
+  };
+  DIE_STATS.forEach(k => p[k] = m[k]);
+  (m.weapons || []).forEach(e => {
+    for(let i = 0; i < (e.qty || 1); i++){
+      p.weapons.push(e.id);
+      (e.mods || []).forEach(x => p.weaponMods.push(x));
+    }
+  });
+  (m.items || []).forEach(e => { for(let i = 0; i < (e.qty || 1); i++) p.items.push(e.id); });
+  return p;
+}
+function memberCost(m){ return modelCost(profileOf(m)); }
+function squadOf(m){ return Math.max(1, m.count || 1); }
+function isSquad(m){ return squadOf(m) >= RS.squads.minSize; }
+function unitCost(m){ return isSquad(m) ? squadCost(profileOf(m), squadOf(m)) : memberCost(m); }
+function activationsOf(m){
+  const a = RS.activation;
+  if(isSquad(m)) return Math.max(1, Math.ceil(squadOf(m) / 3));
+  return Math.max(a.minActivations, Math.min(a.maxActivations,
+    Math.floor(unitCost(m) / a.pointsPerActivation)));
+}
+function fielded(m){ return m.fielded !== false; }
+function bandSpent(b){ return b.members.filter(fielded).reduce((s, m) => s + unitCost(m), 0); }
+function bandActs(b){ return b.members.filter(fielded).reduce((s, m) => s + activationsOf(m), 0); }
+
+/* A model's own name for a piece of gear. Stats and cost always come from the
+   id, so renaming something can never move a number. */
+function skinOf(m, id, fallback){ return (m.skins && m.skins[id]) || fallback; }
+function effectiveMove(m){
+  let v = m.move === undefined ? statDefault("move") : m.move;
+  const a = (m.armour || [])[0];
+  const o = a ? RSX.armour[a] : null;
+  if(o && o.moveMod) v += o.moveMod;
+  return Math.max(1, v);
+}
+
+/* ---------------------------------------------------------------- chrome */
+let toastT = null;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2100);
+}
+function openSheet(html, after){
+  $("#sheetIn").innerHTML = html;
+  $("#sheet").classList.add("show");
+  $("#scrim").classList.add("show");
+  document.body.classList.add("locked");
+  if(after) after($("#sheetIn"));
+}
+function closeSheet(){
+  $("#sheet").classList.remove("show");
+  $("#scrim").classList.remove("show");
+  document.body.classList.remove("locked");
+}
+
+/* ---------------------------------------------------------------- render */
+function render(){
+  const b = band();
+  $("#rsVer").textContent = RS.meta.name + " · ruleset " + RS.meta.version;
+  $$(".way").forEach(w => w.classList.toggle("on", w.dataset.way === store.way));
+  $("#viewUnburied").hidden = store.way !== "unburied";
+  $("#viewRealm").hidden = store.way !== "realm";
+  if(store.way === "unburied") renderUnburied(b);
+  save();
+}
+
+function renderUnburied(b){
+  const spent = bandSpent(b), over = spent > b.budget;
+  const pct = b.budget > 0 ? Math.min(100, spent / b.budget * 100) : 0;
+  const nField = b.members.filter(fielded).length;
+
+  $("#bandHead").innerHTML = `
+    <div class="band">
+      <input class="band-name" id="bandName" value="${esc(b.name)}" maxlength="42" spellcheck="false">
+      <button class="btn sm ghost" id="bandMenu">Bands</button>
+    </div>
+    <div class="gauge">
+      <div class="gauge-line">
+        <b class="${over ? "over" : ""}">${spent}</b>
+        <span>of</span>
+        <input class="input mono" id="bandBudget" value="${b.budget}" inputmode="numeric"
+               style="width:76px;padding:3px 7px;font-size:13px;text-align:center">
+        <span>points fielded</span>
+        <span class="rule"></span>
+        <span class="chip ${over ? "bad" : ""}">${over ? "over by " + (spent - b.budget) : (b.budget - spent) + " left"}</span>
+      </div>
+      <div class="bar"><i class="${over ? "over" : ""}" style="width:${pct}%"></i></div>
+      <div class="gauge-line" style="margin-top:9px">
+        <span class="chip">${nField} of ${b.members.length} fielded</span>
+        <span class="chip">${bandActs(b)} activations a round</span>
+      </div>
+    </div>`;
+
+  $("#bandName").oninput = e => { b.name = e.target.value; save(); };
+  $("#bandBudget").oninput = e => {
+    b.budget = Math.max(0, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
+    renderUnburied(b);
+  };
+  $("#bandMenu").onclick = openBands;
+
+  const list = $("#roster");
+  list.innerHTML = "";
+  if(!b.members.length){
+    list.insertAdjacentHTML("beforeend", `
+      <div class="empty" style="grid-column:1/-1">
+        <div class="big">No one yet</div>
+        <div class="quiet">The Unburied are what you make of them. Raise the first.</div>
+      </div>`);
+  }
+  b.members.slice().sort((x, y) => (fielded(y) - fielded(x))).forEach(m => {
+    const n = squadOf(m), cost = unitCost(m);
+    const el = document.createElement("button");
+    el.className = "marker" + (fielded(m) ? "" : " benched");
+    el.innerHTML = `
+      <div class="m-cost">${cost}<small>points</small></div>
+      <span class="m-name">${esc(m.name) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
+      ${m.epithet ? `<span class="m-epithet">“${esc(m.epithet)}”</span>` : ""}
+      ${m.role ? `<span class="m-role">${esc(m.role)}</span>` : ""}
+      <div class="m-stats">
+        ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(m[k])}</b><span>${esc(RSX.stat[k].name.slice(0,3))}</span></div>`).join("")}
+        <div class="m-stat"><b>${m.wounds}</b><span>${esc(RSX.stat.wounds.name.slice(0,3))}</span></div>
+      </div>
+      <div class="m-foot">
+        ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
+        <span class="chip">${effectiveMove(m)}cm</span>
+        <span class="chip">${activationsOf(m)} act</span>
+        ${(m.flaws || []).length ? `<span class="chip bad">${m.flaws.length} flaw${m.flaws.length > 1 ? "s" : ""}</span>` : ""}
+        <span class="rule"></span>
+        <span class="chip ${fielded(m) ? "gilt" : ""}" data-field>${fielded(m) ? "fielded" : "benched"}</span>
+      </div>`;
+    el.onclick = ev => {
+      if(ev.target.closest("[data-field]")){ m.fielded = !fielded(m); renderUnburied(b); return; }
+      openMember(m.id);
+    };
+    list.appendChild(el);
+  });
+  const add = document.createElement("button");
+  add.className = "marker add";
+  add.innerHTML = `<div class="plus">†</div><span>Raise one of the Unburied</span>`;
+  add.onclick = () => {
+    const m = newMember();
+    b.members.push(m); save();
+    openMember(m.id);
+  };
+  list.appendChild(add);
+}
+
+/* ---------------------------------------------------------------- boot */
+function boot(){
+  const el = document.getElementById("rulesetJSON");
+  const ok = loadRuleset(el ? el.textContent : "{}");
+  if(!ok){
+    document.body.innerHTML = `<div class="fatal">
+      <h2>The ruleset would not load</h2>
+      <p class="lead">Epitaph refuses to run on rules it cannot read, rather than guess at a value.</p>
+      <ul>${RS_ERRORS.map(e => "<li>" + esc(e) + "</li>").join("")}</ul></div>`;
+    return;
+  }
+  buildCatalogues();
+  load();
+  $$(".way").forEach(w => w.onclick = () => { store.way = w.dataset.way; render(); });
+  $("#scrim").onclick = closeSheet;
+  $("#scrim2").onclick = closePicker;
+  render();
+}
+
+/* ---- member.js ---- */
+/* =====================================================================
+   RAISING ONE OF THE UNBURIED
+   The editor. Every control it draws is described by the ruleset: the die
+   ladder, what a step costs, what may be carried, what a flaw gives back.
+   Nothing here decides a value.
+   ===================================================================== */
+
+let editId = null;
+function editing(){ return band().members.find(m => m.id === editId); }
+
+function openMember(id){
+  editId = id;
+  drawMember();
+  $("#sheet").classList.add("show");
+  $("#scrim").classList.add("show");
+  document.body.classList.add("locked");
+}
+function redraw(){ drawMember(); renderUnburied(band()); save(); }
+
+/* ---- a row with a stepper, used by every stat ---- */
+function stepRow(o){
+  return `
+  <div class="srow">
+    <div class="srow-l">
+      <b>${esc(o.title)}</b>
+      <span>${esc(o.sub)}</span>
+    </div>
+    <div class="srow-r">
+      <div class="stepper">
+        <button data-step="${o.key}|-1" ${o.down ? "" : "disabled"} aria-label="Lower ${esc(o.title)}">−</button>
+        <span>${esc(o.value)}</span>
+        <button data-step="${o.key}|1" ${o.up ? "" : "disabled"} aria-label="Raise ${esc(o.title)}">+</button>
+      </div>
+      <span class="srow-hint mono">${esc(o.hint)}</span>
+    </div>
+  </div>`;
+}
+
+function drawMember(){
+  const m = editing(); if(!m) return closeSheet();
+  const b = band();
+  const cost = unitCost(m), bd = costBreakdown(profileOf(m));
+
+  const dieRows = DIE_STATS.map(k => {
+    const st = RSX.stat[k], cur = m[k];
+    const i = RSX.ladder.indexOf(dieNum(cur));
+    const iMin = RSX.ladder.indexOf(dieNum(st.min)), iMax = RSX.ladder.indexOf(dieNum(st.max));
+    const iBase = RSX.ladder.indexOf(dieNum(st.default));
+    const next = i < iBase ? st.stepDownCost : st.stepUpCosts[i - iBase];
+    return stepRow({key: "die:" + k, title: st.name, sub: "from " + st.default + " · " + st.min + "–" + st.max,
+      value: cur, down: i > iMin, up: i < iMax,
+      hint: i >= iMax ? "max" : (next === undefined ? "—" : "next +" + next)});
+  }).join("");
+
+  const mv = RSX.stat.move, ws = RSX.stat.wounds, as = RSX.stat.actions, sz = RSX.stat.size;
+  const wStep = ws.upStep || 1, wCost = ws.upCostPerStep !== undefined ? ws.upCostPerStep : ws.upCostEach;
+  const armObj = (m.armour || [])[0] ? RSX.armour[m.armour[0]] : null;
+  const bodyRows =
+    stepRow({key: "move", title: mv.name,
+      sub: mv.step + "cm a step · " + mv.costPerStep + " pts" +
+           (armObj && armObj.moveMod ? " · armour " + signed(armObj.moveMod) + "cm" : ""),
+      value: effectiveMove(m) + "cm", down: m.move > mv.min, up: m.move < mv.max, hint: "±" + mv.costPerStep}) +
+    stepRow({key: "wounds", title: ws.name,
+      sub: "start " + ws.default + (wStep > 1 ? " · bought in " + wStep + "s, " + wCost + " a step" : ""),
+      value: m.wounds, down: m.wounds > ws.min, up: m.wounds < ws.max, hint: m.wounds >= ws.max ? "max" : "+" + wCost}) +
+    stepRow({key: "actions", title: as.name, sub: "start " + as.default,
+      value: m.actions, down: m.actions > as.min,
+      up: m.actions < as.max && as.upCosts[m.actions - as.default] !== undefined,
+      hint: as.upCosts[m.actions - as.default] !== undefined ? "+" + as.upCosts[m.actions - as.default] : "max"}) +
+    (sz ? stepRow({key: "size", title: sz.name,
+      sub: (sz.effects || {})[m.size] || "",
+      value: m.size.charAt(0).toUpperCase() + m.size.slice(1),
+      down: sz.values.indexOf(m.size) > 0, up: sz.values.indexOf(m.size) < sz.values.length - 1,
+      hint: (sz.costs || {})[m.size] ? signed(sz.costs[m.size]) : "free"}) : "");
+
+  const n = squadOf(m), sq = RS.squads;
+  const deploy = stepRow({key: "count", title: isSquad(m) ? "Squad" : "Alone",
+    sub: isSquad(m) ? "one profile, " + n + " models · " + (sq.squadDiscount * 100) + "% together"
+                    : "set " + sq.minSize + " or more to field a squad",
+    value: n, down: n > 1, up: n < sq.maxSize, hint: n > 1 ? "×" + n : "—"});
+
+  $("#sheetIn").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="mBack" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="eyebrow">One of the Unburied</div>
+      <div class="m-cost" style="position:static">${cost}<small>points</small></div>
+    </div>
+
+    <div class="slab">
+      <div class="field" style="margin-bottom:11px"><label>Name</label>
+        <input class="input" id="fName" value="${esc(m.name)}" maxlength="42" placeholder="who were they"></div>
+      <div class="field" style="margin-bottom:11px"><label>Epithet</label>
+        <input class="input serif" id="fEpi" value="${esc(m.epithet)}" maxlength="42" placeholder="what they are called now"></div>
+      <div class="field" style="margin-bottom:11px"><label>Role</label>
+        <input class="input" id="fRole" value="${esc(m.role)}" maxlength="40" placeholder="what they do"></div>
+      <div class="field"><label>Their story</label>
+        <textarea class="input" id="fStory" rows="3" placeholder="how they came to be Unburied">${esc(m.story)}</textarea></div>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Attributes</span><span class="rule"></span>
+        <span class="quiet mono">${RS.dice.ladder.join(" · ")}</span></div>
+      ${dieRows}
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Body</span><span class="rule"></span></div>
+      ${bodyRows}
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">How it deploys</span><span class="rule"></span>
+        <span class="chip gilt">${activationsOf(m)} activation${activationsOf(m) === 1 ? "" : "s"}</span></div>
+      ${deploy}
+      <p class="quiet" style="margin:9px 0 0">${isSquad(m)
+        ? memberCost(m) + " each × " + n + ", less " + (sq.squadDiscount * 100) + "% — <b>" + unitCost(m) + " points</b>. Activates " +
+          activationsOf(m) + " time" + (activationsOf(m) === 1 ? "" : "s") + " a round, up to three models each time. Coherency " + sq.coherency + "cm."
+        : "One activation per " + RS.activation.pointsPerActivation + " points, up to " + RS.activation.maxActivations + "."}</p>
+    </div>
+
+    ${gearSlab(m, "Weapons", "weapons")}
+    ${gearSlab(m, "Armour", "armour")}
+    ${gearSlab(m, "Carried", "items")}
+    ${gearSlab(m, "Traits", "traits")}
+    ${gearSlab(m, "Abilities", "abilities")}
+    ${gearSlab(m, "Powers", "powers")}
+    ${gearSlab(m, "Flaws", "flaws")}
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">What it costs</span><span class="rule"></span>
+        <span class="chip gilt mono">${bd.total} points</span></div>
+      ${bd.rows.map(r => `<div class="cost-row"><span>${esc(r.label)}</span><b class="mono ${r.cost < 0 ? "neg" : ""}">${signed(r.cost)}</b></div>`).join("")}
+      ${n > 1 ? `<div class="cost-row"><span>Squad of ${n}, less ${(sq.squadDiscount * 100)}%</span><b class="mono">${unitCost(m)}</b></div>` : ""}
+      <p class="quiet" style="margin:10px 0 0">The first ${RS.surcharge.freeUpgrades} upgrades cost list price; after that each
+        adds +${RS.surcharge.perPriorUpgrade} for every upgrade already bought. Gear, size, resistances and flaws are exempt.</p>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn danger ghost" id="mDel">Lay to rest</button>
+      <button class="btn primary" id="mDone">Done</button>
+    </div>`;
+
+  const root = $("#sheetIn");
+  root.querySelector("#fName").oninput = e => { m.name = e.target.value; renderUnburied(band()); save(); };
+  root.querySelector("#fEpi").oninput = e => { m.epithet = e.target.value; renderUnburied(band()); save(); };
+  root.querySelector("#fRole").oninput = e => { m.role = e.target.value; renderUnburied(band()); save(); };
+  root.querySelector("#fStory").oninput = e => { m.story = e.target.value; save(); };
+
+  root.querySelectorAll("[data-step]").forEach(btn => btn.onclick = () => {
+    const [key, dRaw] = btn.dataset.step.split("|"); const d = +dRaw;
+    if(key.startsWith("die:")){
+      const k = key.slice(4), st = RSX.stat[k];
+      const nv = dieStep(m[k], d); if(!nv) return;
+      const i = RSX.ladder.indexOf(dieNum(nv));
+      if(i < RSX.ladder.indexOf(dieNum(st.min)) || i > RSX.ladder.indexOf(dieNum(st.max))) return;
+      m[k] = nv;
+    } else if(key === "move"){
+      const nv = m.move + d * mv.step; if(nv < mv.min || nv > mv.max) return; m.move = nv;
+    } else if(key === "wounds"){
+      const nv = m.wounds + d * (d > 0 || m.wounds - wStep >= ws.default ? wStep : 1);
+      if(nv < ws.min || nv > ws.max) return; m.wounds = nv;
+    } else if(key === "actions"){
+      const nv = m.actions + d; if(nv < as.min || nv > as.max) return; m.actions = nv;
+    } else if(key === "size"){
+      const i = sz.values.indexOf(m.size) + d; if(i < 0 || i >= sz.values.length) return; m.size = sz.values[i];
+    } else if(key === "count"){
+      let nv = n + d;
+      if(nv > 1 && nv < sq.minSize) nv = d > 0 ? sq.minSize : 1;
+      m.count = Math.max(1, Math.min(sq.maxSize, nv));
+    }
+    redraw();
+  });
+
+  bindGear(root, m);
+  root.querySelector("#mBack").onclick = closeSheet;
+  root.querySelector("#mDone").onclick = closeSheet;
+  root.querySelector("#mDel").onclick = () => {
+    const b2 = band();
+    b2.members = b2.members.filter(x => x.id !== m.id);
+    closeSheet(); renderUnburied(b2); save();
+    toast("Laid to rest");
+  };
+}
+
+/* ---- gear, traits, powers and flaws all render the same way ---- */
+const GEAR_KIND = {
+  weapons:  {cat:"weapons",  qty:true,  single:false, reskin:true,  add:"Add a weapon"},
+  armour:   {cat:"armour",   qty:false, single:true,  reskin:true,  add:"Wear armour"},
+  items:    {cat:"items",    qty:true,  single:false, reskin:true,  add:"Carry something"},
+  traits:   {cat:"traits",   qty:false, single:false, reskin:false, add:"Add a trait"},
+  abilities:{cat:"abilities",qty:false, single:false, reskin:false, add:"Add an ability"},
+  powers:   {cat:"powers",   qty:false, single:false, reskin:false, add:"Learn a power"},
+  flaws:    {cat:"flaws",    qty:false, single:false, reskin:false, add:"Take a flaw"}
+};
+function gearSlab(m, label, field){
+  const k = GEAR_KIND[field], cat = catOf(k.cat), arr = m[field] || [];
+  const rows = arr.map(entry => {
+    const id = k.qty ? entry.id : (entry.id || entry);
+    const o = cat[id]; if(!o) return "";
+    const shown = k.reskin ? skinOf(m, id, o.name) : o.name;
+    const mods = k.qty && field === "weapons" ? (entry.mods || []) : [];
+    const modCost = mods.reduce((s, x) => s + ((CAT.mods[x] || {}).cost || 0), 0);
+    const price = k.qty ? (o.cost + modCost) * (entry.qty || 1) : o.cost;
+    return `
+    <div class="grow">
+      <div class="grow-main">
+        <div class="grow-name">${esc(shown)}
+          ${k.reskin ? `<button class="tiny" data-skin="${field}|${esc(id)}" title="Call it something else">✎</button>` : ""}</div>
+        ${shown !== o.name ? `<div class="grow-sub">${esc(o.name)}</div>` : ""}
+        <div class="grow-sub">${esc(o.desc)}</div>
+        ${field === "weapons" ? `
+          <div class="mods">
+            ${mods.map(x => { const mo = CAT.mods[x]; return mo ? `<span class="mod">${esc(mo.name)} <b>${mo.cost}</b><button data-modoff="${esc(id)}|${esc(x)}" aria-label="Remove">×</button></span>` : ""; }).join("")}
+            ${Object.values(CAT.mods).filter(x => !mods.includes(x.id)).length ? `
+              <select class="mod-add" data-modadd="${esc(id)}" aria-label="Add an effect">
+                <option value="">+ effect…</option>
+                ${Object.values(CAT.mods).filter(x => !mods.includes(x.id))
+                  .map(x => `<option value="${esc(x.id)}">${esc(x.name)} +${x.cost} — ${esc(x.desc)}</option>`).join("")}
+              </select>` : ""}
+          </div>` : ""}
+      </div>
+      <div class="grow-r">
+        <span class="mono ${o.cost < 0 ? "neg" : ""}">${k.qty ? price + " pts" : signed(price)}</span>
+        ${k.qty ? `<div class="stepper sm">
+            <button data-qty="${field}|${esc(id)}|-1" aria-label="fewer">−</button>
+            <span>${entry.qty || 1}</span>
+            <button data-qty="${field}|${esc(id)}|1" aria-label="more">+</button></div>` : ""}
+        <button class="tiny" data-drop="${field}|${esc(id)}" aria-label="Remove">×</button>
+      </div>
+    </div>`;
+  }).join("");
+  const total = arr.reduce((s, e) => {
+    const id = k.qty ? e.id : (e.id || e), o = cat[id]; if(!o) return s;
+    const mods = (e.mods || []).reduce((t, x) => t + ((CAT.mods[x] || {}).cost || 0), 0);
+    return s + (k.qty ? (o.cost + mods) * (e.qty || 1) : o.cost);
+  }, 0);
+  return `
+  <div class="slab">
+    <div class="head"><span class="eyebrow">${esc(label)}</span><span class="rule"></span>
+      <span class="quiet mono">${arr.length ? (k.qty ? total + " pts" : signed(total)) : "—"}</span></div>
+    ${rows || `<p class="quiet" style="margin:0">Nothing yet.</p>`}
+    <button class="btn sm ghost" data-add="${field}" style="margin-top:10px">${esc(k.add)}</button>
+  </div>`;
+}
+
+function bindGear(root, m){
+  root.querySelectorAll("[data-add]").forEach(b => b.onclick = () => openPicker(m, b.dataset.add));
+  root.querySelectorAll("[data-drop]").forEach(b => b.onclick = () => {
+    const [field, id] = b.dataset.drop.split("|");
+    const k = GEAR_KIND[field];
+    m[field] = k.qty ? m[field].filter(e => e.id !== id) : m[field].filter(e => (e.id || e) !== id);
+    if(m.skins) delete m.skins[id];
+    redraw();
+  });
+  root.querySelectorAll("[data-qty]").forEach(b => b.onclick = () => {
+    const [field, id, d] = b.dataset.qty.split("|");
+    const e = m[field].find(x => x.id === id); if(!e) return;
+    e.qty = Math.max(1, (e.qty || 1) + +d);
+    redraw();
+  });
+  root.querySelectorAll("[data-skin]").forEach(b => b.onclick = () => {
+    const [field, id] = b.dataset.skin.split("|");
+    askName(m, field, id);
+  });
+  root.querySelectorAll("[data-modoff]").forEach(b => b.onclick = () => {
+    const [wid, mod] = b.dataset.modoff.split("|");
+    const e = m.weapons.find(x => x.id === wid); if(!e) return;
+    e.mods = (e.mods || []).filter(x => x !== mod);
+    redraw();
+  });
+  root.querySelectorAll("[data-modadd]").forEach(sel => sel.onchange = () => {
+    if(!sel.value) return;
+    const e = m.weapons.find(x => x.id === sel.dataset.modadd); if(!e) return;
+    e.mods = (e.mods || []).concat([sel.value]);
+    redraw();
+  });
+}
+
+/* ---- pickers.js ---- */
+/* =====================================================================
+   CHOOSING THINGS
+   The picker lists whatever the ruleset holds for that kind, with its
+   price and its own words. It also enforces the few limits the ruleset
+   states outright: one suit of armour, so many flaws, uniques, squad-only.
+   ===================================================================== */
+
+let pickCtx = null;
+
+function openPicker(m, field){
+  const k = GEAR_KIND[field];
+  pickCtx = {m, field, k, q: ""};
+  drawPicker();
+  $("#sheet2").classList.add("show");
+  $("#scrim2").classList.add("show");
+}
+function closePicker(){
+  $("#sheet2").classList.remove("show");
+  $("#scrim2").classList.remove("show");
+  pickCtx = null;
+}
+
+/* What the ruleset forbids, said plainly rather than silently ignored. */
+function pickBlocked(m, field, o){
+  const raw = (RS[field === "flaws" ? "flaws" : field] || {});
+  if(field === "flaws"){
+    const cap = ((RS.flaws || {}).refundCap || {});
+    if(cap.maxFlaws !== undefined && (m.flaws || []).length >= cap.maxFlaws)
+      return "Only " + cap.maxFlaws + " flaws on one model.";
+    const taken = (m.flaws || []).reduce((s, id) => s + -((catOf("flaws")[id] || {}).cost || 0), 0);
+    if(cap.maxRefund !== undefined && taken + -o.cost > cap.maxRefund)
+      return "Flaws give back at most " + cap.maxRefund + " points; this would pass it.";
+  }
+  const src = (RS.traits || []).find(t => t.id === o.id);
+  if(src){
+    if(src.unique && (m.traits || []).includes(o.id)) return "Only one.";
+    if(src.squadOnly && !isSquad(m)) return "Squads only — this one fields alone.";
+    if(src.max && (m.traits || []).filter(x => x === o.id).length >= src.max)
+      return "At most " + src.max + ".";
+  }
+  /* A weakness offsets a nature; it cannot simply be banked. */
+  const vuln = ((RS.traitTags || {}).vulnerabilities) || [];
+  if(vuln.includes(o.id)){
+    const spendOn = ((RS.traitTags || {}).resistances || []).concat(["aura", "regenerate"]);
+    const spent = (m.traits || []).reduce((s, id) => s + (spendOn.includes(id) ? (catOf("traits")[id] || {}).cost || 0 : 0), 0)
+      + (m.weapons || []).reduce((s, w) => s + (w.mods || []).reduce((t, x) => t + ((CAT.mods[x] || {}).cost || 0), 0), 0);
+    const already = (m.traits || []).reduce((s, id) => s + (vuln.includes(id) ? -((catOf("traits")[id] || {}).cost || 0) : 0), 0);
+    if(already + -o.cost > spent)
+      return "A weakness offsets a nature. Buy a resistance, an aura or a weapon effect first, or this gives nothing back.";
+  }
+  return null;
+}
+
+function drawPicker(){
+  const {m, field, k, q} = pickCtx;
+  const cat = catOf(k.cat);
+  const chosen = new Set((m[field] || []).map(e => e.id || e));
+  const all = Object.values(cat);
+  const hay = o => (o.name + " " + (o.desc || "") + " " + (o.examples || []).join(" ")).toLowerCase();
+  const list = q ? all.filter(o => hay(o).includes(q.toLowerCase())) : all;
+
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="pkX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="eyebrow">${esc(k.add)}</div>
+      <span class="chip">${list.length}</span>
+    </div>
+    <input class="input" id="pkQ" placeholder="Search" value="${esc(q)}" style="margin-bottom:12px">
+    <div class="picks">
+      ${list.map(o => {
+        const on = chosen.has(o.id);
+        const why = on ? null : pickBlocked(m, field, o);
+        return `
+        <button class="pick ${on ? "on" : ""} ${why ? "no" : ""}" data-pick="${esc(o.id)}" ${why ? "disabled" : ""}>
+          <div class="pick-main">
+            <div class="pick-name">${esc(o.name)}${on ? ` <span class="chip gilt">taken</span>` : ""}</div>
+            <div class="pick-desc">${esc(o.desc)}</div>
+            ${o.examples ? `<div class="pick-eg">e.g. ${esc(o.examples.slice(0, 4).join(", "))}</div>` : ""}
+            ${why ? `<div class="pick-no">${esc(why)}</div>` : ""}
+          </div>
+          <div class="pick-cost mono ${o.cost < 0 ? "neg" : ""}">${k.qty ? o.cost + " pts" : signed(o.cost)}</div>
+        </button>`;
+      }).join("") || `<p class="quiet">Nothing matches that.</p>`}
+    </div>`;
+
+  $("#pkX").onclick = closePicker;
+  const qi = $("#pkQ");
+  qi.oninput = e => { pickCtx.q = e.target.value; drawPicker(); $("#pkQ").focus(); };
+  $("#sheet2In").querySelectorAll("[data-pick]").forEach(btn => btn.onclick = () => {
+    const id = btn.dataset.pick, o = cat[id];
+    const arr = m[field] = m[field] || [];
+    if(k.qty){
+      const e = arr.find(x => x.id === id);
+      if(e) e.qty = (e.qty || 1) + 1;
+      else arr.push({id, qty: 1, mods: []});
+      toast(o.name + " taken");
+    } else if(chosen.has(id)){
+      m[field] = arr.filter(x => (x.id || x) !== id);
+      if(m.skins) delete m.skins[id];
+      toast(o.name + " dropped");
+    } else {
+      if(k.single){ arr.length = 0; if(m.skins) m.skins = {}; }
+      arr.push(id);
+      toast(o.name + " taken");
+    }
+    redraw(); drawPicker();
+  });
+}
+
+/* ---- calling a thing by your own name for it ---- */
+function askName(m, field, id){
+  const cat = catOf(GEAR_KIND[field].cat), o = cat[id]; if(!o) return;
+  const cur = (m.skins && m.skins[id]) || "";
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="skX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="eyebrow">Call it something else</div>
+    </div>
+    <p class="lead">This changes the name on this model only. The stats and the cost stay
+      exactly as they are.${o.examples ? " For instance: " + esc(o.examples.join(", ")) + "." : ""}</p>
+    <div class="field" style="margin:14px 0"><label>${esc(o.name)}</label>
+      <input class="input" id="skV" value="${esc(cur)}" placeholder="${esc(o.name)}" maxlength="40"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="skClear">Use the standard name</button>
+      <button class="btn primary" id="skGo">Rename</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  const done = v => {
+    m.skins = m.skins || {};
+    if(v && v !== o.name) m.skins[id] = v.slice(0, 40); else delete m.skins[id];
+    closePicker(); redraw();
+  };
+  $("#skX").onclick = closePicker;
+  $("#skClear").onclick = () => done("");
+  $("#skGo").onclick = () => done($("#skV").value.trim());
+  $("#skV").onkeydown = e => { if(e.key === "Enter") done($("#skV").value.trim()); };
+  setTimeout(() => { const i = $("#skV"); if(i){ i.focus(); i.select(); } }, 60);
+}
+
+/* ---- more than one band, because a person may keep several ---- */
+function openBands(){
+  const rows = store.bands.map(b => `
+    <div class="grow">
+      <button class="grow-main" data-band="${b.id}" style="text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer">
+        <div class="grow-name">${esc(b.name)}${b.id === store.activeId ? ` <span class="chip gilt">open</span>` : ""}</div>
+        <div class="grow-sub">${b.members.length} raised · ${bandSpent(b)} of ${b.budget} points fielded</div>
+      </button>
+      <div class="grow-r">
+        <button class="tiny" data-bcopy="${b.id}" title="Copy">⧉</button>
+        ${store.bands.length > 1 ? `<button class="tiny" data-bdel="${b.id}" aria-label="Delete">×</button>` : ""}
+      </div>
+    </div>`).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="bX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="eyebrow">Your bands</div>
+    </div>
+    ${rows}
+    <button class="btn sm ghost" id="bNew" style="margin-top:12px">Begin another band</button>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#bX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-band]").forEach(b => b.onclick = () => {
+    store.activeId = b.dataset.band; closePicker(); render();
+  });
+  $("#sheet2In").querySelectorAll("[data-bcopy]").forEach(b => b.onclick = () => {
+    const src = store.bands.find(x => x.id === b.dataset.bcopy);
+    const copy = JSON.parse(JSON.stringify(src));
+    copy.id = uid(); copy.name = src.name + " (again)";
+    copy.members.forEach(m => m.id = uid());
+    store.bands.push(copy); save(); openBands(); toast("Copied");
+  });
+  $("#sheet2In").querySelectorAll("[data-bdel]").forEach(b => b.onclick = () => {
+    store.bands = store.bands.filter(x => x.id !== b.dataset.bdel);
+    if(!store.bands.some(x => x.id === store.activeId)) store.activeId = store.bands[0].id;
+    save(); openBands(); render(); toast("Band removed");
+  });
+  $("#bNew").onclick = () => {
+    const b = newBand("The Unburied");
+    store.bands.push(b); store.activeId = b.id;
+    closePicker(); render(); toast("A new band");
+  };
+}
+
+
+/* light / dark is the viewer's choice and is remembered on this device */
+(function(){
+  const k="ep_theme";
+  try{ const t=localStorage.getItem(k); if(t) document.documentElement.setAttribute("data-theme",t); }catch(e){}
+  const b=document.getElementById("btnTheme");
+  if(b) b.onclick=()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const next=cur==="dark"?"light":cur==="light"?"dark":
+      (matchMedia("(prefers-color-scheme: dark)").matches?"light":"dark");
+    document.documentElement.setAttribute("data-theme",next);
+    try{ localStorage.setItem(k,next); }catch(e){}
+  };
+})();
+boot();
+
+</script>
+</body></html>
