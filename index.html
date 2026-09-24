@@ -4318,9 +4318,7 @@ function renderUnburied(b){
       <button class="iconbtn" id="bandCarry" aria-label="Carry this band out or bring one in" title="Carry out / bring in">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
           <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
-      <button class="btn sm ghost" id="bandScn">A scenario</button>
       <button class="btn sm ghost" id="bandAfter">After the battle</button>
-      <button class="btn sm ghost" id="bandQuest">${questOn() ? "The quest" : "Take them out"}</button>
       <button class="btn sm ghost" id="bandMenu">Bands</button>
     </div>
     <div class="gauge">
@@ -4349,9 +4347,7 @@ function renderUnburied(b){
   };
   $("#bandMenu").onclick = openBands;
   $("#bandCarry").onclick = openCarry;
-  $("#bandQuest").onclick = () => questOn() ? openFoes() : openQuestStart();
   $("#bandAfter").onclick = openAfter;
-  $("#bandScn").onclick = openGenerate;
 
   const qb = $("#questBar");
   qb.innerHTML = questOn() ? questBarHTML() : "";
@@ -7227,23 +7223,56 @@ function leaveRealm(){
 }
 
 /* ---- the Realm view ---- */
+/* The table: what to fight over, and who is at it. Arranging a game happens
+   here; playing your own models happens on their cards. */
+function tableHTML(){
+  const q = questOn();
+  return `
+  <div class="slab">
+    <div class="head"><span class="eyebrow">Something to fight over</span><span class="rule"></span>
+      ${q && Q.scenario ? `<span class="chip gilt">${esc(Q.scenario.name)}</span>` : ""}</div>
+    <p class="lead">${q
+      ? "A quest is running. The round, the markers and your models are on the Unburied side."
+      : "Have one written for you — a place, a reason, an enemy that fits the points, and where the markers go."}</p>
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
+      ${q ? `
+        <button class="btn" id="tbBrief" style="margin-left:0" ${Q.scenario ? "" : "disabled"}>The brief</button>
+        <button class="btn" id="tbFoes">The enemy</button>
+        <button class="btn" id="tbMarkers">Markers</button>
+        <button class="btn ghost" id="tbEnd" style="margin-left:auto">End the quest</button>`
+      : `
+        <button class="btn primary" id="tbScn" style="margin-left:0">Write a scenario</button>
+        <button class="btn ghost" id="tbPlain">Just take them out</button>`}
+    </div>
+  </div>`;
+}
+function bindTable(el){
+  const go = (id, fn) => { const b = el.querySelector("#" + id); if(b) b.onclick = fn; };
+  go("tbScn", openGenerate);
+  go("tbPlain", openQuestStart);
+  go("tbBrief", openBrief);
+  go("tbFoes", openFoes);
+  go("tbMarkers", () => openMarkers());
+  go("tbEnd", askEnd);
+}
+
 function renderRealm(){
   const el = $("#viewRealm");
   if(!realmAvailable()){
-    el.innerHTML = `
+    el.innerHTML = tableHTML() + `
       <div class="slab">
-        <div class="head"><span class="eyebrow">The Realm</span><span class="rule"></span></div>
-        <p class="lead">A shared table needs somewhere to share it. This copy of Epitaph
-          has no realm behind it — building, cards and a solo quest all work, but hosting
-          and joining do not.</p>
-        <p class="quiet" style="margin-top:9px">The hosted build at your own address has it.</p>
+        <div class="head"><span class="eyebrow">A shared table</span><span class="rule"></span></div>
+        <p class="lead">Hosting and joining need somewhere to share it, and this copy has no
+          realm behind it. Everything else works — writing a scenario, running it, your cards.</p>
+        <p class="quiet" style="margin-top:9px">The hosted build at your own address can share.</p>
       </div>`;
+    bindTable(el);
     return;
   }
   const inQuest = questOn() && Q.realm;
-  el.innerHTML = `
+  el.innerHTML = tableHTML() + `
     <div class="slab">
-      <div class="head"><span class="eyebrow">The realm</span><span class="rule"></span>
+      <div class="head"><span class="eyebrow">A shared table</span><span class="rule"></span>
         ${realmKey ? `<span class="chip good">entered</span>` : ""}</div>
       <p class="lead">Everyone who types the same realm name plays in the same one.
         Share it only with them — it is never stored, only its fingerprint.</p>
@@ -7283,6 +7312,7 @@ function renderRealm(){
       <p class="quiet" id="rmMsg" style="margin:9px 0 0"></p>
     </div>`}`;
 
+  bindTable(el);
   const enter = $("#rmEnter");
   if(enter) enter.onclick = async () => {
     const v = $("#rmName").value.trim();
