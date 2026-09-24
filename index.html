@@ -4127,7 +4127,10 @@ function newMember(){
     hp: null,
     /* Things picked up in a scenario. Kept apart from bought gear because
        finding something does not make the model cost more. */
-    found: []
+    found: [],
+    /* What the campaign left on them. Scars change what a model can do but
+       never what it cost: a wound is not a discount. */
+    scars: [], xp: 0
   };
   DIE_STATS.forEach(k => m[k] = h[k] || statDefault(k));
   return m;
@@ -4146,6 +4149,8 @@ function mendBand(b){
     out.armour = (out.armour || []).filter(id => RSX.armour[id.id || id]).map(id => id.id || id).slice(0, 1);
     out.items = (out.items || []).filter(e => RSX.item[e.id]).map(e => ({id: e.id, qty: Math.max(1, e.qty || 1)}));
     out.found = (out.found || []).filter(f => f && f.name).map(f => Object.assign({fid: f.fid || uid()}, f));
+    out.scars = (out.scars || []).filter(x => x && x.name).map(x => Object.assign({iid: x.iid || uid()}, x));
+    out.xp = Math.max(0, out.xp | 0);
     return out;
   });
   return b;
@@ -4238,17 +4243,19 @@ function skinOf(m, id, fallback){ return (m.skins && m.skins[id]) || fallback; }
    Kept on the model, not in the battle tracker, because damage taken in a
    scenario belongs to the Unburied and should still be there afterwards. */
 function healthOf(m){
-  const n = squadOf(m);
+  const n = squadOf(m), max = typeof effWounds === "function" ? effWounds(m) : m.wounds;
   let hp = Array.isArray(m.hp) ? m.hp.slice(0, n) : [];
-  while(hp.length < n) hp.push(m.wounds);
-  return hp.map(h => Math.max(0, Math.min(m.wounds, h | 0)));
+  while(hp.length < n) hp.push(max);
+  return hp.map(h => Math.max(0, Math.min(max, h | 0)));
 }
 function setHealth(m, hp){
-  m.hp = hp.map(h => Math.max(0, Math.min(m.wounds, h | 0)));
-  if(m.hp.every(h => h >= m.wounds)) m.hp = null;    // untouched again
+  const max = typeof effWounds === "function" ? effWounds(m) : m.wounds;
+  m.hp = hp.map(h => Math.max(0, Math.min(max, h | 0)));
+  if(m.hp.every(h => h >= max)) m.hp = null;    // untouched again
   save();
 }
-function isHurt(m){ return healthOf(m).some(h => h < m.wounds); }
+function isHurt(m){ const max = typeof effWounds === "function" ? effWounds(m) : m.wounds;
+  return healthOf(m).some(h => h < max); }
 function standing(m){ return healthOf(m).filter(h => h > 0).length; }
 function patchUp(m){ m.hp = null; save(); }
 
@@ -4266,6 +4273,7 @@ function effectiveMove(m){
   const a = (m.armour || [])[0];
   const o = a ? RSX.armour[a] : null;
   if(o && o.moveMod) v += o.moveMod;
+  if(typeof scarMods === "function"){ const sm = scarMods(m); if(sm.move) v += sm.move; }
   return Math.max(1, v);
 }
 
@@ -4310,6 +4318,7 @@ function renderUnburied(b){
       <button class="iconbtn" id="bandCarry" aria-label="Carry this band out or bring one in" title="Carry out / bring in">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
           <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
+      <button class="btn sm ghost" id="bandAfter">After the battle</button>
       <button class="btn sm ghost" id="bandQuest">${questOn() ? "The quest" : "Take them out"}</button>
       <button class="btn sm ghost" id="bandMenu">Bands</button>
     </div>
@@ -4327,6 +4336,8 @@ function renderUnburied(b){
       <div class="gauge-line" style="margin-top:9px">
         <span class="chip">${nField} of ${b.members.length} fielded</span>
         <span class="chip">${bandActs(b)} activations a round</span>
+        ${b.cash ? `<span class="chip gilt">${b.cash} Cash</span>` : ""}
+        ${(b.reputation || 0) !== 0 ? `<span class="chip ${b.reputation > 0 ? "good" : "bad"}">${esc((repLevel(b) || {}).name || "")} ${signed(b.reputation)}</span>` : ""}
       </div>
     </div>`;
 
@@ -4338,6 +4349,7 @@ function renderUnburied(b){
   $("#bandMenu").onclick = openBands;
   $("#bandCarry").onclick = openCarry;
   $("#bandQuest").onclick = () => questOn() ? openFoes() : openQuestStart();
+  $("#bandAfter").onclick = openAfter;
 
   const qb = $("#questBar");
   qb.innerHTML = questOn() ? questBarHTML() : "";
@@ -4369,6 +4381,8 @@ function renderUnburied(b){
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
         <span class="chip">${activationsOf(m)} act</span>
+        ${(m.scars || []).filter(x => x.scar).length ? `<span class="chip bad">${(m.scars || []).filter(x => x.scar).length} scar${(m.scars || []).filter(x => x.scar).length > 1 ? "s" : ""}</span>` : ""}
+        ${m.xp ? `<span class="chip gilt">${m.xp} XP</span>` : ""}
         ${(m.found || []).length ? `<span class="chip good">${m.found.length} found</span>` : ""}
         ${isHurt(m) ? `<span class="chip bad">${healthOf(m).reduce((s2, h) => s2 + h, 0)}/${m.wounds * n} ${esc(RSX.stat.wounds.name.toLowerCase())}${n > 1 ? " · " + standing(m) + " standing" : ""}</span>` : ""}
         ${(m.flaws || []).length ? `<span class="chip bad">${m.flaws.length} flaw${m.flaws.length > 1 ? "s" : ""}</span>` : ""}
@@ -5151,7 +5165,7 @@ function attackHTML(m, e){
   const w = catOf("weapons")[e.id]; if(!w) return "";
   const ranged = w.kind === "ranged";
   const stat = ranged ? "aim" : "fight";
-  const die = m[stat];
+  const die = effDie(m, stat);            // after any scars
   const shown = skinOf(m, e.id, w.name);
   const mods = (e.mods || []).map(x => catOf("mods")[x]).filter(Boolean);
   return `
@@ -5214,10 +5228,11 @@ function drawCard(){
     ${live ? questStripHTML(m, live) : (isHurt(m) ? hurtStripHTML(m) : "")}
 
     <div class="cstats">
-      ${DIE_STATS.map(k => statCell(RSX.stat[k].name, m[k], "roll 4+")).join("")}
+      ${DIE_STATS.map(k => { const e = effDie(m, k);
+          return statCell(RSX.stat[k].name, e, e !== m[k] ? "was " + m[k] : "roll 4+"); }).join("")}
       ${statCell(RSX.stat.wounds.name,
-          isHurt(m) ? healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + (m.wounds * n) : m.wounds,
-          isHurt(m) ? "left" : (n > 1 ? "each" : ""))}
+          isHurt(m) ? healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + (effWounds(m) * n) : effWounds(m),
+          isHurt(m) ? "left" : (effWounds(m) !== m.wounds ? "was " + m.wounds : (n > 1 ? "each" : "")))}
       ${statCell(RSX.stat.move.name, effectiveMove(m) + "cm", armour && armour.moveMod ? "with armour" : "")}
       ${statCell(RSX.stat.actions.name, m.actions, "an activation")}
       ${statCell("Activations", activationsOf(m), "a round")}
@@ -5238,6 +5253,7 @@ function drawCard(){
     ${saysHTML(m, "Powers", "powers")}
     ${saysHTML(m, "Flaws", "flaws", "bad")}
     ${saysHTML(m, "Carried", "items")}
+    ${scarsHTML(m)}
     ${foundHTML(m)}
 
     ${m.story ? `<div class="slab"><div class="head"><span class="eyebrow">Their story</span><span class="rule"></span></div>
@@ -5307,6 +5323,27 @@ function foundHTML(m){
         ${x.note ? `<div class="says-d">${esc(x.note)}</div>` : ""}
         ${x.from ? `<div class="says-d quiet">from ${esc(x.from)}</div>` : ""}
       </div>`).join("")}
+  </div>`;
+}
+
+/* What the campaign has done to them. */
+function scarsHTML(m){
+  const all = m.scars || [];
+  if(!all.length && !m.xp) return "";
+  const notes = scarNotes(m);
+  return `
+  <div class="slab">
+    <div class="head"><span class="eyebrow">What it has cost them</span><span class="rule"></span>
+      ${m.xp ? `<span class="chip gilt">${m.xp} XP</span>` : ""}</div>
+    ${all.map(x => `
+      <div class="says ${x.scar ? "bad" : ""}">
+        <div class="says-n">${esc(x.name)}
+          <span class="chip mono">d20 ${x.roll}</span>
+          ${x.scar ? `<span class="chip bad">scar</span>` : ""}</div>
+        <div class="says-d">${esc(x.effect)}</div>
+        ${x.mend ? `<div class="says-d quiet">Mendable in camp for ${x.mend.cost}: ${esc(x.mend.effect)}</div>` : ""}
+      </div>`).join("")}
+    ${notes.length ? `<p class="quiet" style="margin:9px 0 0">Also: ${esc(notes.join(", "))}.</p>` : ""}
   </div>`;
 }
 
@@ -6145,6 +6182,339 @@ function openFoes(){
     const u = Q.units.find(x => x.uid === uid);
     u.models[+i] = Math.max(0, Math.min(u.max, u.models[+i] + +d));
   });
+}
+
+/* ---- campaign.js ---- */
+/* =====================================================================
+   AFTER THE BATTLE
+   What a scenario leaves behind. A model taken Down rolls Fate on a d20:
+   most of the time it walks it off, sometimes it keeps something for good.
+   A scar is not a number in a ledger — it changes what the model can do,
+   and it earns a name.
+
+   Every roll, every effect and every price here is read from the ruleset.
+   ===================================================================== */
+
+const INJ = () => RS.injuries || [];
+function injuryFor(roll){
+  return INJ().find(i => roll >= i.roll[0] && roll <= i.roll[1]) || null;
+}
+function d20(){ return 1 + Math.floor(Math.random() * 20); }
+
+/* Stabilised rolls two and keeps the higher, Marked two and keeps the lower,
+   and one cancels the other. */
+function rollFate(mode){
+  const a = d20();
+  if(mode === "plain") return {roll: a, dice: [a]};
+  const b = d20();
+  const keep = mode === "advantage" ? Math.max(a, b) : Math.min(a, b);
+  return {roll: keep, dice: [a, b]};
+}
+function fateMode(stabilised, marked){
+  if(RS.fateRules.cancel && stabilised && marked) return "plain";
+  if(stabilised) return "advantage";
+  if(marked) return "disadvantage";
+  return "plain";
+}
+
+/* ---- what a scar does to a model ----
+   Scars change what a model can do but never what it cost. A wound is not a
+   discount, and re-pricing a band mid-campaign because someone lost an eye
+   would be a nasty surprise. */
+function scarMods(m){
+  const out = {};
+  (m.scars || []).forEach(s => {
+    Object.keys(s.mods || {}).forEach(k => {
+      if(typeof s.mods[k] === "number") out[k] = (out[k] || 0) + s.mods[k];
+      else out[k] = s.mods[k];
+    });
+  });
+  return out;
+}
+function effDie(m, key){
+  const mods = scarMods(m);
+  let d = m[key];
+  if(mods[key]) d = dieStep(d, mods[key]) || d;
+  return d;
+}
+function effWounds(m){
+  const mods = scarMods(m);
+  return Math.max(1, m.wounds + (mods.wounds || 0));
+}
+function scarNotes(m){
+  const mods = scarMods(m), out = [];
+  if(mods.noSprint) out.push("cannot Sprint");
+  if(mods.noTwoHanded) out.push("no two-handed weapons");
+  if(mods.noShield) out.push("no shield");
+  if(mods.startStrain) out.push("starts every battle with " + mods.startStrain + " Strain");
+  return out;
+}
+
+/* ---- the roll ---- */
+function applyInjury(m, inj, roll){
+  const rec = {iid: uid(), id: inj.id, name: inj.name, roll,
+               effect: inj.effect || "", mods: inj.mods || null,
+               scar: !!inj.scar, hooks: inj.epithetHooks || [],
+               mend: inj.mend || null, replace: inj.replace || []};
+  if(inj.id === "dead"){ rec.dead = true; }
+  /* The bought profile is never touched. A Health change from an injury is a
+     scar modifier, applied by effWounds — writing it into m.wounds would both
+     double-count it and quietly re-price the model. */
+  if(inj.id === "bruisedButWiser" || /\+1 XP/i.test(inj.effect || "")) m.xp = (m.xp || 0) + 1;
+  m.scars = (m.scars || []).concat([rec]);
+  save();
+  return rec;
+}
+
+/* ---- what the band takes away ---- */
+function awardBattle(b, {won, size, difficultyMult}){
+  const aw = RS.campaign.awards;
+  const cash = Math.round((size || 0) * aw.cash.winPayoutPctOfGameSize *
+                          (won ? 1 : aw.cash.lossFactor) * (difficultyMult || 1));
+  b.cash = (b.cash || 0) + cash;
+  b.reputation = (b.reputation || 0) + (won ? aw.reputation.win : aw.reputation.withdrawOrBreak);
+  save();
+  return {cash, rep: won ? aw.reputation.win : aw.reputation.withdrawOrBreak};
+}
+function repLevel(b){
+  const n = b.reputation || 0;
+  return (RS.campaign.reputationLevels || []).find(l => n >= l.min && n <= l.max) || null;
+}
+
+/* =====================================================================
+   The sheet: every model that owes a roll, one at a time.
+   ===================================================================== */
+let afterState = null;
+
+function openAfter(){
+  const b = band();
+  /* Who rolls: the ruleset says anyone Down at the end, or Marked at any point. */
+  const owed = b.members.filter(m => {
+    const u = questOn() ? questUnit(m) : null;
+    const down = u ? unitDown(u) : healthOf(m).every(h => h <= 0);
+    const marked = u ? (u.cond || []).includes("marked") : false;
+    return down || marked;
+  }).map(m => ({id: m.id, marked: questOn() && questUnit(m) ? (questUnit(m).cond || []).includes("marked") : false,
+                stabilised: questOn() && questUnit(m) ? (questUnit(m).cond || []).includes("stabilised") : false}));
+
+  afterState = {owed, done: [], step: owed.length ? "fate" : "spoils", won: true, size: (questOn() && Q.size) || b.budget};
+  drawAfter();
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+}
+
+function drawAfter(){
+  const b = band();
+  const S = afterState;
+  if(S.step === "fate" && S.owed.length){
+    const next = S.owed[0];
+    const m = b.members.find(x => x.id === next.id);
+    const mode = fateMode(next.stabilised, next.marked);
+    $("#sheet2In").innerHTML = `
+      <div class="sheet-head">
+        <button class="iconbtn" id="afX" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button><div class="eyebrow">Fate</div>
+        <span class="chip">${S.owed.length} to roll</span></div>
+      <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
+        <div class="cardname" style="font-size:22px">${esc(m.name) || "Unnamed"}</div>
+        ${m.epithet ? `<div class="cardepi">“${esc(m.epithet)}”</div>` : ""}
+      </div>
+      <p class="lead">Taken Down. ${mode === "advantage"
+        ? "Stabilised by a friend — roll two d20 and keep the higher."
+        : mode === "disadvantage" ? "Marked — roll two d20 and keep the lower."
+        : next.stabilised && next.marked ? "Stabilised and Marked, which cancel — one d20."
+        : "One d20."}</p>
+      <div class="sheet-actions" style="margin-top:16px">
+        <button class="btn primary" id="afRoll" style="margin-left:0">Roll Fate</button>
+        <button class="btn ghost" id="afSkip">Skip this one</button>
+      </div>`;
+    $("#afX").onclick = closeAfter;
+    $("#afSkip").onclick = () => { S.owed.shift(); if(!S.owed.length) S.step = "spoils"; drawAfter(); };
+    $("#afRoll").onclick = () => {
+      const r = rollFate(mode);
+      const inj = injuryFor(r.roll);
+      const rec = applyInjury(m, inj, r.roll);
+      S.done.push({id: m.id, rec, dice: r.dice});
+      S.owed.shift();
+      S.step = "result"; S.showing = {id: m.id, rec, dice: r.dice, mode};
+      drawAfter();
+    };
+    return;
+  }
+
+  if(S.step === "result"){
+    const {id, rec, dice, mode} = S.showing;
+    const m = b.members.find(x => x.id === id);
+    const wantsEpithet = rec.scar || rec.id === "newOutlook" || (rec.hooks || []).length;
+    $("#sheet2In").innerHTML = `
+      <div class="sheet-head"><div class="eyebrow">Fate</div>
+        <span class="chip mono">d20 ${dice.join(" / ")}${dice.length > 1 ? " — kept " + rec.roll : ""}</span></div>
+      <div class="slab" style="margin-top:6px;border-color:${rec.dead ? "var(--rust)" : rec.scar ? "var(--rust)" : "var(--gilt-deep)"}">
+        <div class="head"><span class="eyebrow">${esc(m.name)}</span><span class="rule"></span>
+          <span class="chip mono">${rec.roll}</span></div>
+        <div class="cardname" style="font-size:19px;margin-bottom:6px">${esc(rec.name)}</div>
+        <p class="lead" style="margin:0">${esc(rec.effect)}</p>
+        ${rec.scar ? `<p class="quiet" style="margin:9px 0 0">A scar. It stays, and it shows on the card.</p>` : ""}
+        ${rec.mend ? `<p class="quiet" style="margin:6px 0 0">Can be mended in camp for ${rec.mend.cost}: ${esc(rec.mend.effect)}</p>` : ""}
+      </div>
+      ${rec.dead ? `<p class="lead">Gone. Their gear returns to the stash.</p>` : ""}
+      <div class="sheet-actions" style="margin-top:14px">
+        ${wantsEpithet && !rec.dead ? `<button class="btn" id="afEpi" style="margin-left:0">Give them a name for it</button>` : ""}
+        ${rec.dead ? `<button class="btn danger ghost" id="afBury" style="margin-left:0">Bury them</button>` : ""}
+        <button class="btn primary" id="afNext" style="margin-left:auto">
+          ${S.owed.length ? "Next — " + S.owed.length + " to go" : "On to the spoils"}</button>
+      </div>`;
+    const epi = $("#afEpi");
+    if(epi) epi.onclick = () => openEpithet(m, rec);
+    const bury = $("#afBury");
+    if(bury) bury.onclick = () => {
+      const bb = band();
+      bb.members = bb.members.filter(x => x.id !== m.id);
+      save(); toast(m.name + " is buried");
+      S.step = S.owed.length ? "fate" : "spoils"; drawAfter(); render();
+    };
+    $("#afNext").onclick = () => { S.step = S.owed.length ? "fate" : "spoils"; drawAfter(); };
+    return;
+  }
+
+  /* ---- the spoils ---- */
+  const aw = RS.campaign.awards;
+  const lvl = repLevel(b);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="afX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">What you take away</div></div>
+
+    <div class="slab" style="margin-top:6px">
+      <div class="head"><span class="eyebrow">How it went</span><span class="rule"></span></div>
+      <div class="sheet-actions" style="margin-bottom:12px">
+        <button class="btn ${S.won ? "primary" : "ghost"}" id="afWon" style="margin-left:0">Won</button>
+        <button class="btn ${S.won ? "ghost" : "primary"}" id="afLost">Lost or withdrew</button>
+      </div>
+      <div class="field"><label>Game size in points</label>
+        <input class="input mono" id="afSize" inputmode="numeric" value="${S.size}"></div>
+      <p class="quiet" style="margin:9px 0 0">Cash is ${Math.round(aw.cash.winPayoutPctOfGameSize * 100)}% of
+        the game size${S.won ? "" : ", halved for a loss"}.</p>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">XP</span><span class="rule"></span>
+        <span class="quiet">${aw.xp.participate} each for being there${S.won ? ", +" + aw.xp.win + " for the win" : ""}</span></div>
+      ${b.members.map(m => `
+        <div class="grow">
+          <div class="grow-main"><div class="grow-name">${esc(m.name) || "Unnamed"}</div>
+            <div class="grow-sub">${m.xp || 0} XP saved up</div></div>
+          <div class="grow-r"><div class="stepper sm">
+            <button data-xp="${esc(m.id)}|-1">−</button>
+            <span>${(S.xp && S.xp[m.id]) !== undefined ? S.xp[m.id] : defaultXP(m, S)}</span>
+            <button data-xp="${esc(m.id)}|1">+</button></div></div>
+        </div>`).join("")}
+      <p class="quiet" style="margin:10px 0 0">Add ${aw.xp.takeEnemyDown} for each enemy taken Down
+        (up to ${aw.xp.takeEnemyDownMax}) and ${aw.xp.objectiveAction} for an objective action.</p>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">The band</span><span class="rule"></span></div>
+      <div class="grow"><div class="grow-main"><div class="grow-name">Cash</div>
+        <div class="grow-sub">${b.cash || 0} now</div></div>
+        <div class="grow-r"><span class="mono">+${cashFor(S)}</span></div></div>
+      <div class="grow"><div class="grow-main"><div class="grow-name">Reputation</div>
+        <div class="grow-sub">${b.reputation || 0}${lvl ? " · " + lvl.name : ""}</div></div>
+        <div class="grow-r"><span class="mono">${signed(S.won ? aw.reputation.win : aw.reputation.withdrawOrBreak)}</span></div></div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn ghost" id="afCancel" style="margin-left:0">Not yet</button>
+      <button class="btn primary" id="afDone">Take it all</button>
+    </div>`;
+
+  $("#afX").onclick = closeAfter;
+  $("#afCancel").onclick = closeAfter;
+  $("#afWon").onclick = () => { S.won = true; drawAfter(); };
+  $("#afLost").onclick = () => { S.won = false; drawAfter(); };
+  $("#afSize").oninput = e => { S.size = Math.max(0, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0); };
+  $("#sheet2In").querySelectorAll("[data-xp]").forEach(btn => btn.onclick = () => {
+    const [id, d] = btn.dataset.xp.split("|");
+    S.xp = S.xp || {};
+    const cur = S.xp[id] !== undefined ? S.xp[id] : defaultXP(b.members.find(x => x.id === id), S);
+    S.xp[id] = Math.max(0, cur + +d);
+    drawAfter();
+  });
+  $("#afDone").onclick = () => {
+    b.members.forEach(m => {
+      const n = (S.xp && S.xp[m.id] !== undefined) ? S.xp[m.id] : defaultXP(m, S);
+      m.xp = (m.xp || 0) + n;
+    });
+    const got = awardBattle(b, {won: S.won, size: S.size, difficultyMult: 1});
+    save(); closeAfter(); render();
+    toast("+" + got.cash + " Cash, " + signed(got.rep) + " Reputation");
+  };
+}
+function defaultXP(m, S){
+  const aw = RS.campaign.awards.xp;
+  return aw.participate + (S.won ? aw.win : 0);
+}
+function cashFor(S){
+  const aw = RS.campaign.awards.cash;
+  return Math.round((S.size || 0) * aw.winPayoutPctOfGameSize * (S.won ? 1 : aw.lossFactor));
+}
+function closeAfter(){ afterState = null; closePicker(); render(); }
+
+/* ---- an epithet for what it cost them ---- */
+async function openEpithet(m, rec){
+  const ai = await getAI();
+  const hooks = (rec.hooks || []).join(", ");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="epX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">An epithet</div></div>
+    <p class="lead">${esc(m.name)} came out of that with ${esc(rec.name.toLowerCase())}.
+      People will call them something for it.</p>
+    ${hooks ? `<p class="quiet" style="margin-top:8px">Words that fit: ${esc(hooks)}</p>` : ""}
+    <div class="field" style="margin:14px 0">
+      <label>Epithet</label>
+      <input class="input serif" id="epV" maxlength="42" value="${esc(m.epithet || "")}"
+        placeholder="the Quiet, Ashmouth, One-Eye"></div>
+    ${ai ? `<div class="sheet-actions" style="margin-bottom:12px">
+      <button class="btn" id="epAsk" style="margin-left:0">Suggest three</button></div>
+      <div id="epOut"></div>` : ""}
+    <div class="sheet-actions">
+      <button class="btn ghost" id="epNone" style="margin-left:0">They keep their name</button>
+      <button class="btn primary" id="epGo">That is what they are called</button>
+    </div>`;
+  $("#epX").onclick = drawAfter;
+  $("#epNone").onclick = drawAfter;
+  $("#epGo").onclick = () => {
+    m.epithet = $("#epV").value.trim().slice(0, 42);
+    save(); toast(m.name + (m.epithet ? " — “" + m.epithet + "”" : ""));
+    drawAfter(); render();
+  };
+  const ask = $("#epAsk");
+  if(ask) ask.onclick = async () => {
+    const out = $("#epOut");
+    ask.disabled = true; out.innerHTML = `<p class="quiet">Thinking…</p>`;
+    try{
+      const list = await ai.json(
+`Three epithets for a character in ${RS.meta.name}, a grim tabletop skirmish game.
+An epithet is what others call someone after something happened to them: short, two or three
+words at most, like "the Quiet", "Ashmouth", "One-Eye", "who came back".
+
+The character: ${m.name}${m.role ? ", " + m.role : ""}.
+What happened: ${rec.name} — ${rec.effect}
+${hooks ? "Words that fit: " + hooks : ""}
+${m.story ? "Their story: " + m.story : ""}
+
+Reply with ONLY a JSON array of exactly 3 strings. No other text.`, {modelTier: "quick", cache: false});
+      const three = (Array.isArray(list) ? list : []).map(x => String(x).trim()).filter(Boolean).slice(0, 3);
+      out.innerHTML = three.length
+        ? three.map(t => `<button class="btn sm ghost" data-epi="${esc(t)}" style="margin:0 6px 6px 0">${esc(t)}</button>`).join("")
+        : `<p class="quiet">Nothing came back.</p>`;
+      out.querySelectorAll("[data-epi]").forEach(bn => bn.onclick = () => { $("#epV").value = bn.dataset.epi; });
+    }catch(e){ out.innerHTML = `<p class="quiet">${esc(aiTrouble(e && e.code))}</p>`; }
+    finally{ ask.disabled = false; }
+  };
 }
 
 /* ---- realm.js ---- */
