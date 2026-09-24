@@ -4195,6 +4195,9 @@ function renderUnburied(b){
   $("#bandHead").innerHTML = `
     <div class="band">
       <input class="band-name" id="bandName" value="${esc(b.name)}" maxlength="42" spellcheck="false">
+      <button class="iconbtn" id="bandCarry" aria-label="Carry this band out or bring one in" title="Carry out / bring in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
+          <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
       <button class="btn sm ghost" id="bandMenu">Bands</button>
     </div>
     <div class="gauge">
@@ -4220,6 +4223,7 @@ function renderUnburied(b){
     renderUnburied(b);
   };
   $("#bandMenu").onclick = openBands;
+  $("#bandCarry").onclick = openCarry;
 
   const list = $("#roster");
   list.innerHTML = "";
@@ -5159,6 +5163,185 @@ function aiSummary(m){
   const f = nm(m.flaws, "flaws");
   if(f.length) parts.push(f.join(", "));
   return parts.join("  ·  ");
+}
+
+/* ---- carry.js ---- */
+/* =====================================================================
+   CARRYING A BAND OUT
+   Your Unburied live on this phone, which means a dead phone loses them.
+   So a band can be written down as a code: short enough to paste into a
+   message, complete enough to raise the whole band again somewhere else.
+
+   The same code hands your band to whoever is running a game.
+   ===================================================================== */
+
+const CARRY_TAG = "EPITAPH1";
+
+/* Only what differs from a fresh model is written down. A band of six comes
+   out a few hundred characters rather than several thousand. */
+function thin(m){
+  const base = newMember(), out = {};
+  Object.keys(m).forEach(k => {
+    if(k === "id") return;
+    const v = m[k], b = base[k];
+    if(JSON.stringify(v) === JSON.stringify(b)) return;
+    if(v === "" || v === null || v === undefined) return;
+    if(Array.isArray(v) && !v.length) return;
+    if(k === "skins" && !Object.keys(v || {}).length) return;
+    out[k] = v;
+  });
+  return out;
+}
+function bandPayload(b){
+  return {t: CARRY_TAG, rs: RS.meta.version, name: b.name, budget: b.budget,
+          members: b.members.map(thin)};
+}
+
+/* gzip where the browser has it, which is most places now; plain where not.
+   The prefix says which, so a code made on one device opens on another. */
+async function packCode(obj){
+  const json = JSON.stringify(obj);
+  const bytes = new TextEncoder().encode(json);
+  let body, mark = "R";
+  if(typeof CompressionStream === "function"){
+    try{
+      const cs = new CompressionStream("gzip");
+      const w = cs.writable.getWriter(); w.write(bytes); w.close();
+      const buf = await new Response(cs.readable).arrayBuffer();
+      body = new Uint8Array(buf); mark = "Z";
+    }catch(e){ body = bytes; }
+  } else body = bytes;
+  let s = ""; body.forEach(c => s += String.fromCharCode(c));
+  return CARRY_TAG + mark + ":" + btoa(s);
+}
+async function unpackCode(code){
+  const raw = String(code || "").trim().replace(/\s+/g, "");
+  const m = raw.match(/^EPITAPH1([ZR]):(.+)$/);
+  if(!m) throw new Error("That is not an Epitaph code.");
+  const bin = atob(m[2]);
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  let json;
+  if(m[1] === "Z"){
+    const ds = new DecompressionStream("gzip");
+    const w = ds.writable.getWriter(); w.write(bytes); w.close();
+    json = await new Response(ds.readable).text();
+  } else json = new TextDecoder().decode(bytes);
+  const obj = JSON.parse(json);
+  if(obj.t !== CARRY_TAG) throw new Error("That code is not from Epitaph.");
+  return obj;
+}
+
+/* Whatever arrives is put through the same mending every saved band gets,
+   so a code written against an older ruleset still opens. */
+function adoptBand(obj){
+  const b = newBand(obj.name || "The Unburied");
+  b.budget = Math.max(0, parseInt(obj.budget, 10) || 500);
+  b.members = (obj.members || []).map(m => Object.assign(newMember(), m, {id: uid()}));
+  mendBand(b);
+  return b;
+}
+
+/* ---- the sheet ---- */
+async function openCarry(){
+  const b = band();
+  const code = await packCode(bandPayload(b));
+  const stale = (RS.meta.version !== undefined);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="cyX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="eyebrow">Carry them out</div>
+    </div>
+
+    <p class="lead">Your Unburied live on this phone and nowhere else. This is how
+      they leave it \u2014 to keep somewhere safe, to move to another phone, or to hand
+      to whoever is running a game.</p>
+
+    <div class="slab" style="margin-top:14px">
+      <div class="head"><span class="eyebrow">${esc(b.name)}</span><span class="rule"></span>
+        <span class="chip">${b.members.length} raised</span></div>
+      <textarea class="input mono" id="cyCode" rows="4" readonly
+        style="font-size:11px;line-height:1.4">${esc(code)}</textarea>
+      <div class="sheet-actions" style="margin-top:10px">
+        <button class="btn sm" id="cySave">Save a file</button>
+        <button class="btn sm primary" id="cyCopy" style="margin-left:auto">Copy the code</button>
+      </div>
+      <p class="quiet" style="margin:9px 0 0">${code.length} characters \u00b7 written against ruleset ${esc(RS.meta.version)}</p>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Bring one in</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 9px">Paste a code and the band is raised alongside
+        yours. Nothing you already have is touched.</p>
+      <textarea class="input mono" id="cyIn" rows="3" placeholder="EPITAPH1Z:\u2026"
+        style="font-size:11px;line-height:1.4"></textarea>
+      <div class="sheet-actions" style="margin-top:10px">
+        <label class="btn sm ghost" style="cursor:pointer">Open a file
+          <input type="file" id="cyFile" accept=".json,.txt,application/json" hidden></label>
+        <button class="btn sm primary" id="cyGo" style="margin-left:auto">Raise them</button>
+      </div>
+      <p class="quiet" id="cyMsg" style="margin:9px 0 0"></p>
+    </div>`;
+
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#cyX").onclick = closePicker;
+
+  $("#cyCopy").onclick = async () => {
+    const t = $("#cyCode");
+    try{ await navigator.clipboard.writeText(code); toast("Copied"); }
+    catch(e){ t.focus(); t.select(); toast("Select it and copy"); }
+  };
+  /* Two ways to hand over a file, because the two homes this app has differ.
+     In an artifact the viewer grants the save; on a plain web page a link does
+     it. If neither is possible the button says so rather than pretending. */
+  $("#cySave").onclick = async () => {
+    const name = (b.name || "unburied").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() + ".json";
+    const data = JSON.stringify(bandPayload(b), null, 2);
+    let saver = null;
+    try{ saver = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; }catch(e){}
+    if(saver){
+      try{ await saver.save({filename: name, data}); toast("Saved"); }
+      catch(e){ toast("The save was declined"); }
+      return;
+    }
+    try{
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([data], {type: "application/json"}));
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast("Saved");
+    }catch(e){ toast("Files cannot be saved here \u2014 copy the code instead"); }
+  };
+
+  const bring = async text => {
+    const msg = $("#cyMsg");
+    try{
+      let obj;
+      const t = String(text || "").trim();
+      if(t.startsWith("{")) obj = JSON.parse(t);        // a saved file, pasted or opened
+      else obj = await unpackCode(t);
+      if(obj.t !== CARRY_TAG) throw new Error("That is not an Epitaph band.");
+      const nb = adoptBand(obj);
+      store.bands.push(nb); store.activeId = nb.id;
+      save(); closePicker(); render();
+      toast(nb.name + " raised \u2014 " + nb.members.length + " of them");
+      if(obj.rs && obj.rs !== RS.meta.version)
+        setTimeout(() => toast("Written against ruleset " + obj.rs + "; costs may differ"), 2400);
+    }catch(e){
+      msg.textContent = e.message || "That did not open.";
+      msg.style.color = "var(--rust)";
+    }
+  };
+  $("#cyGo").onclick = () => bring($("#cyIn").value);
+  $("#cyFile").onchange = e => {
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => bring(String(r.result));
+    r.readAsText(f);
+  };
 }
 
 
