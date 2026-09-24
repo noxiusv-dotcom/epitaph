@@ -350,8 +350,84 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .marker.add.conjure{border-color:var(--gilt-deep)}
 .marker.add.conjure .plus{color:var(--gilt)}
 .marker.add.conjure:hover{background:var(--gilt-glow)}
+
+/* ---- the quest ---- */
+.qbar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;justify-content:space-between;
+  margin:14px 0 0;padding:11px 13px;border-radius:var(--r-md);
+  background:var(--stone-1);border:1px solid var(--gilt-deep)}
+.qbar-l{display:flex;align-items:baseline;gap:9px}
+.qbar-l b{font-family:"Cinzel",serif;font-size:14px;letter-spacing:.06em}
+.qbar-l span{font-size:12px;color:var(--ash-mute)}
+.qbar-r{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.qbar-r button.chip{cursor:pointer;font:inherit;font-size:11.5px}
+.qbar-r button.chip:hover{border-color:var(--gilt)}
+
+.qstrip{margin:0 0 16px;padding:12px 13px;border-radius:var(--r-md);
+  background:var(--stone-1);border:1px solid var(--gilt-deep)}
+.qstrip.down{border-color:var(--rust)}
+.qs-top{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:10px}
+.qs-round{font-family:"Cinzel",serif;font-size:11.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gilt)}
+.qs-top button.chip{cursor:pointer;font:inherit;font-size:11.5px}
+.qs-hp{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.qs-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.qs-conds{display:flex;flex-wrap:wrap;gap:5px}
+.qs-eff{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.qs-eff div{font-size:12px;color:var(--ash-dim);line-height:1.45}
+.qs-eff b{color:var(--ash);margin-right:4px}
+.qp-btn{font:inherit;font-size:11.5px;padding:5px 11px;border-radius:999px;
+  border:1px solid var(--line);background:var(--stone-2);color:var(--ash-dim);cursor:pointer}
+.qp-btn.ghost{background:transparent;opacity:.8}
+.qp-btn:disabled{opacity:.35;cursor:default}
+.qp-cond{font:inherit;font-size:11px;padding:3px 9px;border-radius:999px;
+  border:1px dashed var(--line);background:transparent;color:var(--ash-mute);cursor:pointer}
+.qp-cond.on{border-style:solid;border-color:var(--gilt);color:var(--gilt);background:var(--gilt-glow)}
+.pip{display:inline-flex;align-items:center;gap:4px;padding:2px 5px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--stone-2)}
+.pip b{min-width:16px;text-align:center;font-family:"Space Mono",monospace;font-size:13px}
+.pip.hurt b{color:var(--gilt)}
+.pip.dead{opacity:.4}.pip.dead b{text-decoration:line-through}
+.pip button{width:20px;height:20px;border:0;border-radius:5px;background:transparent;
+  color:var(--ash-mute);cursor:pointer;font:inherit;line-height:1}
+.pip button:hover{background:var(--stone-3);color:var(--ash)}
+
+.mkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin:14px 0 0}
+.mk{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;
+  border-radius:var(--r-md);border:1px solid var(--line);background:var(--stone-2);
+  color:var(--ash-dim);cursor:pointer;font:inherit}
+.mk b{font-family:"Space Mono",monospace;font-size:17px;color:var(--ash)}
+.mk span{font-size:10px;text-align:center;line-height:1.25}
+.mk.on{border-color:var(--gilt);background:var(--gilt-glow)}
+.mk.seen{border-style:dashed}
+.mk.sprung{opacity:.7}
+.mk.gone{opacity:.35;cursor:default}
+.mk.gone span{text-decoration:line-through}
+.mkout{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.mkres{padding:10px 12px;border-radius:var(--r-md);background:var(--stone-1);
+  border:1px solid var(--gilt-deep)}
+.mkres b{display:block;font-family:"Cinzel",serif;font-size:12px;letter-spacing:.06em;
+  color:var(--gilt);margin-bottom:4px}
+.mkres span{font-size:13px;color:var(--ash-dim);line-height:1.5}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+
+.qstrip.hurtonly{border-color:var(--rust)}
+.qstrip.hurtonly .qs-round{color:var(--rust)}
+.qs-top button.chip{cursor:pointer;font:inherit}
+
+.says-n{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 </style>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8DGD6vJa5RWpr9ukeu0NzKJabxFH-ftc",
+  authDomain: "battle-bunker-def3a.firebaseapp.com",
+  databaseURL: "https://battle-bunker-def3a-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "battle-bunker-def3a",
+  storageBucket: "battle-bunker-def3a.firebasestorage.app",
+  messagingSenderId: "75360011836",
+  appId: "1:75360011836:web:5599f300d34ff58b0ca539"
+};</script>
 </head>
 
 <body>
@@ -388,6 +464,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 <main>
   <section id="viewUnburied">
     <div id="bandHead"></div>
+    <div id="questBar"></div>
     <div class="markers" id="roster" style="margin-top:16px"></div>
   </section>
 
@@ -4044,7 +4121,13 @@ function newMember(){
     actions: h.actions !== undefined ? h.actions : statDefault("actions"),
     size: statDefault("size"),
     traits: [], abilities: [], powers: [], flaws: [],
-    weapons: [], armour: [], items: [], skins: {}
+    weapons: [], armour: [], items: [], skins: {},
+    /* Health as it stands now, one entry per model. null means untouched.
+       A scenario writes here, so a model that was hurt stays hurt. */
+    hp: null,
+    /* Things picked up in a scenario. Kept apart from bought gear because
+       finding something does not make the model cost more. */
+    found: []
   };
   DIE_STATS.forEach(k => m[k] = h[k] || statDefault(k));
   return m;
@@ -4062,6 +4145,7 @@ function mendBand(b){
       .map(e => ({id: e.id, qty: Math.max(1, e.qty || 1), mods: (e.mods || []).filter(x => RSX.wmod[x])}));
     out.armour = (out.armour || []).filter(id => RSX.armour[id.id || id]).map(id => id.id || id).slice(0, 1);
     out.items = (out.items || []).filter(e => RSX.item[e.id]).map(e => ({id: e.id, qty: Math.max(1, e.qty || 1)}));
+    out.found = (out.found || []).filter(f => f && f.name).map(f => Object.assign({fid: f.fid || uid()}, f));
     return out;
   });
   return b;
@@ -4149,6 +4233,34 @@ function bandActs(b){ return b.members.filter(fielded).reduce((s, m) => s + acti
 /* A model's own name for a piece of gear. Stats and cost always come from the
    id, so renaming something can never move a number. */
 function skinOf(m, id, fallback){ return (m.skins && m.skins[id]) || fallback; }
+
+/* ---- what a model has left ----
+   Kept on the model, not in the battle tracker, because damage taken in a
+   scenario belongs to the Unburied and should still be there afterwards. */
+function healthOf(m){
+  const n = squadOf(m);
+  let hp = Array.isArray(m.hp) ? m.hp.slice(0, n) : [];
+  while(hp.length < n) hp.push(m.wounds);
+  return hp.map(h => Math.max(0, Math.min(m.wounds, h | 0)));
+}
+function setHealth(m, hp){
+  m.hp = hp.map(h => Math.max(0, Math.min(m.wounds, h | 0)));
+  if(m.hp.every(h => h >= m.wounds)) m.hp = null;    // untouched again
+  save();
+}
+function isHurt(m){ return healthOf(m).some(h => h < m.wounds); }
+function standing(m){ return healthOf(m).filter(h => h > 0).length; }
+function patchUp(m){ m.hp = null; save(); }
+
+/* ---- what a model picked up ---- */
+function giveFound(m, what){
+  m.found = (m.found || []).concat([Object.assign({fid: uid()}, what)]);
+  save();
+}
+function dropFound(m, fid){
+  m.found = (m.found || []).filter(f => f.fid !== fid);
+  save();
+}
 function effectiveMove(m){
   let v = m.move === undefined ? statDefault("move") : m.move;
   const a = (m.armour || [])[0];
@@ -4183,7 +4295,7 @@ function render(){
   $$(".way").forEach(w => w.classList.toggle("on", w.dataset.way === store.way));
   $("#viewUnburied").hidden = store.way !== "unburied";
   $("#viewRealm").hidden = store.way !== "realm";
-  if(store.way === "unburied") renderUnburied(b);
+  if(store.way === "unburied") renderUnburied(b); else renderRealm();
   save();
 }
 
@@ -4198,6 +4310,7 @@ function renderUnburied(b){
       <button class="iconbtn" id="bandCarry" aria-label="Carry this band out or bring one in" title="Carry out / bring in">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
           <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
+      <button class="btn sm ghost" id="bandQuest">${questOn() ? "The quest" : "Take them out"}</button>
       <button class="btn sm ghost" id="bandMenu">Bands</button>
     </div>
     <div class="gauge">
@@ -4224,6 +4337,11 @@ function renderUnburied(b){
   };
   $("#bandMenu").onclick = openBands;
   $("#bandCarry").onclick = openCarry;
+  $("#bandQuest").onclick = () => questOn() ? openFoes() : openQuestStart();
+
+  const qb = $("#questBar");
+  qb.innerHTML = questOn() ? questBarHTML() : "";
+  if(questOn()) questBarBind(qb);
 
   const list = $("#roster");
   list.innerHTML = "";
@@ -4251,6 +4369,8 @@ function renderUnburied(b){
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
         <span class="chip">${activationsOf(m)} act</span>
+        ${(m.found || []).length ? `<span class="chip good">${m.found.length} found</span>` : ""}
+        ${isHurt(m) ? `<span class="chip bad">${healthOf(m).reduce((s2, h) => s2 + h, 0)}/${m.wounds * n} ${esc(RSX.stat.wounds.name.toLowerCase())}${n > 1 ? " · " + standing(m) + " standing" : ""}</span>` : ""}
         ${(m.flaws || []).length ? `<span class="chip bad">${m.flaws.length} flaw${m.flaws.length > 1 ? "s" : ""}</span>` : ""}
         <span class="rule"></span>
         <span class="chip ${fielded(m) ? "gilt" : ""}" data-field>${fielded(m) ? "fielded" : "benched"}</span>
@@ -4772,6 +4892,235 @@ function openBands(){
   };
 }
 
+/* ---- quest.js ---- */
+/* =====================================================================
+   THE QUEST
+   A battle in progress. The app does not play the game; it remembers the
+   things that are easy to lose track of across a table — Health on each
+   model, Strain and its burnout number, Ready tokens, which units have
+   activated, how many activate per turn, and how close a side is to
+   breaking.
+
+   It also keeps the secrets. Markers are numbered on the table and blank;
+   what is under them lives here, and when a model walks into one, the app
+   knows which model it was and deals with it.
+   ===================================================================== */
+
+const QUEST_KEY = "ep_quest_v1";
+let Q = null;
+
+function questLoad(){
+  if(Q !== null) return Q;
+  try{ Q = JSON.parse(localStorage.getItem(QUEST_KEY) || "null"); }catch(e){ Q = null; }
+  return Q;
+}
+function questSave(){
+  try{ localStorage.setItem(QUEST_KEY, JSON.stringify(Q)); }catch(e){}
+  /* A shared quest publishes what this device owns and nothing else:
+     a player their own models, the host the table as well. */
+  if(Q && Q.realm && typeof pushMyUnits === "function"){
+    try{ pushMyUnits(); if(Q.host) pushTable(); }catch(e){}
+  }
+}
+function questOn(){ return !!questLoad(); }
+function questEnd(){ Q = null; try{ localStorage.removeItem(QUEST_KEY); }catch(e){} }
+
+/* ---- who is in it ---- */
+function questUnitFrom(m){
+  return {uid: m.id, side: "us", name: m.name || "Unnamed",
+          models: healthOf(m),                 // whatever it has left, not a fresh sheet
+          max: m.wounds, acts: activationsOf(m), used: 0,
+          strain: 0, ready: false, cond: [], pushed: false};
+}
+/* Anything that changes a unit's Health writes straight through to the model.
+   The tracker is a view of the Unburied, not a separate set of numbers. */
+function writeThrough(u){
+  if(!u || u.remote || u.side !== "us") return;
+  const m = band().members.find(x => x.id === u.uid);
+  if(m) setHealth(m, u.models);
+}
+function questFoe(name, count, health, acts){
+  return {uid: "f" + uid(), side: "them", name: name || "Enemy",
+          models: Array.from({length: count}, () => health),
+          max: health, acts, used: 0, strain: 0, ready: false, cond: [], pushed: false};
+}
+function questUnit(m){ return Q ? Q.units.find(u => u.uid === m.id) : null; }
+function unitDown(u){ return u.models.every(h => h <= 0); }
+function unitStanding(u){ return u.models.filter(h => h > 0).length; }
+
+function questBegin(size){
+  const b = band();
+  const mine = b.members.filter(fielded);
+  if(!mine.length){ toast("Field someone first"); return false; }
+  Q = {round: 1, step: "tempo", size,
+       nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
+       units: mine.map(questUnitFrom),
+       markers: rollMarkers(size),
+       log: []};
+  questSave();
+  return true;
+}
+
+/* ---- the ruleset's arithmetic ---- */
+function sideActs(side){
+  return Q.units.filter(u => u.side === side && !unitDown(u)).reduce((s, u) => s + u.acts, 0);
+}
+function questGroups(){
+  const a = sideActs("us"), b = sideActs("them");
+  if(!a || !b) return {us: 1, them: 1, usTotal: a, themTotal: b};
+  return a >= b ? {us: Math.ceil(a / b), them: 1, usTotal: a, themTotal: b}
+                : {us: 1, them: Math.ceil(b / a), usTotal: a, themTotal: b};
+}
+function lostFraction(side){
+  const us = Q.units.filter(u => u.side === side);
+  const start = us.reduce((s, u) => s + u.models.length, 0);
+  const lost = us.reduce((s, u) => s + u.models.filter(h => h <= 0).length, 0);
+  return start ? lost / start : 0;
+}
+function breakState(side){
+  const f = lostFraction(side);
+  const hit = RS.morale.break.thresholds.slice().sort((a, b) => b - a).find(t => f >= t);
+  return {at: hit || 0, frac: f};
+}
+function qlog(s){ Q.log.unshift({r: Q.round, t: s}); Q.log = Q.log.slice(0, 50); }
+
+/* ---- what happens to a model ---- */
+function hurtUnit(u, amount, why){
+  let left = amount;
+  while(left > 0){
+    const i = u.models.findIndex(h => h > 0);
+    if(i < 0) break;
+    const take = Math.min(u.models[i], left);
+    u.models[i] -= take; left -= take;
+    if(u.models[i] === 0) qlog(u.name + " — a model goes Down" + (why ? " (" + why + ")" : ""));
+  }
+  writeThrough(u);
+  questSave();
+}
+function strainUnit(u, d){
+  const st = RS.strain;
+  u.strain = Math.max(0, u.strain + d);
+  if(u.strain >= st.autoBurnoutAt){
+    u.strain = 0;
+    hurtUnit(u, st.burnoutEffect.damage, "burnout");
+    qlog(u.name + " burns out at " + st.autoBurnoutAt + " Strain");
+    toast("Burnout — " + st.burnoutEffect.damage + " damage, no save");
+  }
+  questSave();
+}
+function questStep(){
+  if(Q.step === "tempo"){
+    const gain = side => {
+      let g = RS.nerve.perRound;
+      if(Q.units.some(u => u.side === side && !unitDown(u) && (u.cond || []).includes("leader")))
+        g += RS.nerve.leaderStandingBonus;
+      return g;
+    };
+    Q.nerve.us = Math.min(RS.nerve.cap, Q.nerve.us + gain("us"));
+    Q.nerve.them = Math.min(RS.nerve.cap, Q.nerve.them + gain("them"));
+    Q.units.forEach(u => u.used = 0);
+    Q.step = "acts";
+    qlog("Round " + Q.round + " — Nerve gained, activations reset");
+  } else if(Q.step === "acts"){
+    Q.step = "end";
+  } else {
+    Q.units.forEach(u => {
+      if((u.cond || []).includes("burning")) hurtUnit(u, 1, "burning");
+      if((u.cond || []).includes("tainted")) hurtUnit(u, 1, "tainted");
+      u.ready = false;
+      if(!u.pushed && u.strain > 0) u.strain = Math.max(0, u.strain - RS.strain.restDecay.amount);
+      u.pushed = false;
+    });
+    Q.round++; Q.step = "tempo";
+    qlog("End of round — Burning and Tainted bite, Ready cleared, Strain rested");
+  }
+  questSave();
+}
+
+/* ---- markers: numbered on the table, known only here ---- */
+function markerKinds(){
+  const priced = id => (((RS.scenario.budget || {}).costs) || []).find(c => c.id === id) || {};
+  return {
+    trapVisible:  {label: "Trap", hurt: 2,
+      sprung: priced("trapVisible").desc || "Wits test or 2 damage.",
+      seen: "A trap, in plain view now. Go round it, or disarm it with Interact in contact (Wits; Tools step up)."},
+    trapHidden:   {label: "Hidden trap", hurt: 2,
+      sprung: "It springs. " + (priced("trapVisible").desc || "Wits test or 2 damage."),
+      seen: "A hidden trap, now visible. Go round it, or disarm it with Interact in contact."},
+    cache:        {label: "Cache", hurt: 0,
+      sprung: "A cache. It pays out only when a model in contact spends Interact on it (Wits test).",
+      seen: "A cache. Interact in contact to search it."},
+    hiddenUnit:   {label: "Hidden enemy", hurt: 0,
+      sprung: "Something was waiting here. Place it on the marker.",
+      seen: "A hidden enemy. Place it on the marker — it has not acted."},
+    ambushTrigger:{label: "Ambush", hurt: 0,
+      sprung: "Ambush. The reserve arrives — place it as the scenario says.",
+      seen: "An ambush trigger. Stepping within 5 cm brings the reserve in."},
+    objective:    {label: "Objective", hurt: 0,
+      sprung: "The objective is here.", seen: "The objective is here."},
+    nothing:      {label: "Nothing", hurt: 0,
+      sprung: "Nothing. Take the marker off the table.", seen: "A decoy. Take it off the table."}
+  };
+}
+function rollMarkers(size){
+  const sec = RS.scenario.secrets.markers;
+  const n = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
+  const capTrap = Math.max(1, Math.floor(size / 150));
+  const capCache = Math.max(1, Math.floor(size / 250));
+  const want = ["trapVisible", "trapHidden", "cache", "hiddenUnit", "ambushTrigger", "objective"];
+  const pool = [];
+  let traps = 0, caches = 0, objectives = 0, ambushes = 0, spins = 0;
+  while(pool.length < n - (sec.decoysMin || 1) && spins++ < 500){
+    const pick = want[Math.floor(Math.random() * want.length)];
+    if(pick === "trapVisible" || pick === "trapHidden"){ if(traps >= capTrap) continue; traps++; }
+    if(pick === "cache"){ if(caches >= capCache) continue; caches++; }
+    if(pick === "objective"){ if(objectives >= 1) continue; objectives++; }
+    if(pick === "ambushTrigger"){ if(ambushes >= 2) continue; ambushes++; }
+    pool.push(pick);
+  }
+  while(pool.length < n) pool.push("nothing");
+  for(let i = pool.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.map((kind, i) => ({n: i + 1, kind, state: "hidden"}));
+}
+
+/* A model walked into it. The app knows which model, so a trap lands where
+   it should rather than on whoever the table remembers last. */
+function resolveMarker(num, uid){
+  const mk = Q.markers.find(x => x.n === num); if(!mk) return null;
+  const k = markerKinds()[mk.kind];
+  const u = uid ? Q.units.find(x => x.uid === uid) : null;
+  mk.state = mk.kind === "nothing" ? "gone" : "sprung";
+  let extra = "";
+  if(k.hurt && u){
+    if(u.remote && typeof sendEvent === "function"){
+      /* Someone else's model: post what happened and let their app apply it. */
+      sendEvent(u.uid, {damage: k.hurt, why: "marker " + num});
+    } else {
+      hurtUnit(u, k.hurt, "marker " + num);
+    }
+    extra = " " + u.name + " takes " + k.hurt + ".";
+  }
+  qlog("Marker " + num + " — " + k.label + (u ? ", triggered by " + u.name : ""));
+  questSave();
+  return {label: k.label, text: k.sprung + extra, hurt: k.hurt && u ? u.name : null};
+}
+function revealMarkers(nums){
+  const out = [];
+  nums.forEach(num => {
+    const mk = Q.markers.find(x => x.n === num);
+    if(!mk || mk.state === "gone") return;
+    const k = markerKinds()[mk.kind];
+    if(mk.state === "hidden") mk.state = mk.kind === "nothing" ? "gone" : "seen";
+    out.push({n: num, label: k.label, text: k.seen});
+  });
+  qlog("Revealed " + nums.join(", ") + " without setting them off");
+  questSave();
+  return out;
+}
+
 /* ---- card.js ---- */
 /* =====================================================================
    THE CARD
@@ -4862,11 +5211,13 @@ function drawCard(){
         <span class="cardpts">${unitCost(m)} points</span></div>
     </div>
 
-    ${live ? questStripHTML(m, live) : ""}
+    ${live ? questStripHTML(m, live) : (isHurt(m) ? hurtStripHTML(m) : "")}
 
     <div class="cstats">
       ${DIE_STATS.map(k => statCell(RSX.stat[k].name, m[k], "roll 4+")).join("")}
-      ${statCell(RSX.stat.wounds.name, m.wounds, n > 1 ? "each" : "")}
+      ${statCell(RSX.stat.wounds.name,
+          isHurt(m) ? healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + (m.wounds * n) : m.wounds,
+          isHurt(m) ? "left" : (n > 1 ? "each" : ""))}
       ${statCell(RSX.stat.move.name, effectiveMove(m) + "cm", armour && armour.moveMod ? "with armour" : "")}
       ${statCell(RSX.stat.actions.name, m.actions, "an activation")}
       ${statCell("Activations", activationsOf(m), "a round")}
@@ -4887,6 +5238,7 @@ function drawCard(){
     ${saysHTML(m, "Powers", "powers")}
     ${saysHTML(m, "Flaws", "flaws", "bad")}
     ${saysHTML(m, "Carried", "items")}
+    ${foundHTML(m)}
 
     ${m.story ? `<div class="slab"><div class="head"><span class="eyebrow">Their story</span><span class="rule"></span></div>
       <p class="serif" style="margin:0;font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(m.story)}</p></div>` : ""}
@@ -4897,16 +5249,66 @@ function drawCard(){
     </div>`;
 
   const root = $("#sheetIn");
+  root.querySelectorAll("[data-drop-found]").forEach(btn => btn.onclick = () => {
+    dropFound(m, btn.dataset.dropFound);
+    drawCard(); renderUnburied(band());
+    toast("Left behind");
+  });
+  root.querySelectorAll("[data-hurt]").forEach(btn => btn.onclick = () => {
+    const [what, i, d] = btn.dataset.hurt.split("|");
+    if(what === "patch"){ patchUp(m); toast("Patched up"); }
+    else { const hp = healthOf(m); hp[+i] = hp[+i] + +d; setHealth(m, hp); }
+    drawCard(); renderUnburied(band());
+  });
   root.querySelector("#cBack").onclick = closeSheet;
   root.querySelector("#cDone").onclick = closeSheet;
   root.querySelector("#cEdit").onclick = () => openMember(m.id);
   if(live) questBind(root, m);
 }
 
-/* Until the quest side is built, these keep the card honest about it. */
-function questUnit(m){ return null; }
-function questStripHTML(){ return ""; }
-function questBind(){}
+/* Outside a quest a hurt model still shows what it lost, and can be patched
+   up when the band has had time to see to it. */
+function hurtStripHTML(m){
+  const hp = healthOf(m), n = hp.length;
+  return `
+  <div class="qstrip hurtonly">
+    <div class="qs-top">
+      <span class="qs-round">Carrying wounds</span>
+      <span class="chip bad">${hp.reduce((s, h) => s + h, 0)}/${m.wounds * n}</span>
+      ${n > 1 ? `<span class="chip">${hp.filter(h => h > 0).length}/${n} standing</span>` : ""}
+      <button class="chip good" data-hurt="patch">Patch up</button>
+    </div>
+    <div class="qs-hp">
+      ${hp.map((h, i) => `
+        <span class="pip ${h <= 0 ? "dead" : h <= m.wounds * 0.5 ? "hurt" : ""}">
+          <button data-hurt="hp|${i}|-1" aria-label="Worse">\u2212</button><b>${h}</b>
+          <button data-hurt="hp|${i}|1" aria-label="Better">+</button></span>`).join("")}
+    </div>
+    <p class="quiet" style="margin:0">Taken in a scenario and still carried. Patch up when
+      they have had time to mend.</p>
+  </div>`;
+}
+
+/* Things picked up in the field. Deliberately apart from bought gear: a model
+   that finds a medkit does not become worth more points for having found it. */
+function foundHTML(m){
+  const f = m.found || [];
+  if(!f.length) return "";
+  return `
+  <div class="slab">
+    <div class="head"><span class="eyebrow">Found in the field</span><span class="rule"></span>
+      <span class="quiet">costs nothing</span></div>
+    ${f.map(x => `
+      <div class="says">
+        <div class="says-n">${esc(x.name)}
+          ${x.roll ? `<span class="chip mono">${esc(RS.dice.lootDie)} ${x.roll}</span>` : ""}
+          <button class="tiny" data-drop-found="${esc(x.fid)}" style="margin-left:auto"
+            aria-label="Leave it behind">\u00d7</button></div>
+        ${x.note ? `<div class="says-d">${esc(x.note)}</div>` : ""}
+        ${x.from ? `<div class="says-d quiet">from ${esc(x.from)}</div>` : ""}
+      </div>`).join("")}
+  </div>`;
+}
 
 /* ---- ai.js ---- */
 /* =====================================================================
@@ -5342,6 +5744,685 @@ async function openCarry(){
     r.onload = () => bring(String(r.result));
     r.readAsText(f);
   };
+}
+
+/* ---- questview.js ---- */
+/* =====================================================================
+   THE QUEST, SEEN
+   Two places only. The bar above the roster holds what belongs to the
+   whole table — the round, Nerve, activations, victory points, markers.
+   Everything that belongs to a model lives on that model's card, because
+   that is where you are already looking.
+   ===================================================================== */
+
+function questBarHTML(){
+  if(!questOn()) return "";
+  const g = questGroups(), brk = breakState("us");
+  return `
+  <div class="qbar">
+    <div class="qbar-l">
+      <b>Round ${Q.round}</b>
+      <span>${Q.step === "tempo" ? "Tempo" : Q.step === "acts" ? "Activations" : "End step"}</span>
+    </div>
+    <div class="qbar-r">
+      <button class="chip gilt" data-q="nerve">◆ ${Q.nerve.us} Nerve</button>
+      <span class="chip" title="The side with more activations acts several units per turn">${g.usTotal} acts · ${g.us} a turn</span>
+      <button class="chip" data-q="vp">VP ${Q.vp.us}–${Q.vp.them}</button>
+      <button class="chip ${Q.markers.some(m => m.state === "hidden") ? "" : "good"}" data-q="markers">
+        ◈ ${Q.markers.filter(m => m.state === "hidden").length} unknown</button>
+      ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}% — break test</span>` : ""}
+      <button class="btn sm" data-q="step">${Q.step === "end" ? "Next round" : Q.step === "tempo" ? "Begin" : "End step"}</button>
+      <button class="btn sm ghost" data-q="end">End</button>
+    </div>
+  </div>`;
+}
+function questBarBind(root){
+  root.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
+    switch(b.dataset.q){
+      case "step":    questStep(); render(); break;
+      case "nerve":   openNerve(); break;
+      case "vp":      openVP(); break;
+      case "markers": openMarkers(); break;
+      case "end": askEnd(); break;
+    }
+  });
+}
+function askEnd(){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">End the quest</div></div>
+    <p class="lead">The tracker is cleared. What your Unburied lost, they keep — anyone
+      hurt in this scenario is still hurt, and you can patch them up from their card.</p>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="qeX">Keep going</button>
+      <button class="btn danger" id="qeGo" style="margin-left:auto">End it</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#qeX").onclick = closePicker;
+  $("#qeGo").onclick = () => { questEnd(); closePicker(); render(); toast("Quest ended"); };
+}
+
+/* ---- the live strip at the top of a card ---- */
+function questStripHTML(m, u){
+  const st = RS.strain, spent = u.used >= u.acts, down = unitDown(u);
+  const conds = ["shaken", "pinned", "burning", "tainted", "marked", "stabilised"];
+  const byId = {}; (RS.conditions || []).forEach(c => byId[c.id] = c);
+  const effects = (u.cond || []).map(id => byId[id]).filter(Boolean);
+  return `
+  <div class="qstrip ${down ? "down" : ""}">
+    <div class="qs-top">
+      <span class="qs-round">Round ${Q.round}</span>
+      <span class="chip ${spent ? "" : "gilt"}">${u.used}/${u.acts} used</span>
+      ${u.models.length > 1 ? `<span class="chip">${unitStanding(u)}/${u.models.length} standing</span>` : ""}
+      <button class="chip ${u.ready ? "good" : ""}" data-qp="ready">${u.ready ? "◉ Ready" : "○ Ready"}</button>
+      ${u.strain ? `<span class="chip ${u.strain >= st.autoBurnoutAt - 1 ? "bad" : "gilt"}">Strain ${u.strain}</span>` : ""}
+    </div>
+
+    <div class="qs-hp">
+      ${u.models.map((h, i) => `
+        <span class="pip ${h <= 0 ? "dead" : h <= u.max * 0.5 ? "hurt" : ""}">
+          <button data-qp="hp|${i}|-1" aria-label="Damage">−</button><b>${h}</b>
+          <button data-qp="hp|${i}|1" aria-label="Heal">+</button></span>`).join("")}
+    </div>
+
+    <div class="qs-row">
+      <button class="qp-btn" data-qp="act" ${spent || down ? "disabled" : ""}>Activate</button>
+      <button class="qp-btn ghost" data-qp="unact" ${!u.used ? "disabled" : ""}>undo</button>
+      <button class="qp-btn" data-qp="push" ${down ? "disabled" : ""}
+        title="A push costs 1 Strain; you burn out if the Risk die rolls under it">Push</button>
+      <button class="qp-btn ghost" data-qp="recover" ${!u.strain && !(u.cond || []).length ? "disabled" : ""}>Recover</button>
+    </div>
+
+    <div class="qs-conds">
+      ${conds.map(id => `<button class="qp-cond ${(u.cond || []).includes(id) ? "on" : ""}"
+        data-qp="cond|${id}">${id.charAt(0).toUpperCase() + id.slice(1)}</button>`).join("")}
+    </div>
+
+    ${effects.length || u.strain ? `<div class="qs-eff">
+      ${effects.map(c => `<div><b>${c.id.charAt(0).toUpperCase() + c.id.slice(1)}</b> ${esc(c.desc)}</div>`).join("")}
+      ${u.strain ? `<div><b>Strain ${u.strain}</b> ${u.strain >= st.autoBurnoutAt - 1
+        ? "One more push and it burns out: " + st.burnoutEffect.damage + " damage, no save."
+        : "Push again and the Risk die burns it out if it rolls under " + (u.strain + 1) + "."}</div>` : ""}
+    </div>` : ""}
+  </div>`;
+}
+function questBind(root, m){
+  const u = questUnit(m); if(!u) return;
+  root.querySelectorAll("[data-qp]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const [what, a, c] = b.dataset.qp.split("|");
+    if(what === "hp"){ u.models[+a] = Math.max(0, Math.min(u.max, u.models[+a] + +c)); writeThrough(u); }
+    else if(what === "ready") u.ready = !u.ready;
+    else if(what === "act")   u.used = Math.min(u.acts, u.used + 1);
+    else if(what === "unact") u.used = Math.max(0, u.used - 1);
+    else if(what === "push"){ u.pushed = true; strainUnit(u, 1); }
+    else if(what === "recover"){
+      /* One Recover: 1 Strain, or Shaken, or Pinned. Not all three. */
+      if(u.strain > 0) u.strain--;
+      else if((u.cond || []).includes("shaken")) u.cond = u.cond.filter(x => x !== "shaken");
+      else if((u.cond || []).includes("pinned")) u.cond = u.cond.filter(x => x !== "pinned");
+    }
+    else if(what === "cond"){
+      u.cond = u.cond || [];
+      u.cond = u.cond.includes(a) ? u.cond.filter(x => x !== a) : u.cond.concat([a]);
+    }
+    questSave(); drawCard(); renderUnburied(band());
+  });
+}
+
+/* ---- the table's own things ---- */
+function openNerve(){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="nvX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Nerve</div></div>
+    <p class="lead"><b>${Q.nerve.us}</b> in the pool, capped at ${RS.nerve.cap}. It refills at Tempo:
+      ${RS.nerve.perRound} a round, +${RS.nerve.leaderStandingBonus} while your Leader stands,
+      +${RS.nerve.underdogBonus} if you have lost more points than the enemy.</p>
+    <div class="slab" style="margin-top:14px">
+      ${RS.nerve.spends.map(sp => `
+        <div class="grow"><div class="grow-main"><div class="grow-name">${esc(sp.desc)}</div></div>
+          <div class="grow-r"><button class="btn sm" data-sp="${esc(sp.id)}"
+            ${Q.nerve.us < sp.cost ? "disabled" : ""}>Spend ${sp.cost}</button></div></div>`).join("")}
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#nvX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-sp]").forEach(b => b.onclick = () => {
+    const sp = RS.nerve.spends.find(x => x.id === b.dataset.sp);
+    if(Q.nerve.us < sp.cost) return;
+    Q.nerve.us -= sp.cost; qlog("Nerve: " + sp.desc); questSave();
+    closePicker(); render(); toast(sp.desc);
+  });
+}
+function openVP(){
+  const row = (side, label) => `
+    <div class="grow"><div class="grow-main"><div class="grow-name">${label}</div></div>
+      <div class="grow-r"><div class="stepper sm">
+        <button data-vp="${side}|-1">−</button><span>${Q.vp[side]}</span>
+        <button data-vp="${side}|1">+</button></div></div></div>`;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="vpX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Victory points</div></div>
+    <p class="lead">Scored each round, per the scenario.</p>
+    <div class="slab" style="margin-top:14px">${row("us", "The Unburied")}${row("them", "The enemy")}</div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#vpX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-vp]").forEach(b => b.onclick = () => {
+    const [s, d] = b.dataset.vp.split("|");
+    Q.vp[s] = Math.max(0, Q.vp[s] + +d); questSave(); openVP(); render();
+  });
+}
+
+/* ---- markers ---- */
+let mkPicked = new Set(), mkWho = null;
+function openMarkers(result){
+  const K = markerKinds();
+  const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));   // every player's, when shared
+  const chip = m => {
+    const face = m.state === "hidden" ? "?" : K[m.kind].label;
+    return `<button class="mk ${m.state} ${mkPicked.has(m.n) ? "on" : ""}" data-mk="${m.n}"
+      ${m.state === "gone" ? "disabled" : ""}><b>${m.n}</b><span>${esc(face)}</span></button>`;
+  };
+  const one = mkPicked.size === 1 ? [...mkPicked][0] : null;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="mkX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Suspicion markers</div>
+      <span class="chip">${Q.markers.filter(m => m.state === "hidden").length} unknown</span></div>
+    <p class="lead">The table shows numbers and nothing else. What is under them stays here
+      until a model walks into one, or something looks.</p>
+    <div class="mkgrid">${Q.markers.map(chip).join("")}</div>
+
+    <div class="slab" style="margin-top:14px">
+      <div class="head"><span class="eyebrow">A model walked into it</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 9px">Pick one marker and whose model ended its move within 5 cm.
+        Anything it does lands on that model.</p>
+      <select class="input" id="mkWho" style="margin-bottom:10px">
+        <option value="">no one in particular</option>
+        ${standing.map(u => `<option value="${esc(u.uid)}" ${mkWho === u.uid ? "selected" : ""}>${esc(u.name)}</option>`).join("")}
+      </select>
+      <div class="sheet-actions">
+        <button class="btn primary" id="mkGo" ${one ? "" : "disabled"} style="margin-left:0">
+          ${one ? "Walk into marker " + one : "Walk into marker …"}</button>
+      </div>
+    </div>
+
+    ${Q.markers.some(m => m.kind === "cache" && m.state !== "hidden" && m.state !== "gone") ? `
+    <div class="slab">
+      <div class="head"><span class="eyebrow">A cache</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 9px">It pays out only when a model in contact spends
+        Interact on it and passes a Wits test.</p>
+      <div class="sheet-actions">
+        ${Q.markers.filter(m => m.kind === "cache" && m.state !== "hidden" && m.state !== "gone")
+          .map(m => `<button class="btn" data-search="${m.n}" style="margin-left:0">Search marker ${m.n}</button>`).join("")}
+      </div>
+    </div>` : ""}
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Something looked</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 9px">Glimpse, Trapwise, or anything else that reveals.
+        Pick every marker in range — they are revealed without going off.</p>
+      <div class="sheet-actions">
+        <button class="btn" id="mkSee" ${mkPicked.size ? "" : "disabled"} style="margin-left:0">
+          ${mkPicked.size ? "Reveal " + [...mkPicked].sort((a, b) => a - b).join(", ") : "Reveal …"}</button>
+      </div>
+    </div>
+
+    ${result && result.length ? `<div class="mkout">${result.map(r =>
+      `<div class="mkres"><b>Marker ${r.n !== undefined ? r.n : one} — ${esc(r.label)}</b>
+        <span>${esc(r.text)}</span></div>`).join("")}</div>` : ""}`;
+
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#mkX").onclick = () => { mkPicked = new Set(); closePicker(); render(); };
+  $("#sheet2In").querySelectorAll("[data-mk]").forEach(b => b.onclick = () => {
+    const n = +b.dataset.mk;
+    if(mkPicked.has(n)) mkPicked.delete(n); else mkPicked.add(n);
+    openMarkers(result);
+  });
+  const who = $("#mkWho"); if(who) who.onchange = () => { mkWho = who.value || null; };
+  const go = $("#mkGo");
+  if(go) go.onclick = () => {
+    const r = resolveMarker(one, mkWho);
+    mkPicked = new Set();
+    openMarkers(r ? [Object.assign({n: one}, r)] : null);
+    render();
+    if(r && r.hurt) toast(r.hurt + " takes it");
+  };
+  $("#sheet2In").querySelectorAll("[data-search]").forEach(b2 => b2.onclick = () => {
+    mkPicked = new Set(); openSearch(+b2.dataset.search);
+  });
+  const see = $("#mkSee");
+  if(see) see.onclick = () => {
+    const out = revealMarkers([...mkPicked]);
+    mkPicked = new Set();
+    openMarkers(out); render();
+  };
+}
+
+/* ---- searching a cache ----
+   The ruleset pays a cache out with a d100 loot roll but does not say what the
+   numbers mean, so the app rolls the die and whoever is running it says what
+   turned up. What is found goes to the model that searched, and is kept apart
+   from bought gear: finding something does not make a model cost more. */
+let searchRoll = null, searchWho = null;
+function openSearch(markerN){
+  const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));
+  if(!searchWho && standing.length) searchWho = standing[0].uid;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="seX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Searching${markerN ? " marker " + markerN : ""}</div></div>
+    <p class="lead">A cache pays out only when a model in contact spends Interact on it
+      and passes a Wits test. Then roll ${RS.dice.lootDie} for what is in it.</p>
+
+    <div class="slab" style="margin-top:14px">
+      <div class="field" style="margin-bottom:11px"><label>Who searched it</label>
+        <select class="input" id="seWho">
+          ${standing.map(u => `<option value="${esc(u.uid)}" ${searchWho === u.uid ? "selected" : ""}>${esc(u.name)}</option>`).join("")}
+        </select></div>
+      <div class="sheet-actions" style="margin-bottom:11px">
+        <button class="btn" id="seRoll" style="margin-left:0">Roll ${RS.dice.lootDie}</button>
+        ${searchRoll ? `<span class="chip gilt mono" style="font-size:15px">${searchRoll}</span>` : ""}
+      </div>
+      <div class="field" style="margin-bottom:11px"><label>What they found</label>
+        <input class="input" id="seName" maxlength="50" placeholder="a coil of wire, a wet ledger, someone's teeth"></div>
+      <div class="field" style="margin-bottom:11px"><label>Or something from the list</label>
+        <select class="input" id="seItem">
+          <option value="">nothing from the list</option>
+          ${Object.values(catOf("items")).map(o => `<option value="${esc(o.id)}">${esc(o.name)} \u2014 ${esc(o.desc)}</option>`).join("")}
+        </select></div>
+      <div class="field"><label>A note, if it needs one</label>
+        <input class="input" id="seNote" maxlength="90" placeholder="what it does, or where it came from"></div>
+      <div class="sheet-actions" style="margin-top:12px">
+        <button class="btn primary" id="seGive" style="margin-left:0">They take it</button></div>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#seX").onclick = () => { searchRoll = null; closePicker(); render(); };
+  $("#seWho").onchange = e => searchWho = e.target.value;
+  $("#seRoll").onclick = () => {
+    searchRoll = 1 + Math.floor(Math.random() * (dieNum(RS.dice.lootDie) || 100));
+    searchWho = $("#seWho").value;
+    openSearch(markerN);
+  };
+  $("#seGive").onclick = () => {
+    const uidSel = $("#seWho").value;
+    const u = Q.units.find(x => x.uid === uidSel);
+    const itemId = $("#seItem").value;
+    const listed = itemId ? catOf("items")[itemId] : null;
+    const name = ($("#seName").value.trim()) || (listed ? listed.name : "");
+    if(!name && !listed){ toast("Say what they found"); return; }
+    const what = {name: name || listed.name, id: itemId || null,
+                  note: $("#seNote").value.trim() || (listed ? listed.desc : ""),
+                  roll: searchRoll || null, from: markerN ? "marker " + markerN : "the field"};
+    if(u && u.remote && typeof sendEvent === "function"){
+      sendEvent(u.uid, {found: what, why: "found " + what.name});
+    } else {
+      const m = band().members.find(x => x.id === uidSel);
+      if(m) giveFound(m, what);
+    }
+    qlog((u ? u.name : "Someone") + " found " + what.name + (searchRoll ? " (" + RS.dice.lootDie + " " + searchRoll + ")" : ""));
+    searchRoll = null;
+    questSave(); closePicker(); render();
+    toast((u ? u.name : "They") + " take " + what.name);
+  };
+}
+
+/* ---- starting one ---- */
+function openQuestStart(){
+  const b = band();
+  const size = bandSpent(b) * 2 || b.budget;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="qsX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Take them out</div></div>
+    <p class="lead">Everyone fielded goes. The app will roll suspicion markers for the
+      table and keep what is under them to itself.</p>
+    <div class="field" style="margin:14px 0"><label>Game size in points</label>
+      <input class="input mono" id="qsSize" inputmode="numeric" value="${size}"></div>
+    <p class="quiet">About one marker per 100 points, up to eight, at least one decoy.</p>
+    <div class="sheet-actions">
+      <button class="btn primary" id="qsGo" style="margin-left:0">Begin</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#qsX").onclick = closePicker;
+  $("#qsGo").onclick = () => {
+    const n = Math.max(100, Math.min(5000, parseInt(($("#qsSize").value || "").replace(/\D/g, ""), 10) || 500));
+    if(questBegin(n)){ closePicker(); render(); toast("The quest begins — open a card to run it"); }
+  };
+}
+
+/* ---- enemies, entered by whoever is running it ---- */
+function openFoes(){
+  const foes = Q.units.filter(u => u.side === "them");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="feX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">The enemy</div></div>
+    ${foes.length ? foes.map(u => `
+      <div class="slab">
+        <div class="head"><span class="eyebrow">${esc(u.name)}</span><span class="rule"></span>
+          <span class="chip">${u.used}/${u.acts} used</span>
+          <button class="tiny" data-fdel="${esc(u.uid)}" aria-label="Remove">×</button></div>
+        <div class="qs-hp">${u.models.map((h, i) => `
+          <span class="pip ${h <= 0 ? "dead" : h <= u.max * 0.5 ? "hurt" : ""}">
+            <button data-fhp="${esc(u.uid)}|${i}|-1">−</button><b>${h}</b>
+            <button data-fhp="${esc(u.uid)}|${i}|1">+</button></span>`).join("")}</div>
+        <div class="qs-row" style="margin-top:9px">
+          <button class="qp-btn" data-fact="${esc(u.uid)}" ${u.used >= u.acts ? "disabled" : ""}>Activate</button>
+          <button class="qp-btn ghost" data-funact="${esc(u.uid)}" ${!u.used ? "disabled" : ""}>undo</button>
+        </div>
+      </div>`).join("") : `<p class="quiet">Nothing against you yet.</p>`}
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Add one</span><span class="rule"></span></div>
+      <div class="field" style="margin-bottom:9px"><label>Name</label>
+        <input class="input" id="feName" placeholder="Scav pack" maxlength="40"></div>
+      <div class="row3">
+        <div class="field"><label>Models</label><input class="input mono" id="feN" inputmode="numeric" value="1"></div>
+        <div class="field"><label>${esc(RSX.stat.wounds.name)}</label><input class="input mono" id="feH" inputmode="numeric" value="${statDefault("wounds")}"></div>
+        <div class="field"><label>Acts</label><input class="input mono" id="feA" inputmode="numeric" value="1"></div>
+      </div>
+      <div class="sheet-actions"><button class="btn primary" id="feGo" style="margin-left:0">Add</button></div>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#feX").onclick = () => { closePicker(); render(); };
+  const num = id => Math.max(1, parseInt(($("#" + id).value || "").replace(/\D/g, ""), 10) || 1);
+  $("#feGo").onclick = () => {
+    Q.units.push(questFoe($("#feName").value.trim(), num("feN"), num("feH"), num("feA")));
+    qlog("Enemy joined: " + ($("#feName").value.trim() || "Enemy"));
+    questSave(); openFoes(); render();
+  };
+  const bind = (sel, fn) => $("#sheet2In").querySelectorAll(sel).forEach(b => b.onclick = () => { fn(b); questSave(); openFoes(); render(); });
+  bind("[data-fdel]", b => Q.units = Q.units.filter(u => u.uid !== b.dataset.fdel));
+  bind("[data-fact]", b => { const u = Q.units.find(x => x.uid === b.dataset.fact); u.used = Math.min(u.acts, u.used + 1); });
+  bind("[data-funact]", b => { const u = Q.units.find(x => x.uid === b.dataset.funact); u.used = Math.max(0, u.used - 1); });
+  bind("[data-fhp]", b => {
+    const [uid, i, d] = b.dataset.fhp.split("|");
+    const u = Q.units.find(x => x.uid === uid);
+    u.models[+i] = Math.max(0, Math.min(u.max, u.models[+i] + +d));
+  });
+}
+
+/* ---- realm.js ---- */
+/* =====================================================================
+   THE REALM
+   A shared table. One person hosts; the rest join with the realm's name
+   and a number.
+
+   Who may write what is the whole design:
+
+     the host   the round, victory points, the markers, the enemy, and
+                EVENTS aimed at a player's model
+     a player   their own models, and nothing else
+
+   A trap never reaches in and sets your Health. It posts an event saying
+   what happened, your app applies it to your own model and marks it done.
+   Two devices never write the same thing, so nothing is lost when you
+   both touch the table at once.
+
+   None of this exists in an artifact; it needs the hosted build, and the
+   app simply hides the Realm where it cannot work.
+   ===================================================================== */
+
+const REALM_PASS = "ep_realm_pass", REALM_ME = "ep_me";
+let realmDb = null, realmKey = "", realmOff = [];
+
+function realmAvailable(){
+  return typeof firebase !== "undefined" && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey;
+}
+function meId(){
+  let v = "";
+  try{ v = localStorage.getItem(REALM_ME) || ""; }catch(e){}
+  if(!v){ v = uid() + uid(); try{ localStorage.setItem(REALM_ME, v); }catch(e){} }
+  return v;
+}
+async function hashKey(s){
+  const norm = String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("epitaph|" + norm));
+  return [...new Uint8Array(buf)].slice(0, 10).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+function realmInit(){
+  if(realmDb) return true;
+  if(!realmAvailable()) return false;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+    realmDb = firebase.database();
+    return true;
+  }catch(e){ return false; }
+}
+/* The database allows writing children of a room, not the room node itself,
+   so everything lives one level in. The realm key is hashed with its own
+   prefix, so an Epitaph realm never lands on another game's room even if
+   someone types the same name. */
+function ref(path){
+  if(!realmDb || !realmKey) return null;
+  return realmDb.ref("rooms/" + realmKey + "/epitaph/" + path);
+}
+/* Publishing must never be able to stop the game. If the realm is not there
+   — no connection, not entered, a dropped signal — the app carries on as a
+   local tracker and picks the sharing back up when it returns. */
+function tryWrite(path, value){
+  const r = ref(path);
+  if(!r) return false;
+  try{ r.set(value); return true; }catch(e){ return false; }
+}
+function watch(path, fn){
+  const r = ref(path);
+  if(!r) return;
+  const h = r.on("value", s => fn(s.val()));
+  realmOff.push(() => r.off("value", h));
+}
+function unwatchAll(){ realmOff.forEach(f => { try{ f(); }catch(e){} }); realmOff = []; }
+
+/* ---- entering ---- */
+async function enterRealm(name){
+  if(!realmInit()) return false;
+  realmKey = await hashKey(name);
+  try{ localStorage.setItem(REALM_PASS, name); }catch(e){}
+  return true;
+}
+function savedRealm(){ try{ return localStorage.getItem(REALM_PASS) || ""; }catch(e){ return ""; } }
+
+/* ---- what goes up ----
+   A unit is published thin: what the table needs to see, not the whole
+   model. Its profile stays on the owner's phone. */
+function shareUnit(u){
+  return {uid: u.uid, owner: meId(), name: u.name, side: u.side,
+          models: u.models, max: u.max, acts: u.acts, used: u.used,
+          strain: u.strain, ready: !!u.ready, cond: u.cond || []};
+}
+function pushMyUnits(){
+  if(!Q || !Q.realm) return;
+  const mine = Q.units.filter(u => u.side === "us" && !u.remote);
+  const out = {};
+  mine.forEach(u => out[u.uid] = shareUnit(u));
+  tryWrite("quests/" + Q.realm + "/units/" + meId(), out);
+}
+function pushTable(){
+  if(!Q || !Q.realm || !Q.host) return;
+  tryWrite("quests/" + Q.realm + "/table", {
+    round: Q.round, step: Q.step, size: Q.size,
+    vp: Q.vp, nerve: Q.nerve,
+    markers: Q.markers.map(m => ({n: m.n, state: m.state})),   // never the kind
+    foes: Q.units.filter(u => u.side === "them").map(shareUnit),
+    at: Date.now()
+  });
+}
+
+/* ---- events: the only way the host touches a player's model ---- */
+function sendEvent(toUid, ev){
+  if(!Q || !Q.realm || !Q.host) return;
+  const id = uid() + Date.now().toString(36);
+  tryWrite("quests/" + Q.realm + "/events/" + id, Object.assign({to: toUid, at: Date.now()}, ev));
+}
+function applyEvent(id, ev){
+  const u = Q.units.find(x => x.uid === ev.to);
+  if(!u || u.side !== "us") return;
+  let seen = Q.seen || (Q.seen = {});
+  if(seen[id]) return;
+  seen[id] = 1;
+  if(ev.damage) hurtUnit(u, ev.damage, ev.why || "the scenario");
+  if(ev.cond && !(u.cond || []).includes(ev.cond)) u.cond = (u.cond || []).concat([ev.cond]);
+  if(ev.strain) strainUnit(u, ev.strain);
+  if(ev.found){
+    const m = band().members.find(x => x.id === u.uid);
+    if(m) giveFound(m, ev.found);
+  }
+  qlog(u.name + " — " + (ev.why || "the scenario") + (ev.damage ? ", " + ev.damage + " damage" : ""));
+  questSave();
+  toast(u.name + ": " + (ev.why || "something happens") + (ev.damage ? " — " + ev.damage + " damage" : ""));
+  render();
+  if(cardId) drawCard();
+}
+
+/* ---- hosting ---- */
+async function hostQuest(size){
+  if(!questBegin(size)) return false;
+  Q.realm = uid();
+  Q.host = true;
+  Q.joinCode = Q.realm.slice(0, 5).toUpperCase();
+  questSave();
+  tryWrite("quests/" + Q.realm + "/meta", {code: Q.joinCode, host: meId(), size, at: Date.now()});
+  pushTable(); pushMyUnits();
+  listenAsHost();
+  return true;
+}
+function listenAsHost(){
+  unwatchAll();
+  watch("quests/" + Q.realm + "/units", all => {
+    if(!all) return;
+    const others = [];
+    Object.keys(all).forEach(owner => {
+      if(owner === meId()) return;
+      Object.values(all[owner] || {}).forEach(u => others.push(Object.assign({}, u, {owner, remote: true})));
+    });
+    Q.units = Q.units.filter(u => !u.remote).concat(others);
+    questSave(); render();
+  });
+}
+
+/* ---- joining ---- */
+async function joinQuest(code){
+  const snap = await realmDb.ref("rooms/" + realmKey + "/epitaph/quests").once("value");
+  const all = snap.val() || {};
+  const id = Object.keys(all).find(k => ((all[k] || {}).meta || {}).code === String(code).trim().toUpperCase());
+  if(!id) throw new Error("No quest with that number in this realm.");
+  const b = band();
+  const mine = b.members.filter(fielded);
+  if(!mine.length) throw new Error("Field someone first.");
+  Q = {round: 1, step: "tempo", size: (all[id].meta || {}).size || 0,
+       nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
+       units: mine.map(questUnitFrom), markers: [], log: [],
+       realm: id, host: false, joinCode: String(code).trim().toUpperCase(), seen: {}};
+  questSave();
+  pushMyUnits();
+  listenAsGuest();
+  return true;
+}
+function listenAsGuest(){
+  unwatchAll();
+  watch("quests/" + Q.realm + "/table", t => {
+    if(!t) return;
+    Q.round = t.round; Q.step = t.step; Q.size = t.size;
+    Q.vp = t.vp || Q.vp; Q.nerve = t.nerve || Q.nerve;
+    Q.markers = (t.markers || []).map(m => ({n: m.n, state: m.state, kind: "unknown"}));
+    Q.units = Q.units.filter(u => u.side === "us")
+      .concat((t.foes || []).map(f => Object.assign({}, f, {remote: true})));
+    questSave(); render();
+    if(cardId) drawCard();
+  });
+  watch("quests/" + Q.realm + "/events", all => {
+    if(!all) return;
+    Object.keys(all).forEach(id => applyEvent(id, all[id]));
+  });
+}
+
+function leaveRealm(){
+  unwatchAll();
+  if(Q && Q.realm && !Q.host){ const r = ref("quests/" + Q.realm + "/units/" + meId()); if(r) try{ r.remove(); }catch(e){} }
+  if(Q){ delete Q.realm; delete Q.host; questSave(); }
+}
+
+/* ---- the Realm view ---- */
+function renderRealm(){
+  const el = $("#viewRealm");
+  if(!realmAvailable()){
+    el.innerHTML = `
+      <div class="slab">
+        <div class="head"><span class="eyebrow">The Realm</span><span class="rule"></span></div>
+        <p class="lead">A shared table needs somewhere to share it. This copy of Epitaph
+          has no realm behind it — building, cards and a solo quest all work, but hosting
+          and joining do not.</p>
+        <p class="quiet" style="margin-top:9px">The hosted build at your own address has it.</p>
+      </div>`;
+    return;
+  }
+  const inQuest = questOn() && Q.realm;
+  el.innerHTML = `
+    <div class="slab">
+      <div class="head"><span class="eyebrow">The realm</span><span class="rule"></span>
+        ${realmKey ? `<span class="chip good">entered</span>` : ""}</div>
+      <p class="lead">Everyone who types the same realm name plays in the same one.
+        Share it only with them — it is never stored, only its fingerprint.</p>
+      <div class="field" style="margin:13px 0">
+        <label>Realm name</label>
+        <input class="input" id="rmName" value="${esc(savedRealm())}" placeholder="rusted-cathedral"
+          autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="sheet-actions"><button class="btn primary" id="rmEnter" style="margin-left:0">Enter</button></div>
+    </div>
+
+    ${!realmKey ? "" : inQuest ? `
+    <div class="slab">
+      <div class="head"><span class="eyebrow">${Q.host ? "You are hosting" : "You have joined"}</span><span class="rule"></span></div>
+      <p class="lead">The number for this table is <b class="mono" style="font-size:19px;color:var(--gilt)">${esc(Q.joinCode)}</b></p>
+      <p class="quiet" style="margin-top:8px">${Q.host
+        ? "Players enter the realm, then this number. Their models appear here as they join."
+        : "Your models are yours to run. The round, the markers and anything the scenario does to you arrive from the host."}</p>
+      <div class="sheet-actions">
+        <button class="btn ghost" id="rmLeave" style="margin-left:0">${Q.host ? "Stop hosting" : "Leave the table"}</button>
+      </div>
+    </div>` : `
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Host a table</span><span class="rule"></span></div>
+      <p class="lead">You keep the scenario, the markers and the enemy. Everyone else brings
+        their own Unburied.</p>
+      <div class="field" style="margin:13px 0"><label>Game size in points</label>
+        <input class="input mono" id="rmSize" inputmode="numeric" value="${band().budget * 2}"></div>
+      <div class="sheet-actions"><button class="btn primary" id="rmHost" style="margin-left:0">Host it</button></div>
+    </div>
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Join a table</span><span class="rule"></span></div>
+      <p class="lead">Whoever is hosting will read you the number.</p>
+      <div class="field" style="margin:13px 0"><label>The number</label>
+        <input class="input mono" id="rmCode" maxlength="5" placeholder="A1B2C"
+          style="text-transform:uppercase"></div>
+      <div class="sheet-actions"><button class="btn primary" id="rmJoin" style="margin-left:0">Join</button></div>
+      <p class="quiet" id="rmMsg" style="margin:9px 0 0"></p>
+    </div>`}`;
+
+  const enter = $("#rmEnter");
+  if(enter) enter.onclick = async () => {
+    const v = $("#rmName").value.trim();
+    if(!v){ toast("Name the realm"); return; }
+    if(await enterRealm(v)){ toast("Entered"); renderRealm(); }
+    else toast("Could not reach the realm");
+  };
+  const host = $("#rmHost");
+  if(host) host.onclick = async () => {
+    const n = Math.max(100, parseInt(($("#rmSize").value || "").replace(/\D/g, ""), 10) || 500);
+    if(await hostQuest(n)){ render(); renderRealm(); toast("Hosting — give them the number"); }
+  };
+  const join = $("#rmJoin");
+  if(join) join.onclick = async () => {
+    try{ await joinQuest($("#rmCode").value); render(); renderRealm(); toast("Joined"); }
+    catch(e){ const m = $("#rmMsg"); m.textContent = e.message; m.style.color = "var(--rust)"; }
+  };
+  const leave = $("#rmLeave");
+  if(leave) leave.onclick = () => { leaveRealm(); renderRealm(); render(); toast("Left the table"); };
 }
 
 
