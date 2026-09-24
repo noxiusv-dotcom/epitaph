@@ -310,6 +310,42 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .pick-no{font-size:11.5px;color:var(--rust);margin-top:5px}
 .pick-cost{font-size:13px;color:var(--gilt);flex:none}
 .pick-cost.neg{color:var(--verdigris)}
+
+/* ---- the card: read at arm's length ---- */
+.cardhead{padding:4px 0 16px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.cardname{font-family:"Cinzel",Georgia,serif;font-size:26px;letter-spacing:.07em;line-height:1.15}
+.cardepi{font-family:"Spectral",Georgia,serif;font-style:italic;color:var(--gilt);font-size:17px;margin-top:5px}
+.cardrole{color:var(--ash-mute);font-size:13px;margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.cardpts{margin-left:auto;font-family:"Space Mono",monospace;color:var(--gilt);font-size:13px}
+
+.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin-bottom:14px}
+.cstat{text-align:center;padding:11px 6px;border-radius:var(--r-md);
+  background:var(--stone-1);border:1px solid var(--line)}
+.cstat b{display:block;font-family:"Space Mono",monospace;font-size:21px;line-height:1}
+.cstat span{display:block;font-family:"Cinzel",serif;font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ash-dim);margin-top:5px}
+.cstat small{display:block;font-size:9.5px;color:var(--ash-mute);margin-top:3px}
+
+.atk{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.atk:last-child{border-bottom:none;padding-bottom:0}
+.atk:first-child{padding-top:0}
+.atk-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.atk-name{font-size:15px;font-weight:600;flex:1;min-width:0}
+.atk-roll{font-size:12.5px;color:var(--ash-dim);white-space:nowrap}
+.atk-roll b{font-family:"Space Mono",monospace;font-size:15px;color:var(--gilt)}
+.atk-roll small{color:var(--ash-mute);font-size:11px}
+.atk-line{font-size:13px;color:var(--ash-dim);margin-top:3px}
+.atk-mods{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.atk-mods .mod{display:block;font-size:12px;padding:5px 9px;border-radius:var(--r-sm);
+  background:var(--stone-2);border:1px solid var(--line);color:var(--ash-dim)}
+.atk-mods .mod b{color:var(--gilt);margin-right:5px}
+
+.says{padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.says:last-child{border-bottom:none;padding-bottom:0}
+.says:first-child{padding-top:0}
+.says-n{font-size:14px;font-weight:600}
+.says-d{font-size:13px;color:var(--ash-dim);line-height:1.5;margin-top:2px;white-space:pre-line}
+.says.bad .says-n{color:var(--rust)}
 </style>
 
 </head>
@@ -336,7 +372,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
   <nav class="ways">
     <button class="way on" data-way="unburied">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 21V9a6 6 0 0 1 12 0v12"/><path d="M4 21h16"/></svg>
-      Your Unburied
+      Unburied
     </button>
     <button class="way" data-way="realm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg>
@@ -4056,7 +4092,7 @@ function buildCatalogues(){
     kind: x.type, range: x.range, damage: x.damage,
     desc: [x.type === "melee" ? "Melee" : "Ranged",
            x.range ? x.range + "cm" : null,
-           x.damage + " dmg",
+           x.damage + " damage",
            kw(x.keywords) || null].filter(Boolean).join(" · ")
   }));
   CAT.powers    = map(RS.powers.slice().sort((a, b) =>
@@ -4200,8 +4236,8 @@ function renderUnburied(b){
       ${m.epithet ? `<span class="m-epithet">“${esc(m.epithet)}”</span>` : ""}
       ${m.role ? `<span class="m-role">${esc(m.role)}</span>` : ""}
       <div class="m-stats">
-        ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(m[k])}</b><span>${esc(RSX.stat[k].name.slice(0,3))}</span></div>`).join("")}
-        <div class="m-stat"><b>${m.wounds}</b><span>${esc(RSX.stat.wounds.name.slice(0,3))}</span></div>
+        ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(m[k])}</b><span>${esc(RSX.stat[k].name)}</span></div>`).join("")}
+        <div class="m-stat"><b>${m.wounds}</b><span>${esc(RSX.stat.wounds.name)}</span></div>
       </div>
       <div class="m-foot">
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
@@ -4213,7 +4249,7 @@ function renderUnburied(b){
       </div>`;
     el.onclick = ev => {
       if(ev.target.closest("[data-field]")){ m.fielded = !fielded(m); renderUnburied(b); return; }
-      openMember(m.id);
+      openCard(m.id);
     };
     list.appendChild(el);
   });
@@ -4717,6 +4753,142 @@ function openBands(){
     closePicker(); render(); toast("A new band");
   };
 }
+
+/* ---- card.js ---- */
+/* =====================================================================
+   THE CARD
+   This is the app. It is what you look at across a table instead of a
+   printed sheet, so it has to answer one question fast: what can this
+   model do right now?
+
+   Everything it says is quoted from the ruleset in the ruleset's own
+   words. Nothing is summarised, because a summary is the thing you end
+   up looking up anyway.
+   ===================================================================== */
+
+let cardId = null;
+function carded(){ return band().members.find(m => m.id === cardId); }
+
+function openCard(id){
+  cardId = id;
+  drawCard();
+  $("#sheet").classList.add("show");
+  $("#scrim").classList.add("show");
+  document.body.classList.add("locked");
+  $("#sheet").scrollTop = 0;
+}
+
+/* One attack line per weapon: which die you roll, what it does, and
+   whatever the model calls it. */
+function attackHTML(m, e){
+  const w = catOf("weapons")[e.id]; if(!w) return "";
+  const ranged = w.kind === "ranged";
+  const stat = ranged ? "aim" : "fight";
+  const die = m[stat];
+  const shown = skinOf(m, e.id, w.name);
+  const mods = (e.mods || []).map(x => catOf("mods")[x]).filter(Boolean);
+  return `
+  <div class="atk">
+    <div class="atk-top">
+      <span class="atk-name">${ranged ? "➤" : "⚔"} ${esc(shown)}</span>
+      <span class="atk-roll">${esc(RSX.stat[stat].name)} <b>${esc(die)}</b> <small>4+</small></span>
+    </div>
+    <div class="atk-line">${esc(w.desc)}${shown !== w.name ? ` · <span class="quiet">${esc(w.name)}</span>` : ""}</div>
+    ${mods.length ? `<div class="atk-mods">${mods.map(x =>
+      `<span class="mod"><b>${esc(x.name)}</b> ${esc(x.desc)}</span>`).join("")}</div>` : ""}
+  </div>`;
+}
+
+/* A block of things that each have a name and their own words. */
+function saysHTML(m, title, field, tone){
+  const arr = m[field] || []; if(!arr.length) return "";
+  const cat = catOf(GEAR_KIND[field].cat);
+  const qty = GEAR_KIND[field].qty;
+  return `
+  <div class="slab">
+    <div class="head"><span class="eyebrow">${esc(title)}</span><span class="rule"></span></div>
+    ${arr.map(entry => {
+      const id = qty ? entry.id : (entry.id || entry);
+      const o = cat[id]; if(!o) return "";
+      const shown = GEAR_KIND[field].reskin ? skinOf(m, id, o.name) : o.name;
+      return `<div class="says ${tone || ""}">
+        <div class="says-n">${esc(shown)}${qty && (entry.qty || 1) > 1 ? ` ×${entry.qty}` : ""}
+          ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""}</div>
+        <div class="says-d">${esc(o.desc)}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+function drawCard(){
+  const m = carded(); if(!m) return closeSheet();
+  const n = squadOf(m), live = questUnit(m);
+  const armour = (m.armour || [])[0] ? catOf("armour")[m.armour[0]] : null;
+
+  const statCell = (label, value, note) => `
+    <div class="cstat"><b>${esc(value)}</b><span>${esc(label)}</span>${note ? `<small>${esc(note)}</small>` : ""}</div>`;
+
+  $("#sheetIn").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="cBack" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="eyebrow">${n > 1 ? "A squad of the Unburied" : "One of the Unburied"}</div>
+      <button class="btn sm ghost" id="cEdit">Edit</button>
+    </div>
+
+    <div class="cardhead">
+      <div class="cardname">${esc(m.name) || "Unnamed"}</div>
+      ${m.epithet ? `<div class="cardepi">“${esc(m.epithet)}”</div>` : ""}
+      <div class="cardrole">${esc(m.role || "")}${n > 1 ? (m.role ? " · " : "") + n + " models" : ""}
+        <span class="cardpts">${unitCost(m)} points</span></div>
+    </div>
+
+    ${live ? questStripHTML(m, live) : ""}
+
+    <div class="cstats">
+      ${DIE_STATS.map(k => statCell(RSX.stat[k].name, m[k], "roll 4+")).join("")}
+      ${statCell(RSX.stat.wounds.name, m.wounds, n > 1 ? "each" : "")}
+      ${statCell(RSX.stat.move.name, effectiveMove(m) + "cm", armour && armour.moveMod ? "with armour" : "")}
+      ${statCell(RSX.stat.actions.name, m.actions, "an activation")}
+      ${statCell("Activations", activationsOf(m), "a round")}
+      ${armour ? statCell("Armour", (RS.armour.find(a => a.id === m.armour[0]) || {}).save || "—", skinOf(m, m.armour[0], armour.name)) : ""}
+      ${m.size !== statDefault("size") ? statCell(RSX.stat.size.name, m.size.charAt(0).toUpperCase() + m.size.slice(1), "") : ""}
+    </div>
+
+    ${(m.weapons || []).length ? `
+      <div class="slab">
+        <div class="head"><span class="eyebrow">What it can do</span><span class="rule"></span>
+          <span class="quiet">one Attack an activation</span></div>
+        ${m.weapons.map(e => attackHTML(m, e)).join("")}
+      </div>` : `
+      <div class="slab"><p class="quiet" style="margin:0">Unarmed. It has no weapon — edit to give it one.</p></div>`}
+
+    ${saysHTML(m, "Traits", "traits")}
+    ${saysHTML(m, "Abilities", "abilities")}
+    ${saysHTML(m, "Powers", "powers")}
+    ${saysHTML(m, "Flaws", "flaws", "bad")}
+    ${saysHTML(m, "Carried", "items")}
+
+    ${m.story ? `<div class="slab"><div class="head"><span class="eyebrow">Their story</span><span class="rule"></span></div>
+      <p class="serif" style="margin:0;font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(m.story)}</p></div>` : ""}
+
+    <div class="sheet-actions">
+      <span class="quiet">${n > 1 ? "Every model shares this profile." : ""}</span>
+      <button class="btn primary" id="cDone">Done</button>
+    </div>`;
+
+  const root = $("#sheetIn");
+  root.querySelector("#cBack").onclick = closeSheet;
+  root.querySelector("#cDone").onclick = closeSheet;
+  root.querySelector("#cEdit").onclick = () => openMember(m.id);
+  if(live) questBind(root, m);
+}
+
+/* Until the quest side is built, these keep the card honest about it. */
+function questUnit(m){ return null; }
+function questStripHTML(){ return ""; }
+function questBind(){}
 
 
 /* light / dark is the viewer's choice and is remembered on this device */
