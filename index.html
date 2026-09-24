@@ -4318,6 +4318,7 @@ function renderUnburied(b){
       <button class="iconbtn" id="bandCarry" aria-label="Carry this band out or bring one in" title="Carry out / bring in">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
           <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
+      <button class="btn sm ghost" id="bandScn">A scenario</button>
       <button class="btn sm ghost" id="bandAfter">After the battle</button>
       <button class="btn sm ghost" id="bandQuest">${questOn() ? "The quest" : "Take them out"}</button>
       <button class="btn sm ghost" id="bandMenu">Bands</button>
@@ -4350,6 +4351,7 @@ function renderUnburied(b){
   $("#bandCarry").onclick = openCarry;
   $("#bandQuest").onclick = () => questOn() ? openFoes() : openQuestStart();
   $("#bandAfter").onclick = openAfter;
+  $("#bandScn").onclick = openGenerate;
 
   const qb = $("#questBar");
   qb.innerHTML = questOn() ? questBarHTML() : "";
@@ -5215,6 +5217,7 @@ function drawCard(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
       <div class="eyebrow">${n > 1 ? "A squad of the Unburied" : "One of the Unburied"}</div>
+      ${m.xp ? `<button class="btn sm" id="cXP">${m.xp} XP</button>` : ""}
       <button class="btn sm ghost" id="cEdit">Edit</button>
     </div>
 
@@ -5279,6 +5282,8 @@ function drawCard(){
   root.querySelector("#cBack").onclick = closeSheet;
   root.querySelector("#cDone").onclick = closeSheet;
   root.querySelector("#cEdit").onclick = () => openMember(m.id);
+  const xpb = root.querySelector("#cXP");
+  if(xpb) xpb.onclick = () => openAdvance(m.id);
   if(live) questBind(root, m);
 }
 
@@ -5798,7 +5803,8 @@ function questBarHTML(){
   return `
   <div class="qbar">
     <div class="qbar-l">
-      <b>Round ${Q.round}</b>
+      <b>${Q.scenario ? esc(Q.scenario.name) + " · " : ""}Round ${Q.round}${
+        Q.scenario && Q.scenario.rounds ? " of " + Q.scenario.rounds : ""}</b>
       <span>${Q.step === "tempo" ? "Tempo" : Q.step === "acts" ? "Activations" : "End step"}</span>
     </div>
     <div class="qbar-r">
@@ -5809,6 +5815,7 @@ function questBarHTML(){
         ◈ ${Q.markers.filter(m => m.state === "hidden").length} unknown</button>
       ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}% — break test</span>` : ""}
       <button class="btn sm" data-q="step">${Q.step === "end" ? "Next round" : Q.step === "tempo" ? "Begin" : "End step"}</button>
+      ${Q.scenario ? `<button class="chip" data-q="brief">The brief</button>` : ""}
       <button class="btn sm ghost" data-q="end">End</button>
     </div>
   </div>`;
@@ -5820,6 +5827,7 @@ function questBarBind(root){
       case "nerve":   openNerve(); break;
       case "vp":      openVP(); break;
       case "markers": openMarkers(); break;
+      case "brief": openBrief(); break;
       case "end": askEnd(); break;
     }
   });
@@ -6111,26 +6119,85 @@ function openSearch(markerN){
 /* ---- starting one ---- */
 function openQuestStart(){
   const b = band();
-  const size = bandSpent(b) * 2 || b.budget;
+  /* Game size is what the PLAYERS bring, summed across everyone at the table.
+     The enemy is then sized from it: enemy points = game size x difficulty.
+     In a campaign the ruleset bases it on the band's current total points,
+     so it grows as they do rather than sitting at a fixed number. */
+  const mine = bandSpent(b);
+  const st = questStartState || (questStartState = {mine, others: 0, difficulty: "standard"});
+  const size = st.mine + st.others;
+  const diff = (RS.scenario.difficulty || []).find(d => d.id === st.difficulty) || {enemyPct: 1, reward: 1};
+  const enemy = Math.round(size * diff.enemyPct);
+
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="qsX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Take them out</div></div>
-    <p class="lead">Everyone fielded goes. The app will roll suspicion markers for the
-      table and keep what is under them to itself.</p>
-    <div class="field" style="margin:14px 0"><label>Game size in points</label>
-      <input class="input mono" id="qsSize" inputmode="numeric" value="${size}"></div>
-    <p class="quiet">About one marker per 100 points, up to eight, at least one decoy.</p>
+    <p class="lead">Everyone fielded goes. The app rolls suspicion markers for the table
+      and keeps what is under them to itself.</p>
+
+    <div class="slab" style="margin-top:14px">
+      <div class="head"><span class="eyebrow">Game size</span><span class="rule"></span>
+        <span class="chip gilt mono">${size}</span></div>
+      <p class="quiet" style="margin:0 0 11px">What the players bring between them \u2014 yours,
+        plus anyone else at the table.</p>
+      <div class="grow">
+        <div class="grow-main"><div class="grow-name">Your Unburied, fielded</div>
+          <div class="grow-sub">${b.members.filter(fielded).length} of ${b.members.length}</div></div>
+        <div class="grow-r"><span class="mono">${st.mine}</span></div>
+      </div>
+      <div class="field" style="margin-top:11px"><label>Other players, between them</label>
+        <input class="input mono" id="qsOthers" inputmode="numeric" value="${st.others}"></div>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Difficulty</span><span class="rule"></span></div>
+      <div class="sheet-actions" style="flex-wrap:wrap;gap:7px;margin-bottom:11px">
+        ${(RS.scenario.difficulty || []).map(d => `
+          <button class="btn sm ${d.id === st.difficulty ? "primary" : "ghost"}" data-diff="${esc(d.id)}"
+            style="margin-left:0">${d.id.charAt(0).toUpperCase() + d.id.slice(1)}</button>`).join("")}
+      </div>
+      <div class="grow">
+        <div class="grow-main"><div class="grow-name">What you face</div>
+          <div class="grow-sub">${size} \u00d7 ${diff.enemyPct} \u00b7 up to ${Math.round((RS.scenario.budget.maxPct || 0) * 100)}% of it
+            may be traps, hazards and set pieces instead of models</div></div>
+        <div class="grow-r"><span class="mono" style="font-size:16px;color:var(--gilt)">${enemy}</span></div>
+      </div>
+      <div class="grow">
+        <div class="grow-main"><div class="grow-name">Pays</div>
+          <div class="grow-sub">a win is worth ${diff.reward}\u00d7</div></div>
+        <div class="grow-r"><span class="mono">\u00d7${diff.reward}</span></div>
+      </div>
+    </div>
+
     <div class="sheet-actions">
-      <button class="btn primary" id="qsGo" style="margin-left:0">Begin</button></div>`;
+      <button class="btn primary" id="qsGo" style="margin-left:0" ${size ? "" : "disabled"}>
+        ${size ? "Begin" : "Field someone first"}</button></div>`;
+
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#qsX").onclick = closePicker;
+  $("#qsX").onclick = () => { questStartState = null; closePicker(); };
+  $("#qsOthers").oninput = e => {
+    st.others = Math.max(0, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
+    openQuestStart();
+  };
+  $("#sheet2In").querySelectorAll("[data-diff]").forEach(bn => bn.onclick = () => {
+    st.difficulty = bn.dataset.diff; openQuestStart();
+  });
   $("#qsGo").onclick = () => {
-    const n = Math.max(100, Math.min(5000, parseInt(($("#qsSize").value || "").replace(/\D/g, ""), 10) || 500));
-    if(questBegin(n)){ closePicker(); render(); toast("The quest begins — open a card to run it"); }
+    if(!size) return;
+    if(questBegin(size)){
+      Q.difficulty = st.difficulty;
+      Q.enemyPoints = enemy;
+      Q.reward = diff.reward;
+      questSave();
+      questStartState = null;
+      closePicker(); render();
+      toast("The quest begins \u2014 open a card to run it");
+    }
   };
 }
+let questStartState = null;
 
 /* ---- enemies, entered by whoever is running it ---- */
 function openFoes(){
@@ -6149,6 +6216,8 @@ function openFoes(){
           <span class="pip ${h <= 0 ? "dead" : h <= u.max * 0.5 ? "hurt" : ""}">
             <button data-fhp="${esc(u.uid)}|${i}|-1">−</button><b>${h}</b>
             <button data-fhp="${esc(u.uid)}|${i}|1">+</button></span>`).join("")}</div>
+        ${u.profile ? `<div class="says-d" style="margin-bottom:7px">${esc(enemyLine(u.profile))}</div>` : ""}
+        ${(u.protocol || []).length ? `<div class="says-d quiet" style="margin-bottom:7px">${u.protocol.map(esc).join(" · ")}</div>` : ""}
         <div class="qs-row" style="margin-top:9px">
           <button class="qp-btn" data-fact="${esc(u.uid)}" ${u.used >= u.acts ? "disabled" : ""}>Activate</button>
           <button class="qp-btn ghost" data-funact="${esc(u.uid)}" ${!u.used ? "disabled" : ""}>undo</button>
@@ -6182,6 +6251,41 @@ function openFoes(){
     const u = Q.units.find(x => x.uid === uid);
     u.models[+i] = Math.max(0, Math.min(u.max, u.models[+i] + +d));
   });
+}
+
+/* The scenario as written, for looking back at mid-game. */
+function openBrief(){
+  const s = Q.scenario; if(!s) return;
+  const env = s.environment ? (RS.scenario.environment || []).find(e => e.id === s.environment) : null;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="brX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">The brief</div></div>
+    <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
+      <div class="cardname" style="font-size:22px">${esc(s.name)}</div>
+    </div>
+    <p class="serif" style="font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(s.situation)}</p>
+    <div class="slab" style="margin-top:14px">
+      <div class="grow"><div class="grow-main"><div class="grow-name">Deployment</div>
+        <div class="grow-sub">${esc(s.deployment)}</div></div></div>
+      ${env ? `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(env.id)}</div>
+        <div class="grow-sub">${esc(env.effect)}</div></div></div>` : ""}
+      ${s.twist ? `<div class="grow"><div class="grow-main"><div class="grow-name">Later</div>
+        <div class="grow-sub">${esc(s.twist)}</div></div></div>` : ""}
+    </div>
+    ${(s.objectives || []).length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
+      ${s.objectives.map(o => `<div class="says">
+        <div class="says-n">${esc(o.what)} <span class="chip gilt">${o.vp} VP</span></div>
+        <div class="says-d">${esc(o.rule)}</div></div>`).join("")}</div>` : ""}
+    ${Q.markers.some(m => m.where) ? `<div class="slab">
+      <div class="head"><span class="eyebrow">Where the markers go</span><span class="rule"></span></div>
+      ${Q.markers.filter(m => m.where).map(m => `<div class="grow"><div class="grow-main">
+        <div class="grow-name">${m.n}</div><div class="grow-sub">${esc(m.where)}</div></div></div>`).join("")}
+    </div>` : ""}`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#brX").onclick = closePicker;
 }
 
 /* ---- campaign.js ---- */
@@ -6297,7 +6401,10 @@ function openAfter(){
   }).map(m => ({id: m.id, marked: questOn() && questUnit(m) ? (questUnit(m).cond || []).includes("marked") : false,
                 stabilised: questOn() && questUnit(m) ? (questUnit(m).cond || []).includes("stabilised") : false}));
 
-  afterState = {owed, done: [], step: owed.length ? "fate" : "spoils", won: true, size: (questOn() && Q.size) || b.budget};
+  afterState = {owed, done: [], step: owed.length ? "fate" : "spoils", won: true,
+                size: (questOn() && Q.size) || bandSpent(b),
+                mult: (questOn() && Q.reward) || 1,
+                difficulty: (questOn() && Q.difficulty) || null};
   drawAfter();
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
 }
@@ -6395,7 +6502,8 @@ function drawAfter(){
       <div class="field"><label>Game size in points</label>
         <input class="input mono" id="afSize" inputmode="numeric" value="${S.size}"></div>
       <p class="quiet" style="margin:9px 0 0">Cash is ${Math.round(aw.cash.winPayoutPctOfGameSize * 100)}% of
-        the game size${S.won ? "" : ", halved for a loss"}.</p>
+        the game size${S.won ? "" : ", halved for a loss"}${S.difficulty && S.mult !== 1
+          ? ", ×" + S.mult + " for a " + S.difficulty + " one" : ""}.</p>
     </div>
 
     <div class="slab">
@@ -6446,7 +6554,7 @@ function drawAfter(){
       const n = (S.xp && S.xp[m.id] !== undefined) ? S.xp[m.id] : defaultXP(m, S);
       m.xp = (m.xp || 0) + n;
     });
-    const got = awardBattle(b, {won: S.won, size: S.size, difficultyMult: 1});
+    const got = awardBattle(b, {won: S.won, size: S.size, difficultyMult: S.mult || 1});
     save(); closeAfter(); render();
     toast("+" + got.cash + " Cash, " + signed(got.rep) + " Reputation");
   };
@@ -6457,7 +6565,8 @@ function defaultXP(m, S){
 }
 function cashFor(S){
   const aw = RS.campaign.awards.cash;
-  return Math.round((S.size || 0) * aw.winPayoutPctOfGameSize * (S.won ? 1 : aw.lossFactor));
+  return Math.round((S.size || 0) * aw.winPayoutPctOfGameSize *
+                    (S.won ? 1 : aw.lossFactor) * (S.mult || 1));
 }
 function closeAfter(){ afterState = null; closePicker(); render(); }
 
@@ -6515,6 +6624,406 @@ Reply with ONLY a JSON array of exactly 3 strings. No other text.`, {modelTier: 
     }catch(e){ out.innerHTML = `<p class="quiet">${esc(aiTrouble(e && e.code))}</p>`; }
     finally{ ask.disabled = false; }
   };
+}
+
+/* =====================================================================
+   SPENDING XP
+   "XP buys any upgrade at its points cost, including surcharge." So the
+   price of a thing is whatever adding it does to the model's cost — which
+   means the surcharge is counted honestly, and a fourth upgrade really is
+   dearer than a first.
+   ===================================================================== */
+
+/* What it would cost this model to take one more of something. */
+function xpPrice(m, apply){
+  const before = memberCost(m);
+  const trial = JSON.parse(JSON.stringify(m));
+  apply(trial);
+  return memberCost(trial) - before;
+}
+function xpBuy(m, apply, price){
+  if((m.xp || 0) < price) return false;
+  apply(m);
+  m.xp -= price;
+  save();
+  return true;
+}
+
+function openAdvance(mid){
+  const m = band().members.find(x => x.id === mid); if(!m) return;
+  const have = m.xp || 0;
+
+  /* Every way this model could advance, priced by what it does to its cost. */
+  const offers = [];
+  DIE_STATS.forEach(k => {
+    const st = RSX.stat[k], next = dieStep(m[k], 1);
+    if(!next || dieNum(next) > dieNum(st.max) || next === m[k]) return;
+    offers.push({kind: "stat", label: st.name + " " + m[k] + " \u2192 " + next,
+      note: "one step up the ladder",
+      price: xpPrice(m, t => t[k] = next), apply: t => t[k] = next});
+  });
+  const ws = RSX.stat.wounds, step = ws.upStep || 1;
+  if(m.wounds + step <= ws.max){
+    offers.push({kind: "stat", label: ws.name + " " + m.wounds + " \u2192 " + (m.wounds + step),
+      note: "bought in " + step + "s",
+      price: xpPrice(m, t => t.wounds += step), apply: t => t.wounds += step});
+  }
+  const as = RSX.stat.actions;
+  if(m.actions < as.max && as.upCosts[m.actions - as.default] !== undefined){
+    offers.push({kind: "stat", label: as.name + " " + m.actions + " \u2192 " + (m.actions + 1),
+      note: "another action each activation",
+      price: xpPrice(m, t => t.actions += 1), apply: t => t.actions += 1});
+  }
+  [["traits", "Traits"], ["abilities", "Abilities"], ["powers", "Powers"]].forEach(([field, label]) => {
+    Object.values(catOf(field)).forEach(o => {
+      if((m[field] || []).includes(o.id)) return;
+      if(o.cost < 0) return;                       // a drawback is not an advance
+      const why = typeof pickBlocked === "function" ? pickBlocked(m, field, o) : null;
+      offers.push({kind: field, label: o.name, note: o.desc, blocked: why,
+        price: xpPrice(m, t => t[field] = (t[field] || []).concat([o.id])),
+        apply: t => t[field] = (t[field] || []).concat([o.id])});
+    });
+  });
+  offers.sort((a, b) => a.price - b.price);
+  const shown = offers.filter(o => !o.blocked);
+
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="axX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">What they have learned</div>
+      <span class="chip gilt mono">${have} XP</span></div>
+
+    <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
+      <div class="cardname" style="font-size:21px">${esc(m.name) || "Unnamed"}</div>
+      ${m.epithet ? `<div class="cardepi">\u201c${esc(m.epithet)}\u201d</div>` : ""}
+    </div>
+
+    <p class="lead">XP buys anything at its points price, surcharge and all \u2014 so the
+      fourth thing a model learns costs more than the first.</p>
+
+    <div class="slab" style="margin-top:14px">
+      ${shown.length ? shown.map((o, i) => `
+        <div class="grow">
+          <div class="grow-main">
+            <div class="grow-name">${esc(o.label)}</div>
+            <div class="grow-sub">${esc(o.note || "")}</div>
+          </div>
+          <div class="grow-r">
+            <span class="mono ${have >= o.price ? "" : "quiet"}">${o.price} XP</span>
+            <button class="btn sm ${have >= o.price ? "primary" : ""}" data-buy="${i}"
+              ${have >= o.price ? "" : "disabled"}>Learn</button>
+          </div>
+        </div>`).join("") : `<p class="quiet" style="margin:0">Nothing left to learn.</p>`}
+    </div>`;
+
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#axX").onclick = () => { closePicker(); render(); if(cardId) drawCard(); };
+  $("#sheet2In").querySelectorAll("[data-buy]").forEach(btn => btn.onclick = () => {
+    const o = shown[+btn.dataset.buy];
+    if(xpBuy(m, o.apply, o.price)){
+      toast(m.name + " learns " + o.label + " \u2014 " + o.price + " XP");
+      openAdvance(mid); render(); if(cardId) drawCard();
+    }
+  });
+}
+
+/* ---- scenario.js ---- */
+/* =====================================================================
+   THE SCENARIO
+   Asked for in the shape the ruleset already describes: a mode, a theme,
+   a kind of battle, a difficulty. What comes back is checked against the
+   same file — objectives must belong to the battle type, the enemy must
+   fit inside its points, and every id must exist.
+
+   The generator writes the fiction. The ruleset decides what is legal.
+   ===================================================================== */
+
+let genState = null;
+
+function genDefaults(){
+  const b = band();
+  return {mode: "coop", players: 1, theme: "ruin", type: "raid",
+          difficulty: "standard", length: "standard",
+          mine: bandSpent(b), others: 0, table: "", out: null, busy: false};
+}
+
+async function openGenerate(){
+  const ai = await getAI();
+  genState = genState || genDefaults();
+  genState.mine = bandSpent(band());
+  drawGenerate(ai);
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+}
+
+function drawGenerate(ai){
+  const S = genState, sc = RS.scenario;
+  const size = S.mine + S.others;
+  const diff = (sc.difficulty || []).find(d => d.id === S.difficulty) || {enemyPct: 1, reward: 1};
+  const enemy = Math.round(size * diff.enemyPct);
+  const type = (sc.battleTypes || []).find(t => t.id === S.type) || {};
+  const pick = (list, key, cur, label) => `
+    <div class="field" style="margin-bottom:11px"><label>${label}</label>
+      <select class="input" data-gen="${key}">
+        ${list.map(o => `<option value="${esc(o.id)}" ${o.id === cur ? "selected" : ""}>${
+          esc((o.id.charAt(0).toUpperCase() + o.id.slice(1)) + (o.desc ? " — " + o.desc : o.rounds ? " — " + o.rounds + " rounds" : ""))}</option>`).join("")}
+      </select></div>`;
+
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="gX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Something to fight over</div></div>
+
+    ${!ai ? `<p class="lead">${esc(aiTrouble("not_granted"))}</p>` : `
+    <div class="slab" style="margin-top:6px">
+      ${pick(sc.modes, "mode", S.mode, "How it is played")}
+      ${pick(sc.themes, "theme", S.theme, "Where")}
+      ${pick(sc.battleTypes, "type", S.type, "What kind of fight")}
+      ${pick(sc.difficulty, "difficulty", S.difficulty, "How hard")}
+      ${pick(sc.lengths, "length", S.length, "How long")}
+      <div class="row3">
+        <div class="field"><label>Players</label>
+          <input class="input mono" data-gen="players" inputmode="numeric" value="${S.players}"></div>
+        <div class="field"><label>Your points</label>
+          <input class="input mono" value="${S.mine}" readonly></div>
+        <div class="field"><label>Theirs</label>
+          <input class="input mono" data-gen="others" inputmode="numeric" value="${S.others}"></div>
+      </div>
+      <div class="field" style="margin-top:11px"><label>What is on your table (optional)</label>
+        <input class="input" data-gen="table" value="${esc(S.table)}"
+          placeholder="a stone arch, two shipping containers, a low wall, a dead tree"></div>
+      <p class="quiet" style="margin:10px 0 0">Game size <b>${size}</b> · the enemy gets
+        <b>${enemy}</b> · ${type.objectives && type.objectives.length
+          ? "objectives from: " + type.objectives.join(", ") : "the objectives are its own business"}</p>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn primary" id="gGo" ${S.busy || !size ? "disabled" : ""} style="margin-left:0">
+        ${S.busy ? "Writing…" : size ? "Write it" : "Field someone first"}</button>
+    </div>
+    <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) : ""}</div>`}`;
+
+  $("#gX").onclick = () => { closePicker(); };
+  if(!ai) return;
+  $("#sheet2In").querySelectorAll("[data-gen]").forEach(el => {
+    const k = el.dataset.gen;
+    el.onchange = el.oninput = e => {
+      const v = e.target.value;
+      S[k] = (k === "players" || k === "others")
+        ? Math.max(k === "players" ? 1 : 0, parseInt(String(v).replace(/\D/g, ""), 10) || (k === "players" ? 1 : 0))
+        : v;
+      if(k !== "table" && k !== "others" && k !== "players") drawGenerate(ai);
+    };
+  });
+  $("#gGo").onclick = () => runGenerate(ai);
+  if(S.out) bindScenario();
+}
+
+/* ---- asking ---- */
+async function runGenerate(ai){
+  const S = genState, sc = RS.scenario;
+  S.busy = true; drawGenerate(ai);
+  const size = S.mine + S.others;
+  const diff = (sc.difficulty || []).find(d => d.id === S.difficulty);
+  const enemy = Math.round(size * diff.enemyPct);
+  const type = (sc.battleTypes || []).find(t => t.id === S.type);
+  const theme = (sc.themes || []).find(t => t.id === S.theme);
+  const mode = (sc.modes || []).find(m => m.id === S.mode);
+  const len = (sc.lengths || []).find(l => l.id === S.length);
+  const objList = (type.objectives && type.objectives.length)
+    ? type.objectives : (sc.victory.objectiveTypes || []).map(o => o.id);
+  const markers = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
+
+  const prompt = `Write one scenario for ${RS.meta.name}, a grim tabletop skirmish game.
+A player's band is called the Unburied.
+
+THE BRIEF
+Mode: ${mode.id} — ${mode.desc}
+Where: ${theme.id} — ${theme.desc}
+Kind of fight: ${type.id} — ${type.desc}
+Players: ${S.players}. Game size: ${size} points. Difficulty: ${diff.id}.
+Length: ${len.rounds ? len.rounds + " rounds" : "until it ends"}.
+${S.table ? "On the table: " + S.table + ". Use these pieces by name when you place things." : ""}
+
+THE ENEMY gets ${enemy} points. Build them from this catalogue, by id. A unit is one
+profile fielded as one or more identical models; its cost is the profile cost times the
+model count. Keep the total at or under ${enemy}.
+
+Model profile: fight, aim, will, wits are dice on ${RS.dice.ladder.join(", ")} (default ${statDefault("fight")});
+move in cm (default ${statDefault("move")}); ${RSX.stat.wounds.name.toLowerCase()} (default ${statDefault("wounds")});
+actions (default ${statDefault("actions")}); size one of ${RSX.stat.size.values.join(", ")}.
+
+${aiCatalogue()}
+
+GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" — a name that suits that
+creature. Never leave it out.
+
+EACH ENEMY UNIT also gets a "protocol": two or three lines telling whoever runs them what
+to do, in the form "condition: order". Conditions may be ${sc.protocols.conditions.join(", ")}.
+Orders may be ${sc.protocols.orders.join(", ")}. They are read top to bottom; the first line
+whose condition is true is the one they do.
+
+OBJECTIVES must come only from: ${objList.join(", ")}.
+${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o => "  " + o.id + ": " + o.desc).join("\n")}
+
+MARKERS: there are ${markers} numbered suspicion markers on the table. For each, give a
+"where" — a short phrase saying where it is placed${S.table ? ", using the pieces named above" : ""}.
+Do NOT say what is under them; the app decides that.
+
+Reply with ONLY this JSON and nothing else:
+{"name":"the scenario's name, four words or fewer",
+ "situation":"2-3 sentences. What is happening and why anyone is here.",
+ "deployment":"one sentence on where each side starts",
+ "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
+ "objectives":[{"type":"one of the allowed ids","what":"what it is, in the fiction","vp":1}],
+ "twist":"one sentence, something that turns up in the second half",
+ "markers":[{"n":1,"where":"..."}],
+ "enemy":[{"name":"...","count":3,"points":0,
+   "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
+   "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
+   "armour":"id or null","protocol":["condition: order","condition: order"]}]}`;
+
+  try{
+    const raw = await ai.json(prompt, {modelTier: "default", cache: false});
+    S.out = legaliseScenario(raw, {size, enemy, objList, markers, diff, len, type, theme, mode});
+  }catch(e){
+    S.out = null;
+    toast(aiTrouble(e && e.code) || "That did not work");
+  }finally{
+    S.busy = false; drawGenerate(ai);
+  }
+}
+
+/* ---- checking it against the rules ---- */
+function legaliseScenario(raw, ctx){
+  if(!raw || typeof raw !== "object") return null;
+  const out = {
+    name: String(raw.name || "Unnamed").slice(0, 60),
+    situation: String(raw.situation || "").slice(0, 600),
+    deployment: String(raw.deployment || "").slice(0, 300),
+    twist: String(raw.twist || "").slice(0, 300),
+    environment: (RS.scenario.environment || []).some(e => e.id === raw.environment) ? raw.environment : null,
+    size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
+    rounds: ctx.len.rounds, type: ctx.type.id, theme: ctx.theme.id, mode: ctx.mode.id,
+    objectives: [], markers: [], enemy: [], notes: []
+  };
+
+  (Array.isArray(raw.objectives) ? raw.objectives : []).slice(0, 4).forEach(o => {
+    const t = (RS.scenario.victory.objectiveTypes || []).find(x => x.id === (o && o.type));
+    if(!t || !ctx.objList.includes(t.id)){ out.notes.push("dropped an objective that this battle type does not allow"); return; }
+    out.objectives.push({type: t.id, what: String(o.what || t.desc).slice(0, 120),
+                         vp: Math.max(1, Math.min(5, parseInt(o.vp, 10) || 1)), rule: t.desc});
+  });
+
+  for(let i = 1; i <= ctx.markers; i++){
+    const m = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
+    out.markers.push({n: i, where: m ? String(m.where || "").slice(0, 120) : ""});
+  }
+
+  let spent = 0;
+  (Array.isArray(raw.enemy) ? raw.enemy : []).slice(0, 6).forEach(u => {
+    const built = aiLegalise(Object.assign({}, u, {name: u.name}), 9999);
+    if(!built) return;
+    const count = Math.max(1, Math.min(10, parseInt(u.count, 10) || 1));
+    const per = memberCost(built);
+    const cost = per * count;
+    if(spent + cost > ctx.enemy){ out.notes.push("left out " + (u.name || "a unit") + " — it would not fit the points"); return; }
+    spent += cost;
+    out.enemy.push({name: built.name || "Enemy", count, per, cost, built,
+      protocol: (Array.isArray(u.protocol) ? u.protocol : []).map(x => String(x).slice(0, 90)).slice(0, 4)});
+  });
+  out.enemySpent = spent;
+  if(!out.enemy.length) out.notes.push("no enemy came back that fitted the points");
+  return out;
+}
+
+/* ---- showing it ---- */
+function scenarioHTML(s){
+  if(!s) return `<p class="quiet">Nothing came back.</p>`;
+  const env = s.environment ? (RS.scenario.environment || []).find(e => e.id === s.environment) : null;
+  return `
+  <div class="slab" style="border-color:var(--gilt-deep)">
+    <div class="cardname" style="font-size:21px;margin-bottom:6px">${esc(s.name)}</div>
+    <p class="serif" style="font-size:14px;line-height:1.6;color:var(--ash-dim);margin:0 0 11px">${esc(s.situation)}</p>
+    <div class="grow"><div class="grow-main"><div class="grow-name">Deployment</div>
+      <div class="grow-sub">${esc(s.deployment)}</div></div></div>
+    ${env ? `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(env.id.charAt(0).toUpperCase() + env.id.slice(1))}</div>
+      <div class="grow-sub">${esc(env.effect)}</div></div></div>` : ""}
+    ${s.twist ? `<div class="grow"><div class="grow-main"><div class="grow-name">Later</div>
+      <div class="grow-sub">${esc(s.twist)}</div></div></div>` : ""}
+  </div>
+
+  ${s.objectives.length ? `<div class="slab">
+    <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
+    ${s.objectives.map(o => `<div class="says">
+      <div class="says-n">${esc(o.what)} <span class="chip gilt">${o.vp} VP</span>
+        <span class="chip">${esc(o.type)}</span></div>
+      <div class="says-d">${esc(o.rule)}</div></div>`).join("")}
+  </div>` : ""}
+
+  <div class="slab">
+    <div class="head"><span class="eyebrow">Against you</span><span class="rule"></span>
+      <span class="chip ${s.enemySpent > s.enemyBudget ? "bad" : "gilt"} mono">${s.enemySpent} of ${s.enemyBudget}</span></div>
+    ${s.enemy.map(u => `<div class="says">
+      <div class="says-n">${esc(u.name)} <span class="chip">×${u.count}</span>
+        <span class="chip mono">${u.cost}</span></div>
+      <div class="says-d">${esc(enemyLine(u.built))}</div>
+      ${u.protocol.length ? `<div class="says-d quiet">${u.protocol.map(esc).join(" · ")}</div>` : ""}
+    </div>`).join("")}
+  </div>
+
+  <div class="slab">
+    <div class="head"><span class="eyebrow">Markers</span><span class="rule"></span>
+      <span class="quiet">what is under them stays with you</span></div>
+    ${s.markers.map(m => `<div class="grow"><div class="grow-main">
+      <div class="grow-name">${m.n}</div><div class="grow-sub">${esc(m.where || "wherever suits")}</div>
+    </div></div>`).join("")}
+  </div>
+
+  ${s.notes.length ? `<div class="slab"><div class="head"><span class="eyebrow">What was trimmed</span><span class="rule"></span></div>
+    ${s.notes.map(n => `<p class="quiet" style="margin:0 0 5px">${esc(n)}</p>`).join("")}</div>` : ""}
+
+  <div class="sheet-actions">
+    <button class="btn ghost" id="gAgain" style="margin-left:0">Write another</button>
+    <button class="btn primary" id="gTake">Take them out</button>
+  </div>`;
+}
+function enemyLine(m){
+  const bits = DIE_STATS.map(k => RSX.stat[k].name.slice(0, 2) + " " + m[k]).join(" · ");
+  const w = (m.weapons || []).map(e => skinOf(m, e.id, (catOf("weapons")[e.id] || {}).name)).join(", ");
+  const t = (m.traits || []).map(id => (catOf("traits")[id] || {}).name).filter(Boolean).join(", ");
+  return [bits, m.wounds + " " + RSX.stat.wounds.name, w, t].filter(Boolean).join("  ·  ");
+}
+function bindScenario(){
+  const again = $("#gAgain"), take = $("#gTake");
+  if(again) again.onclick = async () => runGenerate(await getAI());
+  if(take) take.onclick = () => startFromScenario(genState.out);
+}
+
+/* ---- into a quest ---- */
+function startFromScenario(s){
+  if(!s) return;
+  if(!questBegin(s.size)) return;
+  Q.difficulty = s.difficulty;
+  Q.reward = s.reward;
+  Q.enemyPoints = s.enemyBudget;
+  Q.scenario = {name: s.name, situation: s.situation, deployment: s.deployment,
+                twist: s.twist, environment: s.environment, objectives: s.objectives,
+                rounds: s.rounds, type: s.type, theme: s.theme};
+  /* the generator's placements, over the app's own secret contents */
+  Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g) m.where = g.where; });
+  s.enemy.forEach(u => {
+    const f = questFoe(u.name, u.count, u.built.wounds, activationsOf(Object.assign({}, u.built, {count: u.count})));
+    f.profile = u.built;
+    f.protocol = u.protocol;
+    f.points = u.cost;
+    Q.units.push(f);
+  });
+  questSave();
+  genState = null;
+  closePicker(); render();
+  toast(s.name + " — begins");
 }
 
 /* ---- realm.js ---- */
