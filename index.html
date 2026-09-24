@@ -415,6 +415,15 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .qs-top button.chip{cursor:pointer;font:inherit}
 
 .says-n{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+
+.opts{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.opt{display:block;text-align:left;padding:10px 12px;border-radius:var(--r-md);
+  border:1px solid var(--line);background:var(--stone-2);color:inherit;font:inherit;cursor:pointer}
+.opt:hover{border-color:var(--gilt-deep)}
+.opt.on{border-color:var(--gilt);background:var(--gilt-glow)}
+.opt b{display:block;font-size:13.5px;margin-bottom:3px}
+.opt span{display:block;font-size:11.5px;color:var(--ash-mute);line-height:1.4}
+.head button.chip{cursor:pointer;font:inherit;font-size:11px}
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -4401,7 +4410,9 @@ function renderUnburied(b){
   /* Only offered where there is something to answer: the artifact's own
      sampling, or an endpoint you have set. Elsewhere it stays hidden
      rather than sitting there dead. */
-  getAI().then(ai => { if(ai) conj.hidden = false; });
+  /* Asked for lazily: the answer may take a moment to exist, and the tile
+     simply appears when it does. */
+  getAI().then(ai => { if(ai && conj.isConnected) conj.hidden = false; });
   const add = document.createElement("button");
   add.className = "marker add";
   add.innerHTML = `<div class="plus">†</div><span>Raise one of the Unburied</span>`;
@@ -5364,15 +5375,32 @@ const AI_ENDPOINT = "";                 // e.g. "https://epitaph.<you>.workers.d
 function aiKey(){ try{ return localStorage.getItem("ep_aikey") || ""; }catch(e){ return ""; } }
 
 let _ai, _aiTried = false;
+/* The runtime that grants sampling is injected after the page's first scripts
+   run, so asking the moment we boot finds nothing. Wait for it to turn up
+   before deciding there is none — and never cache "no" just because it has
+   not arrived yet, or the whole session is stuck with that answer. */
+const AI_WAIT_MS = 10000, AI_POLL_MS = 120;
+let _aiPending = null;
+function claudeReady(){ return !!(window.claude && typeof window.claude.use === "function"); }
+
 async function getAI(){
   if(_aiTried) return _ai;
-  _aiTried = true;
-  if(AI_ENDPOINT){ _ai = httpAI(AI_ENDPOINT); return _ai; }
-  try{
-    _ai = (window.claude && typeof window.claude.use === "function")
-      ? await window.claude.use("sample") : null;
-  }catch(e){ _ai = null; }
-  return _ai;
+  if(_aiPending) return _aiPending;
+  _aiPending = (async () => {
+    if(AI_ENDPOINT){ _ai = httpAI(AI_ENDPOINT); _aiTried = true; return _ai; }
+    const until = Date.now() + AI_WAIT_MS;
+    while(!claudeReady() && Date.now() < until){
+      await new Promise(r => setTimeout(r, AI_POLL_MS));
+    }
+    if(!claudeReady()){ _ai = null; _aiTried = true; return null; }
+    try{ _ai = await window.claude.use("sample"); }
+    catch(e){ _ai = null; }
+    _aiTried = true;
+    return _ai;
+  })();
+  const got = await _aiPending;
+  _aiPending = null;
+  return got;
 }
 function httpAI(url){
   async function post(prompt, opts){
@@ -5400,7 +5428,7 @@ function aiTrouble(code){
   switch(code){
     case "not_granted": case "sampling_disabled": case "capability_disabled":
     case "not_declared": case "capability_removed":
-      return "The conjuring only works where this app has been given one. Open it from your claude.ai artifacts, or point it at your own service.";
+      return "There is no AI behind this copy. It works in the version opened from claude.ai — you may be on the web address instead, where it stays dark until you point it at your own service.";
     case "rate_limited": return "Too many at once. Wait a moment and try again.";
     case "offline":      return "No answer from the service. Check the connection.";
     case "bad_json":     return "What came back was garbled. Try again.";
@@ -6739,9 +6767,10 @@ let genState = null;
 
 function genDefaults(){
   const b = band();
-  return {mode: "coop", players: 1, theme: "ruin", type: "raid",
-          difficulty: "standard", length: "standard",
-          mine: bandSpent(b), others: 0, table: "", out: null, busy: false};
+  return {wish: "", mode: "coop", type: "", theme: "", difficulty: "standard",
+          length: "standard", players: 1,
+          perBand: Math.max(50, bandSpent(b) || b.budget),
+          table: "", more: false, out: null, busy: false};
 }
 
 async function openGenerate(){
@@ -6754,16 +6783,18 @@ async function openGenerate(){
 
 function drawGenerate(ai){
   const S = genState, sc = RS.scenario;
-  const size = S.mine + S.others;
+  const size = S.players * S.perBand;
   const diff = (sc.difficulty || []).find(d => d.id === S.difficulty) || {enemyPct: 1, reward: 1};
   const enemy = Math.round(size * diff.enemyPct);
-  const type = (sc.battleTypes || []).find(t => t.id === S.type) || {};
-  const pick = (list, key, cur, label) => `
-    <div class="field" style="margin-bottom:11px"><label>${label}</label>
-      <select class="input" data-gen="${key}">
-        ${list.map(o => `<option value="${esc(o.id)}" ${o.id === cur ? "selected" : ""}>${
-          esc((o.id.charAt(0).toUpperCase() + o.id.slice(1)) + (o.desc ? " — " + o.desc : o.rounds ? " — " + o.rounds + " rounds" : ""))}</option>`).join("")}
-      </select></div>`;
+
+  const modeCard = m => `
+    <button class="opt ${S.mode === m.id ? "on" : ""}" data-mode="${esc(m.id)}">
+      <b>${esc(m.id === "coop" ? "Co-op" : m.id === "pvp" ? "Player vs player" : "Solo")}</b>
+      <span>${esc(m.desc)}</span></button>`;
+  const typeCard = t => `
+    <button class="opt ${S.type === t.id ? "on" : ""}" data-type="${esc(t.id)}">
+      <b>${esc(t.id.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()))}</b>
+      <span>${esc(t.desc)}</span></button>`;
 
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
@@ -6772,47 +6803,94 @@ function drawGenerate(ai){
       </button><div class="eyebrow">Something to fight over</div></div>
 
     ${!ai ? `<p class="lead">${esc(aiTrouble("not_granted"))}</p>` : `
-    <div class="slab" style="margin-top:6px">
-      ${pick(sc.modes, "mode", S.mode, "How it is played")}
-      ${pick(sc.themes, "theme", S.theme, "Where")}
-      ${pick(sc.battleTypes, "type", S.type, "What kind of fight")}
-      ${pick(sc.difficulty, "difficulty", S.difficulty, "How hard")}
-      ${pick(sc.lengths, "length", S.length, "How long")}
-      <div class="row3">
-        <div class="field"><label>Players</label>
-          <input class="input mono" data-gen="players" inputmode="numeric" value="${S.players}"></div>
-        <div class="field"><label>Your points</label>
-          <input class="input mono" value="${S.mine}" readonly></div>
-        <div class="field"><label>Theirs</label>
-          <input class="input mono" data-gen="others" inputmode="numeric" value="${S.others}"></div>
-      </div>
-      <div class="field" style="margin-top:11px"><label>What is on your table (optional)</label>
-        <input class="input" data-gen="table" value="${esc(S.table)}"
-          placeholder="a stone arch, two shipping containers, a low wall, a dead tree"></div>
-      <p class="quiet" style="margin:10px 0 0">Game size <b>${size}</b> · the enemy gets
-        <b>${enemy}</b> · ${type.objectives && type.objectives.length
-          ? "objectives from: " + type.objectives.join(", ") : "the objectives are its own business"}</p>
+
+    <div class="slab" style="margin-top:6px;border-color:var(--gilt-deep)">
+      <div class="head"><span class="eyebrow">What would you like to play?</span><span class="rule"></span></div>
+      <textarea class="input serif" id="gWish" rows="3" maxlength="400"
+        placeholder="a bell tower nobody will go near \u00b7 something is taking the dead \u00b7 we owe a debt and it has come to collect \u00b7 a quiet job that goes wrong">${esc(S.wish)}</textarea>
+      <p class="quiet" style="margin:9px 0 0">Say as much or as little as you like. Everything
+        below is a nudge \u2014 leave any of it alone and it will choose.</p>
     </div>
 
+    <div class="slab">
+      <div class="head"><span class="eyebrow">How it is played</span><span class="rule"></span></div>
+      <div class="opts">${(sc.modes || []).map(modeCard).join("")}</div>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">What kind of mission</span><span class="rule"></span>
+        <button class="chip ${S.type ? "" : "gilt"}" data-type="">let it decide</button></div>
+      <div class="opts">${(sc.battleTypes || []).map(typeCard).join("")}</div>
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">The table</span><span class="rule"></span>
+        <span class="chip gilt mono">${size} points</span></div>
+      <div class="row3">
+        <div class="field"><label>Players</label>
+          <div class="stepper" style="width:100%;justify-content:space-between">
+            <button data-players="-1">\u2212</button><span>${S.players}</span><button data-players="1">+</button>
+          </div></div>
+        <div class="field" style="grid-column:span 2"><label>Points per band</label>
+          <input class="input mono" id="gPer" inputmode="numeric" value="${S.perBand}"></div>
+      </div>
+      <p class="quiet" style="margin:9px 0 0">${S.players} band${S.players === 1 ? "" : "s"} of
+        ${S.perBand} \u2014 the enemy gets <b>${enemy}</b> on ${esc(S.difficulty)}.</p>
+    </div>
+
+    <button class="btn sm ghost" id="gMore" style="margin-bottom:12px">
+      ${S.more ? "\u2212 fewer choices" : "+ more choices"}</button>
+
+    ${S.more ? `
+    <div class="slab">
+      <div class="head"><span class="eyebrow">If you care</span><span class="rule"></span></div>
+      <div class="field" style="margin-bottom:11px"><label>Where</label>
+        <select class="input" id="gTheme">
+          <option value="">let it decide</option>
+          ${(sc.themes || []).map(t => `<option value="${esc(t.id)}" ${S.theme === t.id ? "selected" : ""}>${esc(t.id)} \u2014 ${esc(t.desc)}</option>`).join("")}
+        </select></div>
+      <div class="field" style="margin-bottom:11px"><label>How hard</label>
+        <select class="input" id="gDiff">
+          ${(sc.difficulty || []).map(d => `<option value="${esc(d.id)}" ${S.difficulty === d.id ? "selected" : ""}>${esc(d.id)} \u2014 enemy \u00d7${d.enemyPct}, pays \u00d7${d.reward}</option>`).join("")}
+        </select></div>
+      <div class="field" style="margin-bottom:11px"><label>How long</label>
+        <select class="input" id="gLen">
+          ${(sc.lengths || []).map(l => `<option value="${esc(l.id)}" ${S.length === l.id ? "selected" : ""}>${esc(l.id)}${l.rounds ? " \u2014 " + l.rounds + " rounds" : ""}</option>`).join("")}
+        </select></div>
+      <div class="field"><label>What is on your table</label>
+        <input class="input" id="gTable" value="${esc(S.table)}"
+          placeholder="a stone arch, two containers, a low wall, a dead tree"></div>
+    </div>` : ""}
+
     <div class="sheet-actions">
-      <button class="btn primary" id="gGo" ${S.busy || !size ? "disabled" : ""} style="margin-left:0">
-        ${S.busy ? "Writing…" : size ? "Write it" : "Field someone first"}</button>
+      <button class="btn primary" id="gGo" ${S.busy ? "disabled" : ""} style="margin-left:0">
+        ${S.busy ? "Writing\u2026" : "Write it"}</button>
     </div>
     <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) : ""}</div>`}`;
 
   $("#gX").onclick = () => { closePicker(); };
   if(!ai) return;
-  $("#sheet2In").querySelectorAll("[data-gen]").forEach(el => {
-    const k = el.dataset.gen;
-    el.onchange = el.oninput = e => {
-      const v = e.target.value;
-      S[k] = (k === "players" || k === "others")
-        ? Math.max(k === "players" ? 1 : 0, parseInt(String(v).replace(/\D/g, ""), 10) || (k === "players" ? 1 : 0))
-        : v;
-      if(k !== "table" && k !== "others" && k !== "players") drawGenerate(ai);
-    };
+
+  const keep = () => {
+    const w = $("#gWish"); if(w) S.wish = w.value;
+    const p = $("#gPer"); if(p) S.perBand = Math.max(10, parseInt(p.value.replace(/\D/g, ""), 10) || 10);
+    const t = $("#gTable"); if(t) S.table = t.value;
+  };
+  const w = $("#gWish"); if(w) w.oninput = e => S.wish = e.target.value;
+  const per = $("#gPer"); if(per) per.oninput = e => { S.perBand = Math.max(10, parseInt(e.target.value.replace(/\D/g, ""), 10) || 10); };
+  const tbl = $("#gTable"); if(tbl) tbl.oninput = e => S.table = e.target.value;
+
+  $("#sheet2In").querySelectorAll("[data-mode]").forEach(b2 => b2.onclick = () => { keep(); S.mode = b2.dataset.mode; drawGenerate(ai); });
+  $("#sheet2In").querySelectorAll("[data-type]").forEach(b2 => b2.onclick = () => { keep(); S.type = b2.dataset.type; drawGenerate(ai); });
+  $("#sheet2In").querySelectorAll("[data-players]").forEach(b2 => b2.onclick = () => {
+    keep(); S.players = Math.max(1, Math.min(RS.scenario.players.max || 4, S.players + (+b2.dataset.players)));
+    drawGenerate(ai);
   });
-  $("#gGo").onclick = () => runGenerate(ai);
+  const more = $("#gMore"); if(more) more.onclick = () => { keep(); S.more = !S.more; drawGenerate(ai); };
+  const th = $("#gTheme"); if(th) th.onchange = e => { keep(); S.theme = e.target.value; drawGenerate(ai); };
+  const df = $("#gDiff"); if(df) df.onchange = e => { keep(); S.difficulty = e.target.value; drawGenerate(ai); };
+  const ln = $("#gLen"); if(ln) ln.onchange = e => { keep(); S.length = e.target.value; drawGenerate(ai); };
+  $("#gGo").onclick = () => { keep(); runGenerate(ai); };
   if(S.out) bindScenario();
 }
 
@@ -6820,13 +6898,22 @@ function drawGenerate(ai){
 async function runGenerate(ai){
   const S = genState, sc = RS.scenario;
   S.busy = true; drawGenerate(ai);
-  const size = S.mine + S.others;
+
+  const size = S.players * S.perBand;
   const diff = (sc.difficulty || []).find(d => d.id === S.difficulty);
   const enemy = Math.round(size * diff.enemyPct);
-  const type = (sc.battleTypes || []).find(t => t.id === S.type);
-  const theme = (sc.themes || []).find(t => t.id === S.theme);
-  const mode = (sc.modes || []).find(m => m.id === S.mode);
   const len = (sc.lengths || []).find(l => l.id === S.length);
+  const mode = (sc.modes || []).find(m => m.id === S.mode);
+
+  /* Anything left on "let it decide" is chosen here, so the scenario still
+     comes back legal, and the choice is shown afterwards rather than hidden. */
+  const type = S.type
+    ? (sc.battleTypes || []).find(t => t.id === S.type)
+    : (sc.battleTypes || [])[Math.floor(Math.random() * sc.battleTypes.length)];
+  const theme = S.theme
+    ? (sc.themes || []).find(t => t.id === S.theme)
+    : (sc.themes || [])[Math.floor(Math.random() * sc.themes.length)];
+
   const objList = (type.objectives && type.objectives.length)
     ? type.objectives : (sc.victory.objectiveTypes || []).map(o => o.id);
   const markers = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
@@ -6834,13 +6921,19 @@ async function runGenerate(ai){
   const prompt = `Write one scenario for ${RS.meta.name}, a grim tabletop skirmish game.
 A player's band is called the Unburied.
 
-THE BRIEF
-Mode: ${mode.id} — ${mode.desc}
-Where: ${theme.id} — ${theme.desc}
-Kind of fight: ${type.id} — ${type.desc}
-Players: ${S.players}. Game size: ${size} points. Difficulty: ${diff.id}.
-Length: ${len.rounds ? len.rounds + " rounds" : "until it ends"}.
-${S.table ? "On the table: " + S.table + ". Use these pieces by name when you place things." : ""}
+${S.wish.trim() ? `WHAT THEY ASKED FOR \u2014 this matters more than anything below. Build the
+scenario around it; the rest is only there to keep it legal.
+
+  "${S.wish.trim()}"
+` : "They did not say what they wanted, so surprise them."}
+
+THE SHAPE
+Mode: ${mode.id} \u2014 ${mode.desc}
+Kind of mission: ${type.id} \u2014 ${type.desc}${S.type ? "" : "  (chosen for them)"}
+Where: ${theme.id} \u2014 ${theme.desc}${S.theme ? "" : "  (chosen for them)"}
+${S.players} player${S.players === 1 ? "" : "s"}, ${S.perBand} points each, ${size} in total.
+Difficulty ${diff.id}. ${len.rounds ? len.rounds + " rounds" : "no fixed length"}.
+${S.table.trim() ? "On the table: " + S.table.trim() + ". Place things against these pieces by name." : ""}
 
 THE ENEMY gets ${enemy} points. Build them from this catalogue, by id. A unit is one
 profile fielded as one or more identical models; its cost is the profile cost times the
@@ -6852,19 +6945,18 @@ actions (default ${statDefault("actions")}); size one of ${RSX.stat.size.values.
 
 ${aiCatalogue()}
 
-GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" — a name that suits that
+GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" \u2014 a name that suits that
 creature. Never leave it out.
 
-EACH ENEMY UNIT also gets a "protocol": two or three lines telling whoever runs them what
-to do, in the form "condition: order". Conditions may be ${sc.protocols.conditions.join(", ")}.
-Orders may be ${sc.protocols.orders.join(", ")}. They are read top to bottom; the first line
-whose condition is true is the one they do.
+EACH ENEMY UNIT gets a "protocol": two or three lines telling whoever runs them what to do,
+as "condition: order". Conditions may be ${sc.protocols.conditions.join(", ")}.
+Orders may be ${sc.protocols.orders.join(", ")}. Read top to bottom; the first true line wins.
 
 OBJECTIVES must come only from: ${objList.join(", ")}.
 ${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o => "  " + o.id + ": " + o.desc).join("\n")}
 
-MARKERS: there are ${markers} numbered suspicion markers on the table. For each, give a
-"where" — a short phrase saying where it is placed${S.table ? ", using the pieces named above" : ""}.
+MARKERS: ${markers} numbered markers are on the table. For each give a "where" \u2014 a short
+phrase saying where it sits${S.table.trim() ? ", using the pieces named above" : ""}.
 Do NOT say what is under them; the app decides that.
 
 Reply with ONLY this JSON and nothing else:
@@ -6875,14 +6967,16 @@ Reply with ONLY this JSON and nothing else:
  "objectives":[{"type":"one of the allowed ids","what":"what it is, in the fiction","vp":1}],
  "twist":"one sentence, something that turns up in the second half",
  "markers":[{"n":1,"where":"..."}],
- "enemy":[{"name":"...","count":3,"points":0,
+ "enemy":[{"name":"...","count":3,
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
    "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
    "armour":"id or null","protocol":["condition: order","condition: order"]}]}`;
 
   try{
     const raw = await ai.json(prompt, {modelTier: "default", cache: false});
-    S.out = legaliseScenario(raw, {size, enemy, objList, markers, diff, len, type, theme, mode});
+    S.out = legaliseScenario(raw, {size, enemy, objList, markers, diff, len, type, theme, mode,
+                                   players: S.players, perBand: S.perBand,
+                                   chose: {type: !S.type, theme: !S.theme}});
   }catch(e){
     S.out = null;
     toast(aiTrouble(e && e.code) || "That did not work");
@@ -6902,6 +6996,7 @@ function legaliseScenario(raw, ctx){
     environment: (RS.scenario.environment || []).some(e => e.id === raw.environment) ? raw.environment : null,
     size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
     rounds: ctx.len.rounds, type: ctx.type.id, theme: ctx.theme.id, mode: ctx.mode.id,
+    players: ctx.players, perBand: ctx.perBand, chose: ctx.chose || {},
     objectives: [], markers: [], enemy: [], notes: []
   };
 
@@ -6941,6 +7036,14 @@ function scenarioHTML(s){
   return `
   <div class="slab" style="border-color:var(--gilt-deep)">
     <div class="cardname" style="font-size:21px;margin-bottom:6px">${esc(s.name)}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+      <span class="chip">${esc(s.mode === "coop" ? "Co-op" : s.mode === "pvp" ? "Player vs player" : "Solo")}</span>
+      <span class="chip ${s.chose && s.chose.type ? "gilt" : ""}">${esc(s.type)}${s.chose && s.chose.type ? " · chosen" : ""}</span>
+      <span class="chip ${s.chose && s.chose.theme ? "gilt" : ""}">${esc(s.theme)}${s.chose && s.chose.theme ? " · chosen" : ""}</span>
+      <span class="chip">${s.players || 1}×${s.perBand || 0}</span>
+      <span class="chip">${esc(s.difficulty)}</span>
+      ${s.rounds ? `<span class="chip">${s.rounds} rounds</span>` : ""}
+    </div>
     <p class="serif" style="font-size:14px;line-height:1.6;color:var(--ash-dim);margin:0 0 11px">${esc(s.situation)}</p>
     <div class="grow"><div class="grow-main"><div class="grow-name">Deployment</div>
       <div class="grow-sub">${esc(s.deployment)}</div></div></div>
