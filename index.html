@@ -346,6 +346,10 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .says-n{font-size:14px;font-weight:600}
 .says-d{font-size:13px;color:var(--ash-dim);line-height:1.5;margin-top:2px;white-space:pre-line}
 .says.bad .says-n{color:var(--rust)}
+
+.marker.add.conjure{border-color:var(--gilt-deep)}
+.marker.add.conjure .plus{color:var(--gilt)}
+.marker.add.conjure:hover{background:var(--gilt-glow)}
 </style>
 
 </head>
@@ -4253,6 +4257,15 @@ function renderUnburied(b){
     };
     list.appendChild(el);
   });
+  const conj = document.createElement("button");
+  conj.className = "marker add conjure";
+  conj.hidden = true;
+  conj.innerHTML = `<div class="plus">✦</div><span>Call something up</span>`;
+  conj.onclick = openConjure;
+  /* Only offered where there is something to answer: the artifact's own
+     sampling, or an endpoint you have set. Elsewhere it stays hidden
+     rather than sitting there dead. */
+  getAI().then(ai => { if(ai) conj.hidden = false; });
   const add = document.createElement("button");
   add.className = "marker add";
   add.innerHTML = `<div class="plus">†</div><span>Raise one of the Unburied</span>`;
@@ -4262,6 +4275,7 @@ function renderUnburied(b){
     openMember(m.id);
   };
   list.appendChild(add);
+  list.appendChild(conj);
 }
 
 /* ---------------------------------------------------------------- boot */
@@ -4889,6 +4903,263 @@ function drawCard(){
 function questUnit(m){ return null; }
 function questStripHTML(){ return ""; }
 function questBind(){}
+
+/* ---- ai.js ---- */
+/* =====================================================================
+   THE AI
+   One way in, two possible backends. Today it is the artifact's own
+   sampling; set AI_ENDPOINT and every AI feature moves to a server you
+   run, without a line changing anywhere else.
+
+   Whatever comes back is a suggestion. Every id is checked against the
+   ruleset and the whole build is trimmed until it fits the points, so a
+   hallucinated trait or an overspend never reaches the roster.
+   ===================================================================== */
+
+const AI_ENDPOINT = "";                 // e.g. "https://epitaph.<you>.workers.dev/ask"
+function aiKey(){ try{ return localStorage.getItem("ep_aikey") || ""; }catch(e){ return ""; } }
+
+let _ai, _aiTried = false;
+async function getAI(){
+  if(_aiTried) return _ai;
+  _aiTried = true;
+  if(AI_ENDPOINT){ _ai = httpAI(AI_ENDPOINT); return _ai; }
+  try{
+    _ai = (window.claude && typeof window.claude.use === "function")
+      ? await window.claude.use("sample") : null;
+  }catch(e){ _ai = null; }
+  return _ai;
+}
+function httpAI(url){
+  async function post(prompt, opts){
+    let r;
+    try{
+      r = await fetch(url, {method:"POST",
+        headers: Object.assign({"content-type":"application/json"}, aiKey() ? {authorization:"Bearer " + aiKey()} : {}),
+        body: JSON.stringify({prompt, tier:(opts && opts.modelTier) || "default"})});
+    }catch(e){ throw {code:"offline", message:"Could not reach the service."}; }
+    if(!r.ok) throw {code: r.status === 401 || r.status === 403 ? "not_granted"
+                         : r.status === 429 ? "rate_limited" : "error",
+                     message:"The service answered " + r.status + "."};
+    return String(((await r.json().catch(() => ({}))) || {}).text || "");
+  }
+  const ask = async (p, o) => { const text = await post(p, o); if(o && o.onText) o.onText({text}); return {text}; };
+  ask.json = async (p, o) => {
+    const text = await post(p, o);
+    const m = text.match(/[\[{][\s\S]*[\]}]/);
+    try{ return JSON.parse(m ? m[0] : text); }
+    catch(e){ throw {code:"bad_json", message:"The reply was not valid JSON."}; }
+  };
+  return ask;
+}
+function aiTrouble(code){
+  switch(code){
+    case "not_granted": case "sampling_disabled": case "capability_disabled":
+    case "not_declared": case "capability_removed":
+      return "The conjuring only works where this app has been given one. Open it from your claude.ai artifacts, or point it at your own service.";
+    case "rate_limited": return "Too many at once. Wait a moment and try again.";
+    case "offline":      return "No answer from the service. Check the connection.";
+    case "bad_json":     return "What came back was garbled. Try again.";
+    case "cancelled":    return "";
+    default:             return "That did not work. Try again.";
+  }
+}
+
+/* ---- what the ruleset offers, written out for the model to choose from ---- */
+function aiCatalogue(){
+  const line = kind => Object.values(catOf(kind))
+    .map(o => `${o.id} "${o.name}" (${o.cost})`).join(", ");
+  const weapons = Object.values(catOf("weapons"))
+    .map(o => `${o.id} "${o.name}" (${o.cost}; ${o.desc})`).join(", ");
+  const mods = Object.values(catOf("mods"))
+    .map(o => `${o.id} "${o.name}" (+${o.cost}: ${o.desc})`).join(", ");
+  return `TRAITS: ${line("traits")}
+ABILITIES: ${line("abilities")}
+POWERS: ${line("powers")}
+FLAWS (these give points back): ${line("flaws")}
+WEAPONS: ${weapons}
+WEAPON EFFECTS (any weapon may take some): ${mods}
+ARMOUR: ${line("armour")}
+CARRIED: ${line("items")}`;
+}
+
+/* ---- turn a suggestion into something legal ---- */
+function aiLegalise(raw, budget){
+  if(!raw || typeof raw !== "object") return null;
+  const m = newMember();
+  const st = raw.stats || {};
+  DIE_STATS.forEach(k => {
+    const conf = RSX.stat[k], i = RSX.ladder.indexOf(dieNum(String(st[k] || "").trim()));
+    if(i < 0){ m[k] = conf.default; return; }
+    const lo = RSX.ladder.indexOf(dieNum(conf.min)), hi = RSX.ladder.indexOf(dieNum(conf.max));
+    m[k] = dieName(RSX.ladder[Math.max(lo, Math.min(hi, i))]);
+  });
+  const clamp = (v, conf, step) => {
+    let n = Math.round(+v); if(!isFinite(n)) n = conf.default;
+    if(step) n = conf.default + Math.round((n - conf.default) / step) * step;
+    return Math.max(conf.min, Math.min(conf.max, n));
+  };
+  m.move    = clamp(st.move, RSX.stat.move, RSX.stat.move.step);
+  m.wounds  = clamp(st.wounds, RSX.stat.wounds, RSX.stat.wounds.upStep || 1);
+  m.actions = clamp(st.actions, RSX.stat.actions);
+  if(RSX.stat.size && RSX.stat.size.values.includes(raw.size)) m.size = raw.size;
+
+  const keep = (arr, kind, max) => [...new Set((Array.isArray(arr) ? arr : [])
+    .map(x => (typeof x === "string" ? x : x && x.id))
+    .filter(id => catOf(kind)[id]))].slice(0, max);
+  m.traits    = keep(raw.traits, "traits", 4);
+  m.abilities = keep(raw.abilities, "abilities", 3);
+  m.powers    = keep(raw.powers, "powers", 3);
+  m.flaws     = keep(raw.flaws, "flaws", ((RS.flaws || {}).refundCap || {}).maxFlaws || 2);
+
+  (Array.isArray(raw.weapons) ? raw.weapons : []).slice(0, 3).forEach(x => {
+    const id = typeof x === "string" ? x : x && x.id;
+    if(!catOf("weapons")[id] || m.weapons.some(e => e.id === id)) return;
+    const mods = [...new Set(((x && x.mods) || []).filter(v => catOf("mods")[v]))];
+    m.weapons.push({id, qty: 1, mods});
+    const as = (x && typeof x.as === "string") ? x.as.trim().slice(0, 40) : "";
+    if(as && as.toLowerCase() !== catOf("weapons")[id].name.toLowerCase()) m.skins[id] = as;
+  });
+  if(catOf("armour")[raw.armour]) m.armour = [raw.armour];
+  m.items = keep(raw.items, "items", 2).map(id => ({id, qty: 1}));
+
+  /* Trim until it can be paid for: the trimmings go in the order a player
+     would give things up, cheapest flavour first, their own dice last. */
+  let guard = 80;
+  while(memberCost(m) > budget && guard-- > 0){
+    if(m.items.length){ m.items.pop(); continue; }
+    const withMods = m.weapons.filter(w => w.mods.length);
+    if(withMods.length){ withMods[withMods.length - 1].mods.pop(); continue; }
+    if(m.powers.length){ m.powers.pop(); continue; }
+    if(m.abilities.length){ m.abilities.pop(); continue; }
+    if(m.armour.length){ m.armour = []; continue; }
+    if(m.weapons.length > 1){ const g = m.weapons.pop(); delete m.skins[g.id]; continue; }
+    const costly = m.traits.filter(id => catOf("traits")[id].cost > 0);
+    if(costly.length){ m.traits.splice(m.traits.indexOf(costly[costly.length - 1]), 1); continue; }
+    if(m.wounds > RSX.stat.wounds.default){ m.wounds -= (RSX.stat.wounds.upStep || 1); continue; }
+    if(m.actions > RSX.stat.actions.default){ m.actions--; continue; }
+    const best = DIE_STATS.slice().sort((a, b) => dieNum(m[b]) - dieNum(m[a]))[0];
+    if(dieNum(m[best]) > dieNum(RSX.stat[best].default)){ m[best] = dieStep(m[best], -1); continue; }
+    if(m.weapons.length){ const g = m.weapons.pop(); delete m.skins[g.id]; continue; }
+    break;
+  }
+  m.name = String(raw.name || "").trim().slice(0, 42);
+  m.epithet = String(raw.epithet || "").trim().slice(0, 42);
+  m.role = String(raw.role || "").trim().slice(0, 40);
+  m.story = String(raw.story || "").trim();
+  return m.name ? m : null;
+}
+
+/* ---- the conjuring ---- */
+let aiAbort = null;
+async function openConjure(){
+  const ai = await getAI();
+  const b = band();
+  const budget = Math.max(RS.baseCost, b.budget - bandSpent(b));
+
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="cjX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="eyebrow">Call something up</div>
+    </div>
+    ${!ai ? `<p class="lead">${esc(aiTrouble("not_granted"))}</p>` : `
+    <p class="lead">Describe what you want and four of them will be raised, built and
+      costed against the ruleset. Nothing is added until you choose one.</p>
+    <div class="field" style="margin:14px 0 10px"><label>What is it</label>
+      <input class="input" id="cjBrief" maxlength="160"
+        placeholder="a drowned bell-ringer, a thing made of doors, an old soldier who will not stop"></div>
+    <div class="field" style="margin-bottom:12px"><label>Tone</label>
+      <select class="input" id="cjTone">
+        <option value="grim and plain">grim and plain</option>
+        <option value="mythic and strange">mythic and strange</option>
+        <option value="wretched and funny">wretched and funny</option>
+        <option value="cold and clinical">cold and clinical</option>
+      </select></div>
+    <p class="quiet">Up to <b>${budget}</b> points each — what the band has left.</p>
+    <div class="sheet-actions"><button class="btn primary" id="cjGo" style="margin-left:0">Raise four</button></div>
+    <div id="cjOut" style="margin-top:14px"></div>`}`;
+
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#cjX").onclick = () => { if(aiAbort) aiAbort.abort(); closePicker(); };
+  if(!ai) return;
+
+  $("#cjGo").onclick = async () => {
+    const go = $("#cjGo"), out = $("#cjOut");
+    const brief = $("#cjBrief").value.trim() || "whatever suits the Unburied";
+    const tone = $("#cjTone").value;
+    go.disabled = true; go.textContent = "Raising…";
+    out.innerHTML = `<p class="quiet">Digging… this takes a few seconds.</p>`;
+    aiAbort = new AbortController();
+    const prompt = `Invent 4 concepts for a single model in ${RS.meta.name}, a grim tabletop skirmish game.
+A band is called the Unburied. A model can be anything: a person, a beast, a machine, an elemental, something worse.
+Tone: ${tone}.
+Brief: ${brief}.
+
+For each, give: a name; an EPITHET (what others call them — short, like "the Quiet" or "Ashmouth"); a role in three words or fewer; and two or three sentences of story.
+
+Also give a "build" that matches the story — a brawler fights, a marksman aims, a mystic has Will and powers, a coward takes a flaw.
+
+STATS: fight, aim, will, wits are dice on the ladder ${RS.dice.ladder.join(", ")}, default ${statDefault("fight")}; stepping up costs points, stepping down gives a few back. Also move in cm (default ${statDefault("move")}, steps of ${RSX.stat.move.step}), ${RSX.stat.wounds.name.toLowerCase()} (default ${statDefault("wounds")}, bought in ${RSX.stat.wounds.upStep}s), actions (default ${statDefault("actions")}), size (${RSX.stat.size.values.join(", ")}).
+
+GEAR IS NAMED BY WHAT IT DOES, NOT WHAT IT LOOKS LIKE. "${catOf("weapons").rifle ? catOf("weapons").rifle.name : "Long-range weapon"}" is a stat line: it can be a rifle, a longbow, or an acid-spitting maw. So for EVERY weapon, also give "as" — a name that fits THIS model. A drowned bell-ringer does not carry a "Melee weapon", it swings a "Rusted clapper". Never leave "as" out.
+
+Flaws give points back and make a model more interesting. Use them.
+
+Use ONLY these ids:
+${aiCatalogue()}
+
+Keep each build under ${budget} points. Make the four genuinely different.
+
+Reply with ONLY a JSON array of 4 objects:
+[{"name":"...","epithet":"...","role":"...","story":"...","build":{"stats":{"fight":"d8","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},"size":"man","traits":["id"],"abilities":["id"],"powers":["id"],"flaws":["id"],"weapons":[{"id":"id","as":"its own name","mods":["id"]}],"armour":"id","items":["id"]}}]
+No other text.`;
+
+    try{
+      const list = await ai.json(prompt, {modelTier:"default", cache:false, signal:aiAbort.signal});
+      const made = (Array.isArray(list) ? list : []).map(x => {
+        const m = aiLegalise(Object.assign({}, x.build, {
+          name:x.name, epithet:x.epithet, role:x.role, story:x.story}), budget);
+        return m;
+      }).filter(Boolean);
+      if(!made.length){ out.innerHTML = `<p class="quiet">Nothing came up. Try again.</p>`; }
+      else out.innerHTML = made.map((m, i) => `
+        <div class="pick" style="cursor:default;display:block">
+          <div class="pick-name" style="font-family:'Cinzel',serif;font-size:15px">${esc(m.name)}</div>
+          ${m.epithet ? `<div class="cardepi" style="font-size:14px;margin:3px 0 5px">“${esc(m.epithet)}”</div>` : ""}
+          <div class="quiet">${esc(m.role)} · ${memberCost(m)} points</div>
+          <div class="says-d" style="margin-top:6px">${esc(m.story)}</div>
+          <div class="quiet" style="margin-top:7px">${esc(aiSummary(m))}</div>
+          <button class="btn sm primary" data-take="${i}" style="margin-top:10px">Raise this one</button>
+        </div>`).join("");
+      out.querySelectorAll("[data-take]").forEach(btn => btn.onclick = () => {
+        const m = made[+btn.dataset.take];
+        band().members.push(m); save();
+        closePicker(); render(); openCard(m.id);
+        toast(m.name + " joins the Unburied");
+      });
+      go.textContent = "Raise four more";
+    }catch(e){
+      const msg = aiTrouble(e && e.code);
+      out.innerHTML = msg ? `<p class="quiet">${esc(msg)}</p>` : "";
+      go.textContent = "Raise four";
+    }finally{ go.disabled = false; aiAbort = null; }
+  };
+}
+
+function aiSummary(m){
+  const nm = (arr, kind) => arr.map(id => (catOf(kind)[id] || {}).name).filter(Boolean);
+  const parts = [DIE_STATS.map(k => RSX.stat[k].name + " " + m[k]).join(" · "),
+                 m.wounds + " " + RSX.stat.wounds.name];
+  const w = m.weapons.map(e => skinOf(m, e.id, (catOf("weapons")[e.id] || {}).name));
+  if(w.length) parts.push(w.join(", "));
+  const t = nm(m.traits, "traits").concat(nm(m.abilities, "abilities"), nm(m.powers, "powers"));
+  if(t.length) parts.push(t.join(", "));
+  const f = nm(m.flaws, "flaws");
+  if(f.length) parts.push(f.join(", "));
+  return parts.join("  ·  ");
+}
 
 
 /* light / dark is the viewer's choice and is remembered on this device */
