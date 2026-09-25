@@ -5556,6 +5556,22 @@ function revealFoe(uidStr, why){
   questSave();
   return u;
 }
+
+/* Whoever is running a sealed scenario judges when a trigger has happened
+   and opens that envelope by hand — the conditions are plain English, not
+   something the app can watch for on its own. */
+function openEnvelope(eid){
+  const m = Q.scenario && Q.scenario.mystery; if(!m) return null;
+  const e = m.envelopes.find(x => x.eid === eid); if(!e || e.opened) return null;
+  e.opened = true;
+  qlog("Envelope — " + e.title);
+  if(e.revealsObjectives && !Q.scenario.objectivesKnown){
+    Q.scenario.objectivesKnown = true;
+    qlog("The objectives are revealed");
+  }
+  questSave();
+  return e;
+}
 function questUnit(m){ return Q ? Q.units.find(u => u.uid === m.id) : null; }
 function unitDown(u){ return u.models.every(h => h <= 0); }
 function unitStanding(u){ return u.models.filter(h => h > 0).length; }
@@ -5636,6 +5652,7 @@ function questStep(){
   } else if(Q.step === "acts"){
     Q.step = "end";
   } else {
+    const endingRound = Q.round;      // the round whose End step this is, before it advances
     Q.units.forEach(u => {
       if((u.cond || []).includes("burning")) hurtUnit(u, 1, "burning");
       if((u.cond || []).includes("tainted")) hurtUnit(u, 1, "tainted");
@@ -5643,6 +5660,13 @@ function questStep(){
       if(!u.pushed && u.strain > 0) u.strain = Math.max(0, u.strain - RS.strain.restDecay.amount);
       u.pushed = false;
     });
+    /* sealedRule, read literally: "revealed in the End step of round 2" —
+       this round's own End step, not the one that rolls into round 2. */
+    const sc2 = Q.scenario;
+    if(sc2 && sc2.sealed && !sc2.objectivesKnown && endingRound >= 2){
+      sc2.objectivesKnown = true;
+      qlog("The objectives are revealed");
+    }
     Q.round++; Q.step = "tempo";
     qlog("End of round — Burning and Tainted bite, Ready cleared, Strain rested");
     /* Anything the scenario keeps back for this round comes out now. Until it
@@ -7004,11 +7028,36 @@ function openBrief(){
         <div class="grow-sub">${esc(s.twist)}</div></div></div>` : ""}
     </div>
 
-    ${(s.objectives || []).length ? `<div class="slab">
+    ${s.sealed && (s.mystery && s.mystery.envelopes || []).length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">Envelopes</span><span class="rule"></span>
+        <span class="quiet">${s.mystery.envelopes.filter(e => e.opened).length}/${s.mystery.envelopes.length} opened</span></div>
+      ${s.mystery.question ? `<p class="lead" style="margin:0 0 11px">${esc(s.mystery.question)}</p>` : ""}
+      ${s.mystery.envelopes.map(e => e.opened ? `
+        <div class="says">
+          <div class="says-n">${esc(e.title)}</div>
+          <div class="says-d">${esc(e.text)}</div>
+        </div>` : `
+        <div class="grow"><div class="grow-main">
+          <div class="grow-name">Sealed</div>
+          <div class="grow-sub">opens when: ${esc(e.trigger)}</div></div>
+          <div class="grow-r"><button class="btn sm" data-envelope="${esc(e.eid)}">Open it</button></div>
+        </div>`).join("")}
+      ${(s.mystery.finale && s.mystery.envelopes.every(e => e.opened)) ? `
+        <div class="says" style="margin-top:4px;border-top:1px solid var(--gilt-deep);padding-top:11px">
+          <div class="says-n">Now it is clear</div>
+          <div class="says-d">${esc(s.mystery.finale)}</div>
+        </div>` : ""}
+    </div>` : ""}
+
+    ${(s.objectives || []).length ? (s.sealed && !s.objectivesKnown ? `<div class="slab">
+      <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0">Sealed until round 2, or until an envelope reveals it.
+        Casualties still score in the meantime.</p>
+    </div>` : `<div class="slab">
       <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
       ${s.objectives.map(o => `<div class="says">
         <div class="says-n">${esc(o.what)} <span class="chip gilt">${o.vp} VP</span></div>
-        <div class="says-d">${esc(o.rule)}</div></div>`).join("")}</div>` : ""}
+        <div class="says-d">${esc(o.rule)}</div></div>`).join("")}</div>`) : ""}
 
     ${(s.terrain || []).length ? `<div class="slab">
       <div class="head"><span class="eyebrow">What is on the table</span><span class="rule"></span></div>
@@ -7025,6 +7074,10 @@ function openBrief(){
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#brX").onclick = () => { events.forEach(e => { if(e.sprung) e.read = true; }); questSave(); closePicker(); render(); };
+  $("#sheet2In").querySelectorAll("[data-envelope]").forEach(b => b.onclick = () => {
+    openEnvelope(b.dataset.envelope);
+    openBrief(); render();
+  });
   $("#sheet2In").querySelectorAll("[data-spring]").forEach(b => b.onclick = () => {
     const e = events.find(x => x.round === +b.dataset.spring && !x.sprung);
     if(!e) return;
@@ -7735,8 +7788,14 @@ async function runGenerate(ai){
     ? (sc.themes || []).find(t => t.id === S.theme)
     : (sc.themes || [])[Math.floor(Math.random() * sc.themes.length)];
 
-  const objList = (type.objectives && type.objectives.length)
+  /* A sealed (mystery) battle type has no fixed objectives of its own \u2014 the
+     generator picks any it likes and the app hides them until round 2 or an
+     envelope says otherwise. Everything else works exactly as before. */
+  const sealed = !!type.sealed;
+  const objList = sealed ? (sc.victory.objectiveTypes || []).map(o => o.id)
+    : (type.objectives && type.objectives.length)
     ? type.objectives : (sc.victory.objectiveTypes || []).map(o => o.id);
+  const objCount = sealed ? (type.baseObjectives || 2) : null;
   const markers = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
 
   const roles = "cover, blocking, high, objective, hazard, marker";
@@ -7791,7 +7850,28 @@ ${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o =>
 
   specialRules  nought to three, one line each. Only if the place demands one.
   twist         one sentence. Something that turns in the second half.
+${sealed ? `
+  THIS IS A SEALED SCENARIO. Nobody knows what is going on yet \u2014 write it the way an
+  unnerving discovery feels: a thing is found, and nothing about it is understood at first.
+  Do NOT explain what it is in the briefing or the premise. The players find out through
+  envelopes, not through you telling them up front.
 
+  The objectives above should total exactly ${objCount}, chosen from any of the allowed
+  types \u2014 they stay secret until round 2 or an envelope reveals them, so do not describe
+  them in the briefing.
+
+  Also write a "mystery" object:
+    question   what the players are actually trying to work out, one sentence
+    truth      what is really going on \u2014 never told to the players directly, only
+               through envelopes
+    envelopes  three to five moments of discovery. Each: "trigger" (a plain condition
+               someone running the game can judge for themselves, e.g. "a model enters
+               the chamber", "round 3", "someone searches the body", "a model takes
+               damage from it"), "title" (short), "text" (what is found or realised,
+               atmospheric, revealing a piece of the truth), and "revealsObjectives"
+               (true on whichever envelope is what makes the real objectives known).
+    finale     one or two sentences: what becomes clear once every envelope has opened
+` : ""}
   markers    ${markers} numbered suspicion markers. For each give "where" \u2014 where it sits,
              naming a map feature if it suits. Do NOT say what is under them.
 
@@ -7815,6 +7895,7 @@ creature. A drowned thing does not carry a "Melee weapon", it swings a "Rusted c
 
 Reply with ONLY this JSON and nothing else:
 {"title":"...","premise":"...","briefing":"...","scenery":"...","deployment":"...",
+${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes":[{"trigger":"...","title":"...","text":"...","revealsObjectives":false}]},' : ""}
  "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
  "terrain":[{"name":"...","note":"...","role":"cover","ground":"even"}],
  "events":[{"round":3,"title":"...","text":"...","effect":{"type":"damage","amount":"1","where":"within 10 cm of the bell tower (3)","who":"every model"}}],
@@ -7830,7 +7911,7 @@ Reply with ONLY this JSON and nothing else:
 
   try{
     const raw = await ai.json(prompt, {modelTier: "default", cache: false});
-    S.out = legaliseScenario(raw, {size, enemy, objList, markers, diff, len, type, theme, mode,
+    S.out = legaliseScenario(raw, {size, enemy, objList, objCount, markers, diff, len, type, theme, mode,
                                    players: S.players, perBand: S.perBand,
                                    chose: {type: !S.type, theme: !S.theme}});
   }catch(e){
@@ -7863,9 +7944,28 @@ function legaliseScenario(raw, ctx){
     size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
     rounds: ctx.len.rounds, type: ctx.type.id, theme: ctx.theme.id, mode: ctx.mode.id,
     players: ctx.players, perBand: ctx.perBand, chose: ctx.chose || {},
+    sealed: !!ctx.type.sealed, mystery: null,
     terrain: [], events: [], map: {note: "", zones: [], features: []},
     objectives: [], specialRules: [], markers: [], enemy: [], notes: []
   };
+
+  /* The mystery block: everything is optional prose, so it is trimmed rather
+     than rejected \u2014 a sealed scenario with a thin mystery is still playable,
+     it just has less to open. */
+  if(out.sealed && raw.mystery && typeof raw.mystery === "object"){
+    const rm = raw.mystery;
+    out.mystery = {
+      question: str(rm.question, 200), truth: str(rm.truth, 500), finale: str(rm.finale, 400),
+      envelopes: (Array.isArray(rm.envelopes) ? rm.envelopes : []).slice(0, 5).map((e, i) => ({
+        eid: "e" + i, trigger: str(e && e.trigger, 140), title: str(e && e.title, 60),
+        text: str(e && e.text, 500), revealsObjectives: !!(e && e.revealsObjectives),
+        opened: false
+      })).filter(e => e.title)
+    };
+    if(!out.mystery.envelopes.length) out.notes.push("no envelopes came back for a sealed scenario \u2014 objectives will just reveal at round 2");
+  } else if(out.sealed){
+    out.notes.push("this was meant to be sealed but no mystery came back");
+  }
 
   /* terrain to build */
   (Array.isArray(raw.terrain) ? raw.terrain : []).slice(0, 8).forEach(t => {
@@ -7905,7 +8005,8 @@ function legaliseScenario(raw, ctx){
   });
   out.events.sort((a, b) => a.round - b.round);
 
-  (Array.isArray(raw.objectives) ? raw.objectives : []).slice(0, 4).forEach(o => {
+  const maxObj = out.sealed ? (ctx.objCount || 2) : 4;
+  (Array.isArray(raw.objectives) ? raw.objectives : []).slice(0, maxObj).forEach(o => {
     const t = (RS.scenario.victory.objectiveTypes || []).find(x => x.id === (o && o.type));
     if(!t || !ctx.objList.includes(t.id)){ out.notes.push("dropped an objective this mission does not allow"); return; }
     out.objectives.push({type: t.id, what: str(o.what || t.desc, 120),
@@ -7953,6 +8054,7 @@ function scenarioHTML(s){
     </div>
     ${s.premise ? `<p class="lead" style="margin:0 0 11px">${esc(s.premise)}</p>` : ""}
     ${s.briefing ? `<p class="serif briefing">${esc(s.briefing)}</p>` : ""}
+    ${s.sealed ? `<div class="chip gilt" style="margin-top:11px">sealed \u2014 what it really is stays hidden until it is opened</div>` : ""}
   </div>
 
   ${s.map && s.map.features.length ? `<div class="slab">
@@ -7972,12 +8074,25 @@ function scenarioHTML(s){
       ${t.note ? `<div class="says-d">${esc(t.note)}</div>` : ""}</div>`).join("")}
   </div>` : ""}
 
-  ${s.objectives.length ? `<div class="slab">
+  ${s.objectives.length ? (s.sealed ? `<div class="slab">
+    <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
+    <p class="quiet" style="margin:0">Sealed. ${s.objectives.length} objective${s.objectives.length === 1 ? "" : "s"}
+      are set, but nobody \u2014 including whoever runs this \u2014 sees them until round 2 or an
+      envelope opens them.</p>
+  </div>` : `<div class="slab">
     <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
     ${s.objectives.map(o => `<div class="says">
       <div class="says-n">${esc(o.what)} <span class="chip gilt">${o.vp} VP</span>
         <span class="chip">${esc(o.type)}</span></div>
       <div class="says-d">${esc(o.rule)}</div></div>`).join("")}
+  </div>`) : ""}
+
+  ${s.mystery && s.mystery.envelopes && s.mystery.envelopes.length ? `<div class="slab">
+    <div class="head"><span class="eyebrow">Envelopes</span><span class="rule"></span>
+      <span class="quiet">sealed, for whoever runs it</span></div>
+    ${s.mystery.envelopes.map(e => `<div class="grow"><div class="grow-main">
+      <div class="grow-name">${esc(e.title)}</div>
+      <div class="grow-sub">opens when: ${esc(e.trigger)}</div></div></div>`).join("")}
   </div>` : ""}
 
   ${s.events.length ? `<div class="slab">
@@ -8050,7 +8165,13 @@ function startFromScenario(s){
                 environment: s.environment, objectives: s.objectives,
                 specialRules: s.specialRules, terrain: s.terrain, map: s.map,
                 events: s.events.map(e => Object.assign({}, e, {sprung: false})),
-                rounds: s.rounds, type: s.type, theme: s.theme};
+                rounds: s.rounds, type: s.type, theme: s.theme,
+                /* A sealed scenario keeps its objectives to itself until round 2
+                   or an envelope says otherwise. mystery travels with the quest so
+                   the app \u2014 never the players \u2014 can check envelope triggers. */
+                sealed: !!s.sealed, objectivesKnown: !s.sealed,
+                mystery: s.mystery ? Object.assign({}, s.mystery,
+                  {envelopes: s.mystery.envelopes.map(e => Object.assign({}, e))}) : null};
   /* the generator's placements, over the app's own secret contents */
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g) m.where = g.where; });
   s.enemy.forEach(u => {
