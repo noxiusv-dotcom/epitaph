@@ -424,6 +424,20 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .opt b{display:block;font-size:13.5px;margin-bottom:3px}
 .opt span{display:block;font-size:11.5px;color:var(--ash-mute);line-height:1.4}
 .head button.chip{cursor:pointer;font:inherit;font-size:11px}
+
+/* ---- the map ---- */
+.mapwrap{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;
+  background:var(--stone-2);color:var(--ash-dim)}
+.scnmap{display:block;width:100%;height:auto;aspect-ratio:1/1}
+.scnmap .mapnum text{font-family:"Space Mono",monospace}
+.mapkey{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));margin-top:11px}
+.mk-row{display:flex;gap:8px;align-items:flex-start}
+.mk-n{flex:none;width:19px;height:19px;border-radius:50%;border:1px solid var(--gilt-deep);
+  color:var(--gilt);font-family:"Space Mono",monospace;font-size:11px;display:grid;place-items:center}
+.mk-l b{display:block;font-size:12.5px}
+.mk-l span{display:block;font-size:11px;color:var(--ash-mute)}
+.briefing{font-size:14.5px;line-height:1.7;color:var(--ash-dim);margin:0;
+  border-left:2px solid var(--gilt-deep);padding-left:13px}
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -496,8 +510,8 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.10.5",
-    "status": "0.9 plus flaws (drawbacks that give points back) for any character; flaw prices are guesses for the simulator",
+    "version": "0.11.14",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -516,9 +530,25 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "gameName": "Epitaph",
       "powerTierMinor": "Murmur",
       "powerTierMajor": "Reckoning",
-      "tierIdsUnchanged": "power tier ids stay \"knack\" and \"signature\""
+      "tierIdsUnchanged": "power tier ids stay \"knack\" and \"signature\"",
+      "tether": "Tether",
+      "debt": "Debt",
+      "fray": "Frayed",
+      "snap": "Returned",
+      "free": "Unbound",
+      "rest": "Laid to rest",
+      "observance": "Observance",
+      "honour": "honour",
+      "forsake": "forsaken",
+      "oath": "oath (one unit of debt)",
+      "obol": "Obol"
     },
-    "reskinNote": "A model may display its own name for any gear it carries; the stats and cost always come from the id. `examples` is fiction only and never affects play."
+    "reskinNote": "A model may display its own name for any gear it carries; the stats and cost always come from the id. `examples` is fiction only and never affects play.",
+    "ruleCategories": {
+      "core": "needed to play",
+      "campaign": "needed for campaign play",
+      "narrative": "optional story rules the table may switch on (tethers); epithets, titles and the Epitaph wall are narrative-only and change no stats"
+    }
   },
   "dice": {
     "ladder": [
@@ -609,9 +639,9 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "key": "wounds",
       "name": "Health",
       "type": "number",
-      "default": 5,
+      "default": "by size (see size.health)",
       "min": 1,
-      "max": 21,
+      "max": "by size (see size.health)",
       "downRefunds": [
         10,
         8,
@@ -620,7 +650,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "downRefundNote": "5th refunds 10, 4th refunds 8, each below refunds 4",
       "upStep": 2,
       "upCostPerStep": 22,
-      "upNote": "Health above the starting value is bought in steps of 2 (5 -> 7 -> 9). Against 2-damage weapons an odd single point bought nothing. Fate results and scars still move Health by 1."
+      "upNote": "Health above the size's starting value is bought in steps of 2 at 22 points, up to the size's maximum. Scars and Fate still move it by 1. Health can be reduced below the start for refunds as before (minimum 1)."
     },
     {
       "key": "armour",
@@ -653,23 +683,79 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "huge"
       ],
       "costs": {
-        "small": -3,
+        "small": -21,
         "man": 0,
-        "large": 8,
-        "huge": 18
+        "large": 30,
+        "huge": 62
       },
       "note": "large holds objectives as 2 models, huge as 3; a model does not block line of sight to anything its own size or smaller; huge takes cover only from huge terrain",
       "effects": {
-        "small": "counts as half a model when holding objectives (two Small = one); cannot use Heavy or Two-handed weapons",
-        "man": "baseline",
-        "large": "counts as 2 when holding objectives; blocks sight to Man and Small models behind it",
-        "huge": "counts as 3 when holding objectives; blocks sight to everything smaller; takes cover only from Huge terrain"
+        "small": {
+          "benefits": [
+            "Hard to hit: ranged attacks from more than 20 cm step down (does not stack with cover beyond one step)",
+            "Slips through: ignores Difficult ground; can move through gaps and between larger models"
+          ],
+          "drawbacks": [
+            "counts as half a model when holding objectives",
+            "no Heavy or Two-handed weapons",
+            "Easily thrown: Push and Force move it twice as far"
+          ]
+        },
+        "man": {
+          "benefits": [],
+          "drawbacks": []
+        },
+        "large": {
+          "benefits": [
+            "Heavy: Push and Force move it half as far",
+            "Stride: steps over obstacles up to 5 cm high at no cost",
+            "Looms: its melee attacks against Small models step up"
+          ],
+          "drawbacks": [
+            "Big target: long shots against it do not step down",
+            "blocks sight to smaller models behind it",
+            "counts as 2 when holding objectives (benefit)"
+          ]
+        },
+        "huge": {
+          "benefits": [
+            "Immovable: Push and Force do not move it",
+            "Trample: may move through Man and Small models; each takes 1 damage unless it passes a Wits test",
+            "ignores Difficult ground and walls up to 10 cm",
+            "Towers: enemies within 10 cm step down Will tests",
+            "counts as 3 when holding objectives"
+          ],
+          "drawbacks": [
+            "Easy target: all ranged attacks against it step up",
+            "takes cover only from Huge terrain",
+            "blocks sight to everything smaller"
+          ]
+        }
       },
-      "verified": "judgement, not measurement; 0.9 gave Small a real drawback (it previously refunded 3 points for nothing)"
+      "verified": "0.11.14 added size benefits and drawbacks; costs so far only cover Health. Test Large and Huge at current cost and +10",
+      "health": {
+        "small": {
+          "start": 5,
+          "max": 9
+        },
+        "man": {
+          "start": 7,
+          "max": 13
+        },
+        "large": {
+          "start": 9,
+          "max": 17
+        },
+        "huge": {
+          "start": 11,
+          "max": 23
+        }
+      },
+      "costNote": "size cost now includes the change in starting Health (2 Health = one 22-point step): Small = -3 size and -2 Health (refund 18); Large = +8 size and +2 Health; Huge = +18 size and +4 Health. Provisional; simulator to test. 0.11.13: every size +2 Health; baseCost 38 now buys a Man with 7 Health (no price change), so all bodies are tougher relative to weapons"
     }
   ],
   "baseCost": 38,
-  "startingHP": 5,
+  "startingHP": "by size: small 5, man 7, large 9, huge 11",
   "hpStep": 2,
   "hpCost": 22,
   "minModelCost": 10,
@@ -1043,12 +1129,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "large",
       "huge"
     ],
-    "usedFor": [
-      "hold objectives: small counts half, large 2, huge 3",
-      "line of sight: same size or smaller does not block",
-      "cover: huge models only get cover from huge terrain",
-      "small: no Heavy or Two-handed weapons"
-    ]
+    "usedFor": "see stats.size.effects"
   },
   "keywords": [
     {
@@ -1146,7 +1227,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "name": "Vigilant",
       "cost": 3,
       "desc": "Starts each round with a Ready token.",
-      "verified": "round 6: 58% at 3 before Ready access was opened; re-check, value likely lower now"
+      "verified": "untested: the harness AI never holds for a Ready token; needs a hold policy or table play"
     },
     {
       "id": "fearsome",
@@ -1327,11 +1408,12 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
     {
       "id": "extraArms",
       "name": "Extra arms",
-      "cost": 12,
+      "cost": 18,
       "costPer": "pair",
       "max": 2,
-      "desc": "+2 hands per purchase (max two purchases: 4 or 6 arms). Extra hands carry more gear (e.g. a Heavy melee weapon and a Shield). Flurry is built in: if it carries 2 or more melee weapons, its melee Attack makes one attack with each, all stepped down, up to 3 attacks with four arms or 4 with six. This replaces Rapid for that Attack and still counts as its one Attack action. Its Flurry attacks may be split between any enemies it is Engaged with (declared before the throw). Each extra pair of arms cancels one Outnumber step for enemies attacking it (six arms: none; a Swarm squad keeps its third step).",
-      "verified": "new in 0.10.2 (Extra arms and Flurry merged); 12 per pair is a guess; 0.10.4 added split attacks and Outnumber cancelling - likely worth more than 12"
+      "desc": "+2 hands. First pair 18 points (4 arms); a second pair costs 30 more (6 arms). Extra hands carry more gear (e.g. a Heavy melee weapon and a Shield). Flurry is built in: if it carries 2 or more melee weapons, its melee Attack makes one attack with each, all stepped down, up to 3 attacks with four arms or 4 with six. This replaces Rapid for that Attack and still counts as its one Attack action. Its Flurry attacks may be split between any enemies it is Engaged with (declared before the throw). Each extra pair of arms cancels one Outnumber step for enemies attacking it (six arms: none; a Swarm squad keeps its third step).",
+      "verified": "round 9-10: first pair worth ~21 in melee, ~10 vs shooters -> 18. Second pair measured at the 100% ceiling, so 30 is a guess, flagged; test at the table",
+      "secondPairCost": 30
     }
   ],
   "abilities": [
@@ -2775,7 +2857,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "winPayoutPctOfGameSize": 0.06,
         "lossFactor": 0.5,
         "difficultyMultiplier": true,
-        "cacheRoll": "d100 loot per cache"
+        "cacheRoll": "see loot"
       }
     },
     "advancementCosts": {
@@ -2893,7 +2975,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "will": "d6",
         "wits": "d6",
         "move": 12,
-        "wounds": 5,
+        "wounds": 7,
         "actions": 2
       },
       "baseCost": 38,
@@ -2916,6 +2998,20 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "note": "gear of the dead returns to the stash and can be handed on"
       },
       "squads": "new squad models are hired at per-model cost; squads can be topped up to their starting size at camp"
+    },
+    "campRules": {
+      "perModel": "each character or squad takes one camp action per camp (train, treat, work, scout or rest)",
+      "band": "band actions (buy, sell, hire, dismiss, surgery) are unlimited; they only cost Cash",
+      "laidUp": "a Laid up model can only take Rest",
+      "scout": "only one Scout per band has an effect",
+      "health": "after a battle every model returns to full Health for free; lasting harm comes only from the Fate roll",
+      "hardCampaignOption": "optional rule: damage carries over between battles until the model takes Rest or is Treated (see decisions)"
+    },
+    "decisions": {
+      "scarsNeverChangeCost": "confirmed: a scar changes what a model can do, never what it cost; band value is always the bought profile",
+      "woundsPersist": "overruled as the default: Health resets after each battle. Fate is the consequence system; carrying damage as well double-punishes and makes a losing band spiral (weaker next game, loses again). Kept as the optional Hard campaign rule",
+      "foundThingsFree": "confirmed: found items never change cost",
+      "xpFromCostEngine": "confirmed: XP buys upgrades at their points cost including surcharge"
     }
   },
   "scenario": {
@@ -2976,12 +3072,14 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
           "id": "trapVisible",
           "cost": 7,
           "desc": "Wits test or 2 damage.",
-          "limit": "traps of both kinds: one per 150 points of game size"
+          "limit": "traps of both kinds: one per 150 points of game size",
+          "effect": "the model that sets it off makes a Wits test; on a fail it takes 2 damage (armour saves apply)"
         },
         {
           "id": "trapHidden",
           "cost": 15,
-          "limit": "traps of both kinds: one per 150 points of game size"
+          "limit": "traps of both kinds: one per 150 points of game size",
+          "effect": "no test to avoid: the model that sets it off takes 2 damage (armour saves apply) and is Pinned. Once revealed (Glimpse, Trapwise) it works as a visible trap"
         },
         {
           "id": "hazardZone",
@@ -3022,6 +3120,19 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
           "id": "cache",
           "cost": 0,
           "limit": "one per 250 points of game size"
+        },
+        {
+          "id": "ambushTrigger",
+          "cost": 8,
+          "plus": "the ambushing unit's own points",
+          "effect": "when a model sets off the marker, the hidden unit is placed within 10 cm of the marker and may take one action immediately",
+          "limit": "one per 250 points of game size"
+        },
+        {
+          "id": "objectiveMarker",
+          "cost": 0,
+          "effect": "the marker is the mission objective (e.g. the thing to Claim or Carry); free because the battle type already requires it",
+          "limit": "exactly the battle type's objective count (+1 per extra player); never more"
         }
       ],
       "note": "round 6 prices; environment capped at one; set pieces priced by what their Systems do",
@@ -3440,7 +3551,22 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "search": "a cache pays out only when a model in contact uses Interact on it (Wits test)",
       "disarm": "a revealed trap in contact can be disarmed with Interact (Wits test; Tools step up)",
       "paperFallback": "without the app: shuffle face-down cards (Trap, Cache, Nothing, Ambush, ...) under the numbered markers and flip them in the same situations",
-      "pvp": "markers are neutral; either side can trigger or reveal them"
+      "pvp": "markers are neutral; either side can trigger or reveal them",
+      "limits": {
+        "objective": "exactly the battle type's objective count (+1 per player beyond the first), placed only where the battle type uses hidden objectives",
+        "ambushTrigger": "one per 250 points of game size",
+        "hiddenUnit": "one per 250 points of game size, counting ambushes",
+        "trap": "one per 150 points of game size (both kinds together)",
+        "cache": "one per 250 points of game size",
+        "decoys": "at least one, and at least a quarter of all markers",
+        "total": "max 8 markers"
+      }
+    },
+    "bandSize": {
+      "suggested": 500,
+      "quick": 300,
+      "large": 750,
+      "note": "a suggestion, not a rule: 500 points is about 7-9 models, roughly a 2-hour game; confirm against the round-9 game-length results"
     }
   },
   "testLog": [
@@ -3522,6 +3648,41 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "Extra arms at 12 per pair, with and without stacked weapon effects",
         "worst case: six arms, four melee weapons, Fire+Toxic+Acid on each, vs cheap d4 models and vs d6/d8 fighters",
         "Extra arms with split Flurry and Outnumber cancelling vs squads and swarms"
+      ]
+    },
+    {
+      "round": "0.11",
+      "result": "answered the app's 11 asks: Unlucky redesigned; Extra arms 18 (+30 second pair); hidden trap effect; ambush and objective markers priced; marker limits; d100 loot table; camp rules; Health resets after battles (Hard campaign optional); decisions confirmed; 500-point suggested band",
+      "toSimulate": [
+        "new Unlucky",
+        "Extra arms 18/30",
+        "Health step 26 and Medium armour 17 vs current",
+        "a harness hold policy so Vigilant, Slow reflexes and reactions can be priced"
+      ]
+    },
+    {
+      "round": "0.11.1",
+      "result": "added tethers (kinds, debt, fraying, snapping, Unbound or Laid to rest) and the Epitaph wall; story only, no cost changes; 0.11.2 wording: observance / honoured / forsaken; 0.11.3 debt counted in oaths; tether kind Oath renamed Quarry; 0.11.4 added the obol (pay to count a forsaken oath as kept); 0.11.5 default is one band tether held by the Leader; personal tethers are the optional \"Every soul bound\" rule; 0.11.6 one observance per battle is enough; extra observances earn Grace (max 1), which can replace an obol; 0.11.7 removed Grace; each observance keeps one oath with no per-battle limit; default debt raised to 10; 0.11.8 each tether kind has its own debt (Blood/Tithe 15 down to Reckoning/Mercy 4) and a stated way each performance counts; 0.11.9 tether kinds revised: Blood = enemies taken Down; Ground includes suspicion markers; Vigil replaced by Last Rites (tend any fallen body); Tithe replaced by Offering (Burnouts); Mercy replaced by Lantern (Leader standing each round); Reckoning needs a caster; Quarry sworn kind explained; unwinnable battles not checked; 0.11.10 Last Rites is base contact, no action; Lantern replaced by Restraint (Leader wounds but never kills, debt 5); every tether has a reason the Leader is bound"
+    },
+    {
+      "round": "0.11.12",
+      "result": "Health start and max now depend on Size (small 3/7, man 5/11, large 7/15, huge 9/21); size costs include the Health difference",
+      "toSimulate": [
+        "size costs with Health included, especially Huge at 62 and max 21 Health"
+      ]
+    },
+    {
+      "round": "0.11.13",
+      "result": "Health +2 at every size (small 5/9, man 7/13, large 9/17, huge 11/23) at unchanged prices; expected to lengthen games toward the 6/10/15-round targets",
+      "toSimulate": [
+        "game length and win rates with Man at 7 Health (armour, damage-2 and Health-step prices may all shift)"
+      ]
+    },
+    {
+      "round": "0.11.14",
+      "result": "each Size gets benefits and drawbacks (Small hard to hit at range, Huge easy to hit but immovable and tramples)",
+      "toSimulate": [
+        "Size costs with effects: Small vs shooters, Huge vs shooters and vs melee; Large/Huge at +0 and +10"
       ]
     }
   ],
@@ -3807,7 +3968,8 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "id": "slowReflexes",
         "name": "Slow reflexes",
         "cost": -3,
-        "desc": "Never gains a Ready token, so it can never react."
+        "desc": "Never gains a Ready token, so it can never react.",
+        "verified": "untested: same reason as Vigilant"
       },
       {
         "id": "clumsy",
@@ -3819,7 +3981,8 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "id": "shortSighted",
         "name": "Short-sighted",
         "cost": -3,
-        "desc": "No long shots; ranged attacks beyond 30 cm step down."
+        "desc": "No long shots; ranged attacks beyond 30 cm step down.",
+        "verified": "round 9-10: measured 2.8, correct at 3"
       },
       {
         "id": "loner",
@@ -3837,7 +4000,8 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "id": "unlucky",
         "name": "Unlucky",
         "cost": -3,
-        "desc": "Its side cannot spend Nerve on its rolls."
+        "desc": "Once per round, an opponent may make this model reroll one roll that succeeded.",
+        "verified": "0.11: redesigned. The old version (side cannot spend Nerve on it) scaled with how many models carried it (one model -2 win rate, five models -22), so a single Unlucky model at a 7-point refund would have been nearly free points. The new version is local to the model; 3 is a guess to test."
       },
       {
         "id": "greedy",
@@ -3853,7 +4017,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       }
     ],
     "startingScars": {
-      "desc": "A recruit may start with one scar from Fate rows 3-8 as a flaw. It can be Mended or Replaced at camp like any other scar, and feeds the epithet prompt from the start.",
+      "desc": "A recruit may start with one scar from Fate rows 3-8 as a flaw. It can be Mended or Replaced at camp like any other scar, and informs the epithet prompt from the start.",
       "refunds": {
         "lostLeg": -6,
         "lostArm": -6,
@@ -3873,6 +4037,384 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
   "conditionRules": {
     "stacking": "conditions never stack: a model is either Burning/Tainted/Pinned or not. Applying a condition it already has only restarts its duration.",
     "acid": "Acid armour step-down does not stack"
+  },
+  "loot": {
+    "die": "d100",
+    "foundItems": "anything found is kept apart from bought gear and never changes a model's cost; it can be used, sold for half its listed cost, or given to another model at camp",
+    "table": [
+      {
+        "roll": [
+          1,
+          5
+        ],
+        "result": "Empty, and trapped: the searcher takes 1 damage, no save."
+      },
+      {
+        "roll": [
+          6,
+          15
+        ],
+        "result": "Nothing of use."
+      },
+      {
+        "roll": [
+          16,
+          30
+        ],
+        "result": "d6 Cash."
+      },
+      {
+        "roll": [
+          31,
+          40
+        ],
+        "result": "2d6 Cash."
+      },
+      {
+        "roll": [
+          41,
+          45
+        ],
+        "result": "A Healing kit.",
+        "item": "medkit"
+      },
+      {
+        "roll": [
+          46,
+          50
+        ],
+        "result": "A Stimulant.",
+        "item": "stim"
+      },
+      {
+        "roll": [
+          51,
+          55
+        ],
+        "result": "An Obscuring cloud.",
+        "item": "smoke"
+      },
+      {
+        "roll": [
+          56,
+          60
+        ],
+        "result": "Tools or a Light source (finder chooses).",
+        "itemChoice": [
+          "toolkit",
+          "lamp"
+        ]
+      },
+      {
+        "roll": [
+          61,
+          65
+        ],
+        "result": "A map scrap: reveal one suspicion marker of your choice now."
+      },
+      {
+        "roll": [
+          66,
+          70
+        ],
+        "result": "3d6 Cash."
+      },
+      {
+        "roll": [
+          71,
+          74
+        ],
+        "result": "A vial: one weapon the finder carries gains Fire, Toxic or Acid (finder chooses) for the rest of this battle."
+      },
+      {
+        "roll": [
+          75,
+          78
+        ],
+        "result": "A weapon from the list worth up to 6 points.",
+        "itemMaxCost": 6,
+        "itemKind": "weapon"
+      },
+      {
+        "roll": [
+          79,
+          82
+        ],
+        "result": "Light armour.",
+        "item": "padded"
+      },
+      {
+        "roll": [
+          83,
+          85
+        ],
+        "result": "A Backlash ward.",
+        "item": "anchor"
+      },
+      {
+        "roll": [
+          86,
+          88
+        ],
+        "result": "A trophy: +1 Reputation if the finder is standing at the end of the battle."
+      },
+      {
+        "roll": [
+          89,
+          91
+        ],
+        "result": "A lead: you choose the battle type of your next scenario."
+      },
+      {
+        "roll": [
+          92,
+          94
+        ],
+        "result": "A contract: at the next camp, hire one recruit at half price."
+      },
+      {
+        "roll": [
+          95,
+          97
+        ],
+        "result": "A rare find: a weapon or armour worth up to 16 points.",
+        "itemMaxCost": 16,
+        "itemKind": [
+          "weapon",
+          "armour"
+        ]
+      },
+      {
+        "roll": [
+          98,
+          99
+        ],
+        "result": "A relic worth 30 Cash, but someone wants it back: the next scenario adds a bounty hunter aimed at the finder."
+      },
+      {
+        "roll": [
+          100,
+          100
+        ],
+        "result": "A legend: the scenario AI writes one named item (weapon, armour or item, worth up to 25 points, with its own name and a short history). It becomes the finder's, and a title is offered."
+      }
+    ]
+  },
+  "designNotes": {
+    "defenceDominance": "round 9-10: 22 points spent on armour/Move or +2 Health won 83-85%; Aim/Fight steps 66%; Tough+Quick+Sight 47% vs a 51% control. Part is the line board (it ignores position, which Quick and Sight pay for). Co-design view: Health steps and Medium armour are the likeliest underpricings. Next sim round: test Health step 26 and Medium armour 17, and give the harness a hold/position policy before repricing positional upgrades."
+  },
+  "tethers": {
+    "desc": "The Unburied are called back from the grave. A tether binds each one to the living world. Each tether has an observance, a rite the Unburied must perform in every battle to honour it, until the debt is paid.",
+    "appliesTo": "default: the Leader only (band mode). Optional rule: every character and squad",
+    "assign": {
+      "options": [
+        "chosen at recruitment",
+        "rolled on d10",
+        "given by the scenario AI from how the character first died"
+      ],
+      "default": "rolled on d10, player may reroll once"
+    },
+    "kinds": [
+      {
+        "roll": 1,
+        "id": "blood",
+        "name": "Blood",
+        "observance": "take enemies Down",
+        "counts": "each enemy model a member takes Down",
+        "debt": 12,
+        "why": "Died with a clean blade while their company fell around them. The grave wants the blood they held back."
+      },
+      {
+        "roll": 2,
+        "id": "ground",
+        "name": "Ground",
+        "observance": "hold the ground",
+        "counts": "each End step with at least one member standing within 5 cm of an objective or a suspicion marker (max 1 per round)",
+        "debt": 12,
+        "why": "Died running from a place they had sworn to hold. Now they must stand where others would flee."
+      },
+      {
+        "roll": 3,
+        "id": "witness",
+        "name": "Witness",
+        "observance": "see death come",
+        "counts": "each enemy that goes Down within 10 cm of a member",
+        "debt": 12,
+        "why": "Died alone, with no one to see them go. Now they must bear witness when death comes for others."
+      },
+      {
+        "roll": 4,
+        "id": "toll",
+        "name": "Toll",
+        "observance": "take what the dead left",
+        "counts": "each successful search, claim or carry",
+        "debt": 7,
+        "why": "Went into the ground without a coin for the ferryman. They must gather the toll the dead leave behind."
+      },
+      {
+        "roll": 5,
+        "id": "rites",
+        "name": "Last Rites",
+        "observance": "tend the fallen, friend or foe",
+        "counts": "each Down model (friend or enemy) that a member touches base to base; no action needed; once per body",
+        "debt": 10,
+        "why": "Left their own dead unburied and unmourned. Now every fallen body, friend or foe, must be touched and counted."
+      },
+      {
+        "roll": 6,
+        "id": "defiance",
+        "name": "Defiance",
+        "observance": "bleed and stand",
+        "counts": "each member that took damage and is standing at the end of the battle",
+        "debt": 8,
+        "why": "Lay down and gave up before the end came. Now they must bleed and still be standing."
+      },
+      {
+        "roll": 7,
+        "id": "reckoning",
+        "name": "Reckoning",
+        "observance": "call down a Reckoning",
+        "counts": "each Reckoning (major power) a member casts",
+        "debt": 4,
+        "requires": "a caster in the band; reroll if none. A battle with no caster fielded is not checked (no oath, no fraying)",
+        "why": "Bargained with a power they never dared to use. The debt must be paid in spellfire, by a caster sworn to them."
+      },
+      {
+        "roll": 8,
+        "id": "quarry",
+        "name": "Quarry",
+        "observance": "hunt the sworn kind",
+        "counts": "each enemy of the sworn kind taken Down",
+        "debt": 5,
+        "sworn": "when the tether is bound, the player picks a kind of enemy (a titleHook such as wolf, cultist, machine). The scenario AI includes at least one when it can; a battle with none of that kind on the table is not checked",
+        "why": "Killed by something that still walks. The grave will not let them rest until its kind is hunted."
+      },
+      {
+        "roll": 9,
+        "id": "offering",
+        "name": "Offering",
+        "observance": "give of yourself",
+        "counts": "each Burnout a member suffers (pushing past the limit)",
+        "debt": 7,
+        "why": "Held back when others gave everything. Now someone must give of themselves past breaking."
+      },
+      {
+        "roll": 10,
+        "id": "restraint",
+        "name": "Restraint",
+        "observance": "wound, but never kill",
+        "counts": "each battle in which the Leader deals damage to at least one enemy but takes no enemy Down (a Finish counts as taking Down)",
+        "debt": 5,
+        "broken": "if the Leader takes an enemy Down, the oath is forsaken for that battle; other members may kill freely",
+        "why": "Killed too freely in life. Now they must hold their hand: wound, but never kill."
+      }
+    ],
+    "debt": {
+      "unit": "oath",
+      "rule": "each tether kind has its own debt of oaths: the easier and more often it can be honoured, the more oaths it needs. Every performance keeps one oath (see each kind's \"counts\"). When every oath is kept, the tether is severed.",
+      "byKind": {
+        "blood": 12,
+        "ground": 12,
+        "witness": 12,
+        "toll": 7,
+        "rites": 10,
+        "defiance": 8,
+        "reckoning": 4,
+        "quarry": 5,
+        "offering": 7,
+        "restraint": 5
+      },
+      "scenario": "the scenario AI may adjust a special recruit's debt by up to 3 either way",
+      "card": "e.g. \"Tether: Blood. Debt: 7 of 12 oaths kept.\"",
+      "note": "provisional: aimed at roughly 4-6 battles to sever for every kind; tune from playtest logs of oaths kept per battle"
+    },
+    "check": "at the end of every battle, for every fielded character: was its tether honoured or forsaken? The app tracks it from events where it can and asks the player where it cannot. Characters not fielded (Laid up, resting) are not checked",
+    "fray": {
+      "onMiss": "a forsaken tether frays",
+      "mend": {
+        "options": [
+          {
+            "id": "rite",
+            "cost": "10 Cash"
+          },
+          {
+            "id": "sacrifice",
+            "cost": "3 XP"
+          },
+          {
+            "id": "scar",
+            "cost": "roll on Fate rows 3-8 and keep the result"
+          }
+        ],
+        "when": "at camp, as a band action (no camp action used)",
+        "note": "mending is the cheaper choice: it unfrays the tether but the oath is not counted as kept. Paying the obol costs more but counts the oath."
+      },
+      "snap": "a frayed tether that is forsaken again snaps: the character returns to the grave for good. Gear returns to the stash; the character gets a stone on the Epitaph wall"
+    },
+    "paid": {
+      "rule": "when every oath is kept, the tether is severed and the character is never bound again",
+      "choice": [
+        {
+          "id": "unbound",
+          "name": "Stay, Unbound",
+          "effect": "keeps fighting as a free soul; offered the title \"the Unbound\""
+        },
+        {
+          "id": "rest",
+          "name": "Lay them to rest",
+          "effect": "leaves the band with honour: +2 Reputation, their gear goes to the stash, and a gilded stone on the Epitaph wall"
+        }
+      ]
+    },
+    "balance": "tethers are story, not points: the same for every character, so they never change cost",
+    "simulator": "not simulated; watch at the table whether any observance is much harder to honour than the others (Reckoning, Quarry and Mercy are the likely ones)",
+    "language": "never say \"feed\": a tether is honoured by its observance, or forsaken",
+    "obol": {
+      "desc": "Like the coin for the ferryman: if the observance was not performed at all in a battle, the obol can be paid instead. It counts as one oath kept and the tether does not fray.",
+      "when": "at camp after the battle in which the oath was forsaken, as a band action (no camp action used); it cannot be paid later",
+      "cost": "15 Cash for the first obol this character pays, then +15 each time (15, 30, 45...)",
+      "lastOath": "the final oath of a debt can never be bought; it must be honoured in battle",
+      "why": "rising cost stops a rich band buying a character free; the final oath keeps the ending earned"
+    },
+    "mode": {
+      "default": "band",
+      "optional": "everySoul",
+      "band": {
+        "desc": "Only the Leader is tethered; the band is bound to the Leader. One tether, one observance, one debt of oaths per band.",
+        "honour": "any fielded member may perform the observance. Each time it is performed, one oath is kept; there is no limit per battle. At least one in a battle is needed or the tether frays",
+        "obolAndMend": "work as normal, on the Leader's tether",
+        "snap": "the Leader returns to the grave (stone on the Epitaph wall); the band chooses a new Leader, who binds a new tether (new kind, debt starts over); the band loses 2 Reputation",
+        "leaderDies": "if the Leader dies on the Fate table or is dismissed, the tether passes to the new Leader with its kept oaths intact",
+        "severed": "the Leader is free (stay Unbound or be laid to rest); the band then binds a new tether under its current or next Leader. Each tether is a chapter of the campaign",
+        "kindsNote": "Reckoning needs a caster in the band, not the Leader"
+      },
+      "everySoul": {
+        "desc": "Optional rule \"Every soul bound\": every character and squad has its own tether, as written above. More housekeeping, a story for every character."
+      }
+    },
+    "notChecked": "a battle where a tether cannot possibly be honoured (Reckoning with no caster fielded, Quarry with none of the sworn kind) is not checked: no oath kept, no fraying",
+    "lore": "every tether says why the Leader was bound; the app shows it when the tether is bound and on the Epitaph wall",
+    "optional": true,
+    "category": "narrative",
+    "optionalNote": "story rule, off unless the table turns it on for a campaign; changes no points and nothing else depends on it"
+  },
+  "epitaphWall": {
+    "desc": "A memorial page in the app for every Unburied who is gone.",
+    "entryOn": [
+      "dead on the Fate table",
+      "tether snapped",
+      "laid to rest"
+    ],
+    "stone": [
+      "name",
+      "epithets",
+      "titles",
+      "battles fought",
+      "how they left",
+      "a one-line epitaph the AI writes from their deeds, which the player may edit"
+    ],
+    "gilded": "laid-to-rest stones are gilded",
+    "category": "narrative"
   }
 }
 </script>
@@ -3965,6 +4507,16 @@ function dieStep(d, n){
 }
 function statDefault(key){ return RSX.stat[key] ? RSX.stat[key].default : null; }
 
+/* ---- Health comes from Size ----
+   0.11 made a model's starting and maximum Health a property of how big it is,
+   so nothing may read stats.wounds.default as a number any more. */
+function sizeHealth(size){
+  const tbl = ((RSX.stat.size || {}).health) || {};
+  return tbl[size || "man"] || tbl.man || {start: 5, max: 13};
+}
+function startHealth(size){ return sizeHealth(size).start; }
+function maxHealth(size){ return sizeHealth(size).max; }
+
 /* ---- the cost engine, straight from the file ----
    baseCost + stat steps + Wounds + actions + traits/abilities/powers, with the
    surcharge applied in purchase order (the first `freeUpgrades` are clean, then
@@ -3983,12 +4535,13 @@ function upgradeList(p){
   const dm = (p.move === undefined ? mv.default : p.move) - mv.default;
   flat += (dm / mv.step) * mv.costPerStep;
   const wst = RSX.stat.wounds;
-  const w = (p.wounds === undefined ? wst.default : p.wounds);
+  const base = startHealth(p.size);                 // what this size starts with
+  const w = (p.wounds === undefined ? base : p.wounds);
   const hStep = wst.upStep || 1, hCost = (wst.upCostPerStep !== undefined ? wst.upCostPerStep : wst.upCostEach);
-  for(let v = wst.default + hStep; v <= w; v += hStep) ups.push({label: wst.name + " " + v, cost: hCost});
-  const odd = (w - wst.default) % hStep;      // a Fate result or a scar can leave an odd point
-  if(w > wst.default && odd) ups.push({label: wst.name + " " + w, cost: Math.round(hCost / hStep)});
-  for(let i = 0; i < wst.default - w; i++) flat -= wst.downRefunds[Math.min(i, wst.downRefunds.length - 1)];
+  for(let v = base + hStep; v <= w; v += hStep) ups.push({label: wst.name + " " + v, cost: hCost});
+  const odd = (w - base) % hStep;      // a Fate result or a scar can leave an odd point
+  if(w > base && odd) ups.push({label: wst.name + " " + w, cost: Math.round(hCost / hStep)});
+  for(let i = 0; i < base - w; i++) flat -= wst.downRefunds[Math.min(i, wst.downRefunds.length - 1)];
   const ast = RSX.stat.actions;
   const a = (p.actions === undefined ? ast.default : p.actions);
   for(let i = ast.default; i < a; i++) ups.push({label: "Action " + (i+1), cost: ast.upCosts[i - ast.default]});
@@ -4126,9 +4679,9 @@ function newMember(){
     id: uid(), name: "", epithet: "", role: "", story: "",
     fielded: true, count: 1,
     move: h.move !== undefined ? h.move : statDefault("move"),
-    wounds: h.wounds !== undefined ? h.wounds : statDefault("wounds"),
     actions: h.actions !== undefined ? h.actions : statDefault("actions"),
     size: statDefault("size"),
+    wounds: h.wounds !== undefined ? h.wounds : startHealth(statDefault("size")),
     traits: [], abilities: [], powers: [], flaws: [],
     weapons: [], armour: [], items: [], skins: {},
     /* Health as it stands now, one entry per model. null means untouched.
@@ -4252,21 +4805,32 @@ function skinOf(m, id, fallback){ return (m.skins && m.skins[id]) || fallback; }
    Kept on the model, not in the battle tracker, because damage taken in a
    scenario belongs to the Unburied and should still be there afterwards. */
 function healthOf(m){
-  const n = squadOf(m), max = typeof effWounds === "function" ? effWounds(m) : m.wounds;
+  const n = squadOf(m), max = effWounds(m);
   let hp = Array.isArray(m.hp) ? m.hp.slice(0, n) : [];
   while(hp.length < n) hp.push(max);
   return hp.map(h => Math.max(0, Math.min(max, h | 0)));
 }
 function setHealth(m, hp){
-  const max = typeof effWounds === "function" ? effWounds(m) : m.wounds;
+  const max = effWounds(m);
   m.hp = hp.map(h => Math.max(0, Math.min(max, h | 0)));
   if(m.hp.every(h => h >= max)) m.hp = null;    // untouched again
   save();
 }
-function isHurt(m){ const max = typeof effWounds === "function" ? effWounds(m) : m.wounds;
-  return healthOf(m).some(h => h < max); }
+function isHurt(m){ const max = effWounds(m); return healthOf(m).some(h => h < max); }
 function standing(m){ return healthOf(m).filter(h => h > 0).length; }
 function patchUp(m){ m.hp = null; save(); }
+
+/* Size decides what a model starts and tops out at, so changing size moves its
+   Health with it rather than leaving a number that no longer means anything. */
+function setSize(m, size){
+  const wasStart = startHealth(m.size), wasMax = maxHealth(m.size);
+  const nowStart = startHealth(size), nowMax = maxHealth(size);
+  const bought = m.wounds - wasStart;                   // steps paid for, kept
+  m.size = size;
+  m.wounds = Math.max(1, Math.min(nowMax, nowStart + bought));
+  m.hp = null;
+  save();
+}
 
 /* ---- what a model picked up ---- */
 function giveFound(m, what){
@@ -4501,6 +5065,7 @@ function drawMember(){
 
   const mv = RSX.stat.move, ws = RSX.stat.wounds, as = RSX.stat.actions, sz = RSX.stat.size;
   const wStep = ws.upStep || 1, wCost = ws.upCostPerStep !== undefined ? ws.upCostPerStep : ws.upCostEach;
+  const hStart = startHealth(m.size), hMax = maxHealth(m.size);
   const armObj = (m.armour || [])[0] ? RSX.armour[m.armour[0]] : null;
   const bodyRows =
     stepRow({key: "move", title: mv.name,
@@ -4508,14 +5073,17 @@ function drawMember(){
            (armObj && armObj.moveMod ? " · armour " + signed(armObj.moveMod) + "cm" : ""),
       value: effectiveMove(m) + "cm", down: m.move > mv.min, up: m.move < mv.max, hint: "±" + mv.costPerStep}) +
     stepRow({key: "wounds", title: ws.name,
-      sub: "start " + ws.default + (wStep > 1 ? " · bought in " + wStep + "s, " + wCost + " a step" : ""),
-      value: m.wounds, down: m.wounds > ws.min, up: m.wounds < ws.max, hint: m.wounds >= ws.max ? "max" : "+" + wCost}) +
+      sub: m.size + " starts at " + hStart + ", tops out at " + hMax +
+           (wStep > 1 ? " · " + wCost + " a step of " + wStep : ""),
+      value: m.wounds, down: m.wounds > ws.min, up: m.wounds < hMax,
+      hint: m.wounds >= hMax ? "max" : "+" + wCost}) +
     stepRow({key: "actions", title: as.name, sub: "start " + as.default,
       value: m.actions, down: m.actions > as.min,
       up: m.actions < as.max && as.upCosts[m.actions - as.default] !== undefined,
       hint: as.upCosts[m.actions - as.default] !== undefined ? "+" + as.upCosts[m.actions - as.default] : "max"}) +
     (sz ? stepRow({key: "size", title: sz.name,
-      sub: (sz.effects || {})[m.size] || "",
+      sub: startHealth(m.size) + "–" + maxHealth(m.size) + " " + ws.name.toLowerCase() +
+           " · " + ((sz.costs || {})[m.size] ? signed(sz.costs[m.size]) + " points" : "no change"),
       value: m.size.charAt(0).toUpperCase() + m.size.slice(1),
       down: sz.values.indexOf(m.size) > 0, up: sz.values.indexOf(m.size) < sz.values.length - 1,
       hint: (sz.costs || {})[m.size] ? signed(sz.costs[m.size]) : "free"}) : "");
@@ -4611,7 +5179,8 @@ function drawMember(){
     } else if(key === "actions"){
       const nv = m.actions + d; if(nv < as.min || nv > as.max) return; m.actions = nv;
     } else if(key === "size"){
-      const i = sz.values.indexOf(m.size) + d; if(i < 0 || i >= sz.values.length) return; m.size = sz.values[i];
+      const i = sz.values.indexOf(m.size) + d; if(i < 0 || i >= sz.values.length) return;
+      setSize(m, sz.values[i]);
     } else if(key === "count"){
       let nv = n + d;
       if(nv > 1 && nv < sq.minSize) nv = d > 0 ? sq.minSize : 1;
@@ -4950,8 +5519,13 @@ function questEnd(){ Q = null; try{ localStorage.removeItem(QUEST_KEY); }catch(e
 
 /* ---- who is in it ---- */
 function questUnitFrom(m){
+  /* 0.11: every model comes back to full Health between battles. Lasting harm
+     comes from Fate alone — carrying damage as well punishes a losing band
+     twice and sends it into a spiral. The old behaviour is the Hard campaign
+     rule, which a band can switch on. */
+  const carry = !!band().hardCampaign;
   return {uid: m.id, side: "us", name: m.name || "Unnamed",
-          models: healthOf(m),                 // whatever it has left, not a fresh sheet
+          models: carry ? healthOf(m) : Array.from({length: squadOf(m)}, () => effWounds(m)),
           max: m.wounds, acts: activationsOf(m), used: 0,
           strain: 0, ready: false, cond: [], pushed: false};
 }
@@ -4959,26 +5533,41 @@ function questUnitFrom(m){
    The tracker is a view of the Unburied, not a separate set of numbers. */
 function writeThrough(u){
   if(!u || u.remote || u.side !== "us") return;
+  if(!band().hardCampaign) return;      // damage is a battle's business, not the band's
   const m = band().members.find(x => x.id === u.uid);
   if(m) setHealth(m, u.models);
 }
-function questFoe(name, count, health, acts){
+function questFoe(name, count, health, acts, hidden){
+  /* A hidden unit exists from the start of the scenario but is not on the
+     table: it cannot be picked as a marker target and does not add to
+     activation counts until something reveals it. */
   return {uid: "f" + uid(), side: "them", name: name || "Enemy",
           models: Array.from({length: count}, () => health),
-          max: health, acts, used: 0, strain: 0, ready: false, cond: [], pushed: false};
+          max: health, acts, used: 0, strain: 0, ready: false, cond: [],
+          pushed: false, hidden: !!hidden};
+}
+/* Bring a held-back unit onto the table — a scenario event, a marker, or the
+   host doing it by hand. */
+function revealFoe(uidStr, why){
+  const u = Q.units.find(x => x.uid === uidStr && x.hidden);
+  if(!u) return null;
+  u.hidden = false;
+  qlog(u.name + " arrives" + (why ? " — " + why : ""));
+  questSave();
+  return u;
 }
 function questUnit(m){ return Q ? Q.units.find(u => u.uid === m.id) : null; }
 function unitDown(u){ return u.models.every(h => h <= 0); }
 function unitStanding(u){ return u.models.filter(h => h > 0).length; }
 
-function questBegin(size){
+function questBegin(size, opts){
   const b = band();
   const mine = b.members.filter(fielded);
   if(!mine.length){ toast("Field someone first"); return false; }
   Q = {round: 1, step: "tempo", size,
        nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
        units: mine.map(questUnitFrom),
-       markers: rollMarkers(size),
+       markers: rollMarkers(size, opts),
        log: []};
   questSave();
   return true;
@@ -4986,7 +5575,7 @@ function questBegin(size){
 
 /* ---- the ruleset's arithmetic ---- */
 function sideActs(side){
-  return Q.units.filter(u => u.side === side && !unitDown(u)).reduce((s, u) => s + u.acts, 0);
+  return Q.units.filter(u => u.side === side && !u.hidden && !unitDown(u)).reduce((s, u) => s + u.acts, 0);
 }
 function questGroups(){
   const a = sideActs("us"), b = sideActs("them");
@@ -4995,7 +5584,7 @@ function questGroups(){
                 : {us: 1, them: Math.ceil(b / a), usTotal: a, themTotal: b};
 }
 function lostFraction(side){
-  const us = Q.units.filter(u => u.side === side);
+  const us = Q.units.filter(u => u.side === side && !u.hidden);
   const start = us.reduce((s, u) => s + u.models.length, 0);
   const lost = us.reduce((s, u) => s + u.models.filter(h => h <= 0).length, 0);
   return start ? lost / start : 0;
@@ -5056,6 +5645,19 @@ function questStep(){
     });
     Q.round++; Q.step = "tempo";
     qlog("End of round — Burning and Tainted bite, Ready cleared, Strain rested");
+    /* Anything the scenario keeps back for this round comes out now. Until it
+       does, nobody can read it — that is the point of writing it down early. */
+    const due = ((Q.scenario || {}).events || []).filter(e => !e.sprung && e.round <= Q.round);
+    due.forEach(e => {
+      e.sprung = true;
+      qlog("Round " + e.round + " — " + e.title);
+      if(e.effect && e.effect.type === "spawn"){
+        const hid = Q.units.filter(u => u.side === "them" && u.hidden);
+        const one = hid.find(u => (e.effect.who || "").toLowerCase().includes(u.name.toLowerCase())) || hid[0];
+        if(one) revealFoe(one.uid, e.title);
+      }
+    });
+    if(due.length) Q.pending = due.map(e => e.title);
   }
   questSave();
 }
@@ -5085,20 +5687,46 @@ function markerKinds(){
       sprung: "Nothing. Take the marker off the table.", seen: "A decoy. Take it off the table."}
   };
 }
-function rollMarkers(size){
-  const sec = RS.scenario.secrets.markers;
+/* Marker limits, straight from scenario.secrets.limits rather than guessed:
+     objective     exactly the battle type's count (+1 per player beyond the first),
+                   only for a battle type that actually hides objectives
+     ambushTrigger one per 250 points
+     hiddenUnit    one per 250 points, sharing that pool with ambushes
+     trap          one per 150 points, both kinds together
+     cache         one per 250 points
+     decoys        at least one, and at least a quarter of all markers
+     total         max 8
+
+   The battle type's own base objective count is not stated as a number
+   anywhere in the file, so this reads it as 1 for any type that lists
+   objectives at all (mystery lists none, so gets zero) \u2014 flagged here
+   rather than silently assumed. */
+function rollMarkers(size, opts){
+  const type = (opts && opts.type) || null;
+  const players = Math.max(1, (opts && opts.players) || 1);
   const n = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
-  const capTrap = Math.max(1, Math.floor(size / 150));
-  const capCache = Math.max(1, Math.floor(size / 250));
+
+  const capTrap = Math.max(0, Math.floor(size / 150));
+  const capAmbushHidden = Math.max(0, Math.floor(size / 250));      // shared pool
+  const capCache = Math.max(0, Math.floor(size / 250));
+  const usesHiddenObjective = !!(type && type.objectives && type.objectives.length);
+  const capObjective = usesHiddenObjective ? (1 + (players - 1)) : 0;
+  const minDecoys = Math.max(1, Math.ceil(n / 4));
+
   const want = ["trapVisible", "trapHidden", "cache", "hiddenUnit", "ambushTrigger", "objective"];
   const pool = [];
-  let traps = 0, caches = 0, objectives = 0, ambushes = 0, spins = 0;
-  while(pool.length < n - (sec.decoysMin || 1) && spins++ < 500){
+  let traps = 0, ambushHidden = 0, caches = 0, objectives = 0, spins = 0;
+  const room = () => n - pool.length - minDecoys;
+  while(room() > 0 && spins++ < 500){
     const pick = want[Math.floor(Math.random() * want.length)];
-    if(pick === "trapVisible" || pick === "trapHidden"){ if(traps >= capTrap) continue; traps++; }
-    if(pick === "cache"){ if(caches >= capCache) continue; caches++; }
-    if(pick === "objective"){ if(objectives >= 1) continue; objectives++; }
-    if(pick === "ambushTrigger"){ if(ambushes >= 2) continue; ambushes++; }
+    if((pick === "trapVisible" || pick === "trapHidden") && traps >= capTrap) continue;
+    if((pick === "hiddenUnit" || pick === "ambushTrigger") && ambushHidden >= capAmbushHidden) continue;
+    if(pick === "cache" && caches >= capCache) continue;
+    if(pick === "objective" && objectives >= capObjective) continue;
+    if(pick === "trapVisible" || pick === "trapHidden") traps++;
+    if(pick === "hiddenUnit" || pick === "ambushTrigger") ambushHidden++;
+    if(pick === "cache") caches++;
+    if(pick === "objective") objectives++;
     pool.push(pick);
   }
   while(pool.length < n) pool.push("nothing");
@@ -5117,6 +5745,10 @@ function resolveMarker(num, uid){
   const u = uid ? Q.units.find(x => x.uid === uid) : null;
   mk.state = mk.kind === "nothing" ? "gone" : "sprung";
   let extra = "";
+  if(mk.kind === "ambushTrigger" || mk.kind === "hiddenUnit"){
+    const hid = Q.units.find(x => x.side === "them" && x.hidden);
+    if(hid){ revealFoe(hid.uid, "marker " + num); extra += " " + hid.name + " was waiting here."; }
+  }
   if(k.hurt && u){
     if(u.remote && typeof sendEvent === "function"){
       /* Someone else's model: post what happened and let their app apply it. */
@@ -5263,6 +5895,7 @@ function drawCard(){
     ${saysHTML(m, "Powers", "powers")}
     ${saysHTML(m, "Flaws", "flaws", "bad")}
     ${saysHTML(m, "Carried", "items")}
+    ${sizeHTML(m)}
     ${scarsHTML(m)}
     ${foundHTML(m)}
 
@@ -5356,6 +5989,21 @@ function scarsHTML(m){
         ${x.mend ? `<div class="says-d quiet">Mendable in camp for ${x.mend.cost}: ${esc(x.mend.effect)}</div>` : ""}
       </div>`).join("")}
     ${notes.length ? `<p class="quiet" style="margin:9px 0 0">Also: ${esc(notes.join(", "))}.</p>` : ""}
+  </div>`;
+}
+
+/* Being small or huge is not just a number: 0.11 gives every size its own
+   benefits and drawbacks, and they belong on the card with everything else. */
+function sizeHTML(m){
+  const sz = RSX.stat.size; if(!sz) return "";
+  const e = (sz.effects || {})[m.size];
+  if(!e || (!(e.benefits || []).length && !(e.drawbacks || []).length)) return "";
+  return `
+  <div class="slab">
+    <div class="head"><span class="eyebrow">Being ${esc(m.size)}</span><span class="rule"></span>
+      <span class="quiet">${startHealth(m.size)}\u2013${maxHealth(m.size)} ${esc(RSX.stat.wounds.name.toLowerCase())}</span></div>
+    ${(e.benefits || []).map(b => `<div class="says"><div class="says-d">${esc(b)}</div></div>`).join("")}
+    ${(e.drawbacks || []).map(d => `<div class="says bad"><div class="says-d">${esc(d)}</div></div>`).join("")}
   </div>`;
 }
 
@@ -5472,9 +6120,11 @@ function aiLegalise(raw, budget){
     return Math.max(conf.min, Math.min(conf.max, n));
   };
   m.move    = clamp(st.move, RSX.stat.move, RSX.stat.move.step);
-  m.wounds  = clamp(st.wounds, RSX.stat.wounds, RSX.stat.wounds.upStep || 1);
   m.actions = clamp(st.actions, RSX.stat.actions);
   if(RSX.stat.size && RSX.stat.size.values.includes(raw.size)) m.size = raw.size;
+  /* Health is bounded by the size it just chose, not by a global default. */
+  m.wounds = clamp(st.wounds, {default: startHealth(m.size), min: 1, max: maxHealth(m.size)},
+                   RSX.stat.wounds.upStep || 1);
 
   const keep = (arr, kind, max) => [...new Set((Array.isArray(arr) ? arr : [])
     .map(x => (typeof x === "string" ? x : x && x.id))
@@ -5508,7 +6158,7 @@ function aiLegalise(raw, budget){
     if(m.weapons.length > 1){ const g = m.weapons.pop(); delete m.skins[g.id]; continue; }
     const costly = m.traits.filter(id => catOf("traits")[id].cost > 0);
     if(costly.length){ m.traits.splice(m.traits.indexOf(costly[costly.length - 1]), 1); continue; }
-    if(m.wounds > RSX.stat.wounds.default){ m.wounds -= (RSX.stat.wounds.upStep || 1); continue; }
+    if(m.wounds > startHealth(m.size)){ m.wounds -= (RSX.stat.wounds.upStep || 1); continue; }
     if(m.actions > RSX.stat.actions.default){ m.actions--; continue; }
     const best = DIE_STATS.slice().sort((a, b) => dieNum(m[b]) - dieNum(m[a]))[0];
     if(dieNum(m[best]) > dieNum(RSX.stat[best].default)){ m[best] = dieStep(m[best], -1); continue; }
@@ -5839,7 +6489,8 @@ function questBarHTML(){
         ◈ ${Q.markers.filter(m => m.state === "hidden").length} unknown</button>
       ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}% — break test</span>` : ""}
       <button class="btn sm" data-q="step">${Q.step === "end" ? "Next round" : Q.step === "tempo" ? "Begin" : "End step"}</button>
-      ${Q.scenario ? `<button class="chip" data-q="brief">The brief</button>` : ""}
+      ${Q.scenario ? `<button class="chip ${questDue() ? "bad" : ""}" data-q="brief">${
+        questDue() ? "⚠ " + questDue() + " happening" : "The brief"}</button>` : ""}
       <button class="btn sm ghost" data-q="end">End</button>
     </div>
   </div>`;
@@ -6225,7 +6876,8 @@ let questStartState = null;
 
 /* ---- enemies, entered by whoever is running it ---- */
 function openFoes(){
-  const foes = Q.units.filter(u => u.side === "them");
+  const foes = Q.units.filter(u => u.side === "them" && !u.hidden);
+  const waiting = Q.units.filter(u => u.side === "them" && u.hidden);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="feX" aria-label="Close">
@@ -6247,6 +6899,17 @@ function openFoes(){
           <button class="qp-btn ghost" data-funact="${esc(u.uid)}" ${!u.used ? "disabled" : ""}>undo</button>
         </div>
       </div>`).join("") : `<p class="quiet">Nothing against you yet.</p>`}
+
+    ${waiting.length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">Held back</span><span class="rule"></span>
+        <span class="quiet">not on the table yet</span></div>
+      ${waiting.map(u => `<div class="grow"><div class="grow-main">
+        <div class="grow-name">${esc(u.name)}</div>
+        <div class="grow-sub">${u.models.length} model${u.models.length === 1 ? "" : "s"}</div></div>
+        <div class="grow-r"><button class="btn sm" data-freveal="${esc(u.uid)}">Bring them on</button></div>
+      </div>`).join("")}
+    </div>` : ""}
+
     <div class="slab">
       <div class="head"><span class="eyebrow">Add one</span><span class="rule"></span></div>
       <div class="field" style="margin-bottom:9px"><label>Name</label>
@@ -6268,6 +6931,7 @@ function openFoes(){
   };
   const bind = (sel, fn) => $("#sheet2In").querySelectorAll(sel).forEach(b => b.onclick = () => { fn(b); questSave(); openFoes(); render(); });
   bind("[data-fdel]", b => Q.units = Q.units.filter(u => u.uid !== b.dataset.fdel));
+  bind("[data-freveal]", b => revealFoe(b.dataset.freveal, "brought on"));
   bind("[data-fact]", b => { const u = Q.units.find(x => x.uid === b.dataset.fact); u.used = Math.min(u.acts, u.used + 1); });
   bind("[data-funact]", b => { const u = Q.units.find(x => x.uid === b.dataset.funact); u.used = Math.max(0, u.used - 1); });
   bind("[data-fhp]", b => {
@@ -6277,39 +6941,96 @@ function openFoes(){
   });
 }
 
+/* How many of the scenario's events have just come out and not been read. */
+function questDue(){
+  return ((Q.scenario || {}).events || []).filter(e => e.sprung && !e.read).length;
+}
+
 /* The scenario as written, for looking back at mid-game. */
 function openBrief(){
   const s = Q.scenario; if(!s) return;
   const env = s.environment ? (RS.scenario.environment || []).find(e => e.id === s.environment) : null;
+  const events = s.events || [];
+  const out = events.filter(e => e.sprung), ahead = events.filter(e => !e.sprung);
+
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="brX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">The brief</div></div>
+      </button><div class="eyebrow">The brief</div>
+      <span class="chip">Round ${Q.round}${s.rounds ? " of " + s.rounds : ""}</span></div>
+
     <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
       <div class="cardname" style="font-size:22px">${esc(s.name)}</div>
+      ${s.premise ? `<div class="cardrole">${esc(s.premise)}</div>` : ""}
     </div>
-    <p class="serif" style="font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(s.situation)}</p>
-    <div class="slab" style="margin-top:14px">
-      <div class="grow"><div class="grow-main"><div class="grow-name">Deployment</div>
-        <div class="grow-sub">${esc(s.deployment)}</div></div></div>
+    ${s.briefing ? `<p class="serif briefing">${esc(s.briefing)}</p>` : ""}
+
+    ${out.length ? `<div class="slab" style="border-color:var(--rust)">
+      <div class="head"><span class="eyebrow">What has happened</span><span class="rule"></span></div>
+      ${out.map(e => `<div class="says">
+        <div class="says-n">Round ${e.round} \u00b7 ${esc(e.title)}</div>
+        <div class="says-d">${esc(e.text)}</div>
+        ${e.effect && e.effect.type !== "none" ? `<div class="says-d quiet">${
+          esc([e.effect.who, e.effect.amount, e.effect.where].filter(Boolean).join(" \u00b7 "))}</div>` : ""}
+      </div>`).join("")}
+    </div>` : ""}
+
+    ${ahead.length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">Still to come</span><span class="rule"></span>
+        <span class="quiet">kept back</span></div>
+      ${ahead.map(e => `<div class="grow"><div class="grow-main">
+        <div class="grow-name">Round ${e.round}</div>
+        <div class="grow-sub">not yet</div></div>
+        <div class="grow-r"><button class="btn sm ghost" data-spring="${e.round}">Spring it now</button></div>
+      </div>`).join("")}
+    </div>` : ""}
+
+    ${s.map && s.map.features && s.map.features.length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">The table</span><span class="rule"></span>
+        ${s.map.note ? `<span class="quiet">${esc(s.map.note)}</span>` : ""}</div>
+      <div class="mapwrap">${mapSVG(s.map)}</div>
+      ${mapKeyHTML(s.map)}
+    </div>` : ""}
+
+    <div class="slab">
+      ${s.deployment ? `<div class="grow"><div class="grow-main"><div class="grow-name">Deployment</div>
+        <div class="grow-sub">${esc(s.deployment)}</div></div></div>` : ""}
       ${env ? `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(env.id)}</div>
         <div class="grow-sub">${esc(env.effect)}</div></div></div>` : ""}
+      ${(s.specialRules || []).map(r => `<div class="grow"><div class="grow-main">
+        <div class="grow-sub">${esc(r)}</div></div></div>`).join("")}
       ${s.twist ? `<div class="grow"><div class="grow-main"><div class="grow-name">Later</div>
         <div class="grow-sub">${esc(s.twist)}</div></div></div>` : ""}
     </div>
+
     ${(s.objectives || []).length ? `<div class="slab">
       <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
       ${s.objectives.map(o => `<div class="says">
         <div class="says-n">${esc(o.what)} <span class="chip gilt">${o.vp} VP</span></div>
         <div class="says-d">${esc(o.rule)}</div></div>`).join("")}</div>` : ""}
+
+    ${(s.terrain || []).length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">What is on the table</span><span class="rule"></span></div>
+      ${s.terrain.map(t => `<div class="says">
+        <div class="says-n">${esc(t.name)} <span class="chip">${esc(t.role)}</span>
+          ${t.ground !== "even" ? `<span class="chip bad">${esc(t.ground)}</span>` : ""}</div>
+        ${t.note ? `<div class="says-d">${esc(t.note)}</div>` : ""}</div>`).join("")}</div>` : ""}
+
     ${Q.markers.some(m => m.where) ? `<div class="slab">
       <div class="head"><span class="eyebrow">Where the markers go</span><span class="rule"></span></div>
       ${Q.markers.filter(m => m.where).map(m => `<div class="grow"><div class="grow-main">
         <div class="grow-name">${m.n}</div><div class="grow-sub">${esc(m.where)}</div></div></div>`).join("")}
     </div>` : ""}`;
+
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#brX").onclick = closePicker;
+  $("#brX").onclick = () => { events.forEach(e => { if(e.sprung) e.read = true; }); questSave(); closePicker(); render(); };
+  $("#sheet2In").querySelectorAll("[data-spring]").forEach(b => b.onclick = () => {
+    const e = events.find(x => x.round === +b.dataset.spring && !x.sprung);
+    if(!e) return;
+    e.sprung = true; qlog("Sprung early \u2014 " + e.title);
+    questSave(); openBrief(); render();
+  });
 }
 
 /* ---- campaign.js ---- */
@@ -6752,6 +7473,106 @@ function openAdvance(mid){
   });
 }
 
+/* ---- scnmap.js ---- */
+/* =====================================================================
+   THE MAP
+   A scenario is easier to lay out than to read. This draws the table:
+   deployment zones, terrain, the ground under it, and a numbered badge on
+   everything the text refers to, so "the bell tower (3)" is somewhere you
+   can point at.
+
+   Coordinates are percentages of the table, so it does not matter whether
+   you play on a door or a dining table.
+   ===================================================================== */
+
+const GROUND = {
+  even:       {fill: "none",   label: "even ground"},
+  rough:      {fill: "rough",  label: "difficult — costs double"},
+  hazardous:  {fill: "hazard", label: "hazardous"},
+  impassable: {fill: "solid",  label: "impassable"}
+};
+const ROLE_MARK = {
+  cover:     {sym: "◧", tint: "var(--ash-mute)"},
+  blocking:  {sym: "■", tint: "var(--ash-dim)"},
+  high:      {sym: "▲", tint: "var(--ash-dim)"},
+  objective: {sym: "◆", tint: "var(--gilt)"},
+  hazard:    {sym: "✵", tint: "var(--rust)"},
+  marker:    {sym: "◈", tint: "var(--gilt)"}
+};
+
+function mapSVG(map, opts){
+  map = map || {};
+  const mini = opts && opts.mini;
+  const zones = Array.isArray(map.zones) ? map.zones : [];
+  const feats = Array.isArray(map.features) ? map.features : [];
+  const clamp = v => Math.max(0, Math.min(100, +v || 0));
+  const id = "m" + Math.random().toString(36).slice(2, 7);
+
+  const defs = `<defs>
+    <pattern id="${id}grid" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M10 0V10H0" fill="none" stroke="currentColor" stroke-width=".25" opacity=".18"/></pattern>
+    <pattern id="${id}rough" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="3" stroke="currentColor" stroke-width=".55" opacity=".35"/></pattern>
+    <pattern id="${id}hazard" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <line x1="0" y1="0" x2="0" y2="2.6" stroke="var(--rust)" stroke-width=".7" opacity=".55"/></pattern>
+  </defs>`;
+
+  let out = `<rect width="100" height="100" fill="url(#${id}grid)"/>`;
+
+  /* deployment zones first, so everything else sits on top */
+  zones.forEach(z => {
+    const x = clamp(z.x), y = clamp(z.y);
+    const w = Math.min(100 - x, Math.max(4, +z.w || 20));
+    const h = Math.min(100 - y, Math.max(4, +z.h || 18));
+    const col = z.side === "b" ? "var(--rust)" : z.side === "neutral" ? "var(--ash-mute)" : "var(--gilt)";
+    out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" fill="${col}" fill-opacity=".07"
+      stroke="${col}" stroke-width=".5" stroke-dasharray="2 1.6"/>`;
+    if(!mini && z.label)
+      out += `<text x="${x + 1.5}" y="${y + 4}" font-size="3" fill="${col}" opacity=".9">${esc(String(z.label).slice(0, 22))}</text>`;
+  });
+
+  /* the ground each feature sits on, shaded where it is not plain */
+  feats.forEach(f => {
+    const g = GROUND[f.ground] || GROUND.even;
+    if(g.fill === "none") return;
+    const r = Math.max(3, Math.min(30, +f.r || 7));
+    const fill = g.fill === "rough" ? `url(#${id}rough)` : g.fill === "hazard" ? `url(#${id}hazard)` : "currentColor";
+    out += `<circle cx="${clamp(f.x)}" cy="${clamp(f.y)}" r="${r}" fill="${fill}"
+      ${g.fill === "solid" ? 'opacity=".22"' : ""}/>`;
+  });
+
+  /* the pieces themselves, numbered in the order the text uses */
+  let n = 0;
+  feats.forEach(f => {
+    n++;
+    const x = clamp(f.x), y = clamp(f.y);
+    const mark = ROLE_MARK[f.role] || ROLE_MARK.cover;
+    out += `<g class="mapnum" data-n="${n}" data-label="${esc(String(f.label || ""))}">
+      <circle cx="${x}" cy="${y}" r="3" fill="var(--stone-1)" stroke="${mark.tint}" stroke-width=".7"/>
+      <text x="${x}" y="${y}" font-size="3.2" font-weight="700" fill="${mark.tint}"
+        text-anchor="middle" dominant-baseline="central">${n}</text></g>`;
+  });
+
+  return `<svg viewBox="0 0 100 100" class="scnmap ${mini ? "mini" : ""}"
+    role="img" aria-label="the table">${defs}${out}</svg>`;
+}
+
+function mapKeyHTML(map){
+  const feats = (map && Array.isArray(map.features)) ? map.features : [];
+  if(!feats.length) return "";
+  return `<div class="mapkey">
+    ${feats.map((f, i) => {
+      const mark = ROLE_MARK[f.role] || ROLE_MARK.cover;
+      const g = GROUND[f.ground];
+      return `<div class="mk-row">
+        <span class="mk-n">${i + 1}</span>
+        <span class="mk-l"><b>${esc(f.label || "unnamed")}</b>
+          <span>${esc([f.role, g && g.fill !== "none" ? g.label : null].filter(Boolean).join(" · "))}</span></span>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
 /* ---- scenario.js ---- */
 /* =====================================================================
    THE SCENARIO
@@ -6918,26 +7739,70 @@ async function runGenerate(ai){
     ? type.objectives : (sc.victory.objectiveTypes || []).map(o => o.id);
   const markers = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
 
+  const roles = "cover, blocking, high, objective, hazard, marker";
+  const grounds = "even, rough, hazardous, impassable";
   const prompt = `Write one scenario for ${RS.meta.name}, a grim tabletop skirmish game.
-A player's band is called the Unburied.
+A player's band is called the Unburied. Write like someone who has been there: concrete,
+unhurried, no adjectives doing work a noun could do.
 
-${S.wish.trim() ? `WHAT THEY ASKED FOR \u2014 this matters more than anything below. Build the
-scenario around it; the rest is only there to keep it legal.
+${S.wish.trim() ? `WHAT THEY ASKED FOR \u2014 this matters more than anything below. Build the whole
+scenario out of it. The settings are only there to keep it legal.
 
   "${S.wish.trim()}"
 ` : "They did not say what they wanted, so surprise them."}
 
 THE SHAPE
 Mode: ${mode.id} \u2014 ${mode.desc}
-Kind of mission: ${type.id} \u2014 ${type.desc}${S.type ? "" : "  (chosen for them)"}
-Where: ${theme.id} \u2014 ${theme.desc}${S.theme ? "" : "  (chosen for them)"}
+Mission: ${type.id} \u2014 ${type.desc}${S.type ? "" : "  (you chose this)"}
+Where: ${theme.id} \u2014 ${theme.desc}${S.theme ? "" : "  (you chose this)"}
 ${S.players} player${S.players === 1 ? "" : "s"}, ${S.perBand} points each, ${size} in total.
 Difficulty ${diff.id}. ${len.rounds ? len.rounds + " rounds" : "no fixed length"}.
-${S.table.trim() ? "On the table: " + S.table.trim() + ". Place things against these pieces by name." : ""}
+${S.table.trim() ? "ON THE TABLE ALREADY: " + S.table.trim() + ". Build the scenario around these pieces and name them." : ""}
 
-THE ENEMY gets ${enemy} points. Build them from this catalogue, by id. A unit is one
-profile fielded as one or more identical models; its cost is the profile cost times the
-model count. Keep the total at or under ${enemy}.
+WHAT TO WRITE
+
+  title      four words or fewer.
+  premise    one or two sentences. The hook.
+  briefing   four to six sentences, second person, present tense. What they see, hear and
+             smell as they arrive. This is the part read aloud.
+  scenery    one or two sentences on what to put on the table.
+  deployment where each side starts, by table edge or feature.
+
+  terrain    four to eight pieces to build or stand in. Each: name, note (how many, what it
+             looks like), role (one of ${roles}), ground (one of ${grounds}).
+             If a piece is something they probably do not own, say so in "note".
+
+  events     two to four things that happen on a named round. Each: round, title, text
+             (atmospheric, ending with the measurable rule), and effect
+             {type: damage|condition|spawn|terrain|none, amount, where, who}.
+             Events are hidden from the players until their round arrives, so write them
+             as surprises, not as things announced up front.
+
+  map        a top-down plan. Coordinates are percentages: x 0 (left) to 100 (right),
+             y 0 (top) to 100 (bottom).
+             zones: two to four deployment areas {label, side ("a","b","neutral"), x, y, w, h}
+             features: six to ten {label, role (${roles}), ground (${grounds}), x, y, r}
+             where r is how far that ground spreads, 4 to 28. Every feature needs a role and
+             a ground. Keep labels under 22 characters. The features are numbered in order,
+             so refer to them in the text as "the bell tower (3)".
+
+  objectives only from: ${objList.join(", ")}.
+${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o => "             " + o.id + ": " + o.desc).join("\n")}
+
+  specialRules  nought to three, one line each. Only if the place demands one.
+  twist         one sentence. Something that turns in the second half.
+
+  markers    ${markers} numbered suspicion markers. For each give "where" \u2014 where it sits,
+             naming a map feature if it suits. Do NOT say what is under them.
+
+  enemy      ${enemy} points of them, from the catalogue below, by id. A unit is one profile
+             fielded as several identical models; cost is the profile cost times the count.
+             Stay at or under ${enemy}.
+             Each unit also gets "protocol": two or three "condition: order" lines, read top
+             to bottom, first true line wins.
+             Conditions: ${sc.protocols.conditions.join(", ")}.
+             Orders: ${sc.protocols.orders.join(", ")}.
+             Mark a unit "hidden": true if it is not on the table at the start.
 
 Model profile: fight, aim, will, wits are dice on ${RS.dice.ladder.join(", ")} (default ${statDefault("fight")});
 move in cm (default ${statDefault("move")}); ${RSX.stat.wounds.name.toLowerCase()} (default ${statDefault("wounds")});
@@ -6946,31 +7811,22 @@ actions (default ${statDefault("actions")}); size one of ${RSX.stat.size.values.
 ${aiCatalogue()}
 
 GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" \u2014 a name that suits that
-creature. Never leave it out.
-
-EACH ENEMY UNIT gets a "protocol": two or three lines telling whoever runs them what to do,
-as "condition: order". Conditions may be ${sc.protocols.conditions.join(", ")}.
-Orders may be ${sc.protocols.orders.join(", ")}. Read top to bottom; the first true line wins.
-
-OBJECTIVES must come only from: ${objList.join(", ")}.
-${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o => "  " + o.id + ": " + o.desc).join("\n")}
-
-MARKERS: ${markers} numbered markers are on the table. For each give a "where" \u2014 a short
-phrase saying where it sits${S.table.trim() ? ", using the pieces named above" : ""}.
-Do NOT say what is under them; the app decides that.
+creature. A drowned thing does not carry a "Melee weapon", it swings a "Rusted clapper".
 
 Reply with ONLY this JSON and nothing else:
-{"name":"the scenario's name, four words or fewer",
- "situation":"2-3 sentences. What is happening and why anyone is here.",
- "deployment":"one sentence on where each side starts",
+{"title":"...","premise":"...","briefing":"...","scenery":"...","deployment":"...",
  "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
- "objectives":[{"type":"one of the allowed ids","what":"what it is, in the fiction","vp":1}],
- "twist":"one sentence, something that turns up in the second half",
+ "terrain":[{"name":"...","note":"...","role":"cover","ground":"even"}],
+ "events":[{"round":3,"title":"...","text":"...","effect":{"type":"damage","amount":"1","where":"within 10 cm of the bell tower (3)","who":"every model"}}],
+ "map":{"note":"one line on the table","zones":[{"label":"...","side":"a","x":5,"y":40,"w":18,"h":30}],
+        "features":[{"label":"...","role":"cover","ground":"rough","x":50,"y":50,"r":8}]},
+ "objectives":[{"type":"allowed id","what":"what it is, in the fiction","vp":1}],
+ "specialRules":["..."],"twist":"...",
  "markers":[{"n":1,"where":"..."}],
- "enemy":[{"name":"...","count":3,
+ "enemy":[{"name":"...","count":3,"hidden":false,
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
    "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
-   "armour":"id or null","protocol":["condition: order","condition: order"]}]}`;
+   "armour":"id or null","protocol":["condition: order"]}]}`;
 
   try{
     const raw = await ai.json(prompt, {modelTier: "default", cache: false});
@@ -6988,41 +7844,92 @@ Reply with ONLY this JSON and nothing else:
 /* ---- checking it against the rules ---- */
 function legaliseScenario(raw, ctx){
   if(!raw || typeof raw !== "object") return null;
+  const str = (v, n) => String(v == null ? "" : v).slice(0, n);
+  const ROLES = ["cover", "blocking", "high", "objective", "hazard", "marker"];
+  const GROUNDS = ["even", "rough", "hazardous", "impassable"];
+  const num = (v, lo, hi, dflt) => {
+    const n = Math.round(+v);
+    return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
+  };
+
   const out = {
-    name: String(raw.name || "Unnamed").slice(0, 60),
-    situation: String(raw.situation || "").slice(0, 600),
-    deployment: String(raw.deployment || "").slice(0, 300),
-    twist: String(raw.twist || "").slice(0, 300),
+    title: str(raw.title || raw.name || "Unnamed", 60),
+    premise: str(raw.premise, 300),
+    briefing: str(raw.briefing, 1200),
+    scenery: str(raw.scenery, 400),
+    deployment: str(raw.deployment, 300),
+    twist: str(raw.twist, 300),
     environment: (RS.scenario.environment || []).some(e => e.id === raw.environment) ? raw.environment : null,
     size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
     rounds: ctx.len.rounds, type: ctx.type.id, theme: ctx.theme.id, mode: ctx.mode.id,
     players: ctx.players, perBand: ctx.perBand, chose: ctx.chose || {},
-    objectives: [], markers: [], enemy: [], notes: []
+    terrain: [], events: [], map: {note: "", zones: [], features: []},
+    objectives: [], specialRules: [], markers: [], enemy: [], notes: []
   };
+
+  /* terrain to build */
+  (Array.isArray(raw.terrain) ? raw.terrain : []).slice(0, 8).forEach(t => {
+    if(!t || !t.name) return;
+    out.terrain.push({name: str(t.name, 50), note: str(t.note, 140),
+      role: ROLES.includes(t.role) ? t.role : "cover",
+      ground: GROUNDS.includes(t.ground) ? t.ground : "even"});
+  });
+
+  /* the map, clamped to the table */
+  const m = raw.map || {};
+  out.map.note = str(m.note, 140);
+  (Array.isArray(m.zones) ? m.zones : []).slice(0, 4).forEach(z => {
+    out.map.zones.push({label: str(z.label, 22),
+      side: ["a", "b", "neutral"].includes(z.side) ? z.side : "neutral",
+      x: num(z.x, 0, 100, 0), y: num(z.y, 0, 100, 0),
+      w: num(z.w, 4, 100, 20), h: num(z.h, 4, 100, 18)});
+  });
+  (Array.isArray(m.features) ? m.features : []).slice(0, 10).forEach(f => {
+    out.map.features.push({label: str(f.label, 22),
+      role: ROLES.includes(f.role) ? f.role : "cover",
+      ground: GROUNDS.includes(f.ground) ? f.ground : "even",
+      x: num(f.x, 0, 100, 50), y: num(f.y, 0, 100, 50), r: num(f.r, 3, 30, 7)});
+  });
+  if(!out.map.features.length) out.notes.push("no map came back, so there is nothing to lay out");
+
+  /* events, only on rounds that exist */
+  const lastRound = ctx.len.rounds || 8;
+  (Array.isArray(raw.events) ? raw.events : []).slice(0, 4).forEach(e => {
+    if(!e || !e.title) return;
+    const r = num(e.round, 1, lastRound, 2);
+    const eff = e.effect || {};
+    out.events.push({round: r, title: str(e.title, 50), text: str(e.text, 500),
+      effect: {type: ["damage", "condition", "spawn", "terrain", "none"].includes(eff.type) ? eff.type : "none",
+               amount: str(eff.amount, 30), where: str(eff.where, 120), who: str(eff.who, 80)},
+      sprung: false});
+  });
+  out.events.sort((a, b) => a.round - b.round);
 
   (Array.isArray(raw.objectives) ? raw.objectives : []).slice(0, 4).forEach(o => {
     const t = (RS.scenario.victory.objectiveTypes || []).find(x => x.id === (o && o.type));
-    if(!t || !ctx.objList.includes(t.id)){ out.notes.push("dropped an objective that this battle type does not allow"); return; }
-    out.objectives.push({type: t.id, what: String(o.what || t.desc).slice(0, 120),
-                         vp: Math.max(1, Math.min(5, parseInt(o.vp, 10) || 1)), rule: t.desc});
+    if(!t || !ctx.objList.includes(t.id)){ out.notes.push("dropped an objective this mission does not allow"); return; }
+    out.objectives.push({type: t.id, what: str(o.what || t.desc, 120),
+                         vp: num(o.vp, 1, 5, 1), rule: t.desc});
   });
 
+  (Array.isArray(raw.specialRules) ? raw.specialRules : []).slice(0, 3)
+    .forEach(r => { if(r) out.specialRules.push(str(r, 200)); });
+
   for(let i = 1; i <= ctx.markers; i++){
-    const m = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
-    out.markers.push({n: i, where: m ? String(m.where || "").slice(0, 120) : ""});
+    const mk = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
+    out.markers.push({n: i, where: mk ? str(mk.where, 120) : ""});
   }
 
   let spent = 0;
   (Array.isArray(raw.enemy) ? raw.enemy : []).slice(0, 6).forEach(u => {
     const built = aiLegalise(Object.assign({}, u, {name: u.name}), 9999);
     if(!built) return;
-    const count = Math.max(1, Math.min(10, parseInt(u.count, 10) || 1));
-    const per = memberCost(built);
-    const cost = per * count;
-    if(spent + cost > ctx.enemy){ out.notes.push("left out " + (u.name || "a unit") + " — it would not fit the points"); return; }
+    const count = num(u.count, 1, 10, 1);
+    const per = memberCost(built), cost = per * count;
+    if(spent + cost > ctx.enemy){ out.notes.push("left out " + (u.name || "a unit") + " \u2014 it would not fit the points"); return; }
     spent += cost;
-    out.enemy.push({name: built.name || "Enemy", count, per, cost, built,
-      protocol: (Array.isArray(u.protocol) ? u.protocol : []).map(x => String(x).slice(0, 90)).slice(0, 4)});
+    out.enemy.push({name: built.name || "Enemy", count, per, cost, built, hidden: !!u.hidden,
+      protocol: (Array.isArray(u.protocol) ? u.protocol : []).map(x => str(x, 90)).slice(0, 4)});
   });
   out.enemySpent = spent;
   if(!out.enemy.length) out.notes.push("no enemy came back that fitted the points");
@@ -7035,23 +7942,35 @@ function scenarioHTML(s){
   const env = s.environment ? (RS.scenario.environment || []).find(e => e.id === s.environment) : null;
   return `
   <div class="slab" style="border-color:var(--gilt-deep)">
-    <div class="cardname" style="font-size:21px;margin-bottom:6px">${esc(s.name)}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+    <div class="cardname" style="font-size:22px;margin-bottom:6px">${esc(s.title)}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px">
       <span class="chip">${esc(s.mode === "coop" ? "Co-op" : s.mode === "pvp" ? "Player vs player" : "Solo")}</span>
-      <span class="chip ${s.chose && s.chose.type ? "gilt" : ""}">${esc(s.type)}${s.chose && s.chose.type ? " · chosen" : ""}</span>
-      <span class="chip ${s.chose && s.chose.theme ? "gilt" : ""}">${esc(s.theme)}${s.chose && s.chose.theme ? " · chosen" : ""}</span>
-      <span class="chip">${s.players || 1}×${s.perBand || 0}</span>
+      <span class="chip ${s.chose && s.chose.type ? "gilt" : ""}">${esc(s.type)}</span>
+      <span class="chip ${s.chose && s.chose.theme ? "gilt" : ""}">${esc(s.theme)}</span>
+      <span class="chip">${s.players || 1}\u00d7${s.perBand || 0}</span>
       <span class="chip">${esc(s.difficulty)}</span>
       ${s.rounds ? `<span class="chip">${s.rounds} rounds</span>` : ""}
     </div>
-    <p class="serif" style="font-size:14px;line-height:1.6;color:var(--ash-dim);margin:0 0 11px">${esc(s.situation)}</p>
-    <div class="grow"><div class="grow-main"><div class="grow-name">Deployment</div>
-      <div class="grow-sub">${esc(s.deployment)}</div></div></div>
-    ${env ? `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(env.id.charAt(0).toUpperCase() + env.id.slice(1))}</div>
-      <div class="grow-sub">${esc(env.effect)}</div></div></div>` : ""}
-    ${s.twist ? `<div class="grow"><div class="grow-main"><div class="grow-name">Later</div>
-      <div class="grow-sub">${esc(s.twist)}</div></div></div>` : ""}
+    ${s.premise ? `<p class="lead" style="margin:0 0 11px">${esc(s.premise)}</p>` : ""}
+    ${s.briefing ? `<p class="serif briefing">${esc(s.briefing)}</p>` : ""}
   </div>
+
+  ${s.map && s.map.features.length ? `<div class="slab">
+    <div class="head"><span class="eyebrow">The table</span><span class="rule"></span>
+      ${s.map.note ? `<span class="quiet">${esc(s.map.note)}</span>` : ""}</div>
+    <div class="mapwrap">${mapSVG(s.map)}</div>
+    ${mapKeyHTML(s.map)}
+    ${s.deployment ? `<p class="quiet" style="margin:11px 0 0"><b>Deployment.</b> ${esc(s.deployment)}</p>` : ""}
+  </div>` : ""}
+
+  ${s.terrain.length ? `<div class="slab">
+    <div class="head"><span class="eyebrow">What to put on it</span><span class="rule"></span></div>
+    ${s.scenery ? `<p class="quiet" style="margin:0 0 10px">${esc(s.scenery)}</p>` : ""}
+    ${s.terrain.map(t => `<div class="says">
+      <div class="says-n">${esc(t.name)} <span class="chip">${esc(t.role)}</span>
+        ${t.ground !== "even" ? `<span class="chip bad">${esc(t.ground)}</span>` : ""}</div>
+      ${t.note ? `<div class="says-d">${esc(t.note)}</div>` : ""}</div>`).join("")}
+  </div>` : ""}
 
   ${s.objectives.length ? `<div class="slab">
     <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
@@ -7061,14 +7980,31 @@ function scenarioHTML(s){
       <div class="says-d">${esc(o.rule)}</div></div>`).join("")}
   </div>` : ""}
 
+  ${s.events.length ? `<div class="slab">
+    <div class="head"><span class="eyebrow">What happens, and when</span><span class="rule"></span>
+      <span class="chip">kept back until the round</span></div>
+    ${s.events.map(e => `<div class="grow">
+      <div class="grow-main"><div class="grow-name">Round ${e.round} \u00b7 ${esc(e.title)}</div>
+        <div class="grow-sub">hidden until then</div></div></div>`).join("")}
+  </div>` : ""}
+
+  ${(s.specialRules.length || s.twist || env) ? `<div class="slab">
+    <div class="head"><span class="eyebrow">Also true here</span><span class="rule"></span></div>
+    ${env ? `<div class="says"><div class="says-n">${esc(env.id.charAt(0).toUpperCase() + env.id.slice(1))}</div>
+      <div class="says-d">${esc(env.effect)}</div></div>` : ""}
+    ${s.specialRules.map(r => `<div class="says"><div class="says-d">${esc(r)}</div></div>`).join("")}
+    ${s.twist ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(s.twist)}</div></div>` : ""}
+  </div>` : ""}
+
   <div class="slab">
     <div class="head"><span class="eyebrow">Against you</span><span class="rule"></span>
       <span class="chip ${s.enemySpent > s.enemyBudget ? "bad" : "gilt"} mono">${s.enemySpent} of ${s.enemyBudget}</span></div>
     ${s.enemy.map(u => `<div class="says">
-      <div class="says-n">${esc(u.name)} <span class="chip">×${u.count}</span>
-        <span class="chip mono">${u.cost}</span></div>
+      <div class="says-n">${esc(u.name)} <span class="chip">\u00d7${u.count}</span>
+        <span class="chip mono">${u.cost}</span>
+        ${u.hidden ? `<span class="chip gilt">not on the table yet</span>` : ""}</div>
       <div class="says-d">${esc(enemyLine(u.built))}</div>
-      ${u.protocol.length ? `<div class="says-d quiet">${u.protocol.map(esc).join(" · ")}</div>` : ""}
+      ${u.protocol.length ? `<div class="says-d quiet">${u.protocol.map(esc).join(" \u00b7 ")}</div>` : ""}
     </div>`).join("")}
   </div>
 
@@ -7088,6 +8024,7 @@ function scenarioHTML(s){
     <button class="btn primary" id="gTake">Take them out</button>
   </div>`;
 }
+
 function enemyLine(m){
   const bits = DIE_STATS.map(k => RSX.stat[k].name.slice(0, 2) + " " + m[k]).join(" · ");
   const w = (m.weapons || []).map(e => skinOf(m, e.id, (catOf("weapons")[e.id] || {}).name)).join(", ");
@@ -7103,17 +8040,22 @@ function bindScenario(){
 /* ---- into a quest ---- */
 function startFromScenario(s){
   if(!s) return;
-  if(!questBegin(s.size)) return;
+  const typeObj = (RS.scenario.battleTypes || []).find(t => t.id === s.type) || null;
+  if(!questBegin(s.size, {type: typeObj, players: s.players || 1})) return;
   Q.difficulty = s.difficulty;
   Q.reward = s.reward;
   Q.enemyPoints = s.enemyBudget;
-  Q.scenario = {name: s.name, situation: s.situation, deployment: s.deployment,
-                twist: s.twist, environment: s.environment, objectives: s.objectives,
+  Q.scenario = {name: s.title, premise: s.premise, briefing: s.briefing,
+                scenery: s.scenery, deployment: s.deployment, twist: s.twist,
+                environment: s.environment, objectives: s.objectives,
+                specialRules: s.specialRules, terrain: s.terrain, map: s.map,
+                events: s.events.map(e => Object.assign({}, e, {sprung: false})),
                 rounds: s.rounds, type: s.type, theme: s.theme};
   /* the generator's placements, over the app's own secret contents */
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g) m.where = g.where; });
   s.enemy.forEach(u => {
-    const f = questFoe(u.name, u.count, u.built.wounds, activationsOf(Object.assign({}, u.built, {count: u.count})));
+    const f = questFoe(u.name, u.count, u.built.wounds,
+      activationsOf(Object.assign({}, u.built, {count: u.count})), u.hidden);
     f.profile = u.built;
     f.protocol = u.protocol;
     f.points = u.cost;
@@ -7122,7 +8064,7 @@ function startFromScenario(s){
   questSave();
   genState = null;
   closePicker(); render();
-  toast(s.name + " — begins");
+  toast(s.title + " — begins");
 }
 
 /* ---- realm.js ---- */
