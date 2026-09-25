@@ -6971,6 +6971,7 @@ function openFoes(){
           <span class="pip ${h <= 0 ? "dead" : h <= u.max * 0.5 ? "hurt" : ""}">
             <button data-fhp="${esc(u.uid)}|${i}|-1">−</button><b>${h}</b>
             <button data-fhp="${esc(u.uid)}|${i}|1">+</button></span>`).join("")}</div>
+        ${u.deploy ? `<div class="says-d" style="margin-bottom:7px"><b>Starts:</b> ${esc(u.deploy)}</div>` : ""}
         ${u.profile ? `<div class="says-d" style="margin-bottom:7px">${esc(enemyLine(u.profile))}</div>` : ""}
         ${(u.protocol || []).length ? `<div class="says-d quiet" style="margin-bottom:7px">${u.protocol.map(esc).join(" · ")}</div>` : ""}
         <div class="qs-row" style="margin-top:9px">
@@ -8035,6 +8036,12 @@ ${sealed ? `
              \u2014 until the moment that reveals it. An envelope that brings a hidden unit on
              should describe what happens, not name what did it.
 
+             Every unit that is NOT hidden needs a "deploy": where it actually is when the game
+             starts \u2014 a table edge, a zone, a named feature ("holding the bridge", "spread
+             through the reactor hall") \u2014 so whoever sets up the table knows where it goes
+             and does not have to guess. A hidden unit does not need this; where and when it
+             appears is already covered by whatever reveals it.
+
              EVERY UNIT YOU WRITE MUST FIT INSIDE ${enemy} POINTS TOGETHER. Total their cost
              yourself before replying. If a unit is named or implied anywhere else in this
              scenario (an envelope, a special rule, the twist), it must appear in this list \u2014
@@ -8063,6 +8070,7 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
  "woundFlavour":[{"cause":"...","text":"..."}],
  "markers":[{"n":1,"where":"..."}],
  "enemy":[{"name":"...","count":3,"hidden":false,"hint":"only if hidden \u2014 what to prepare, no name",
+   "deploy":"only if not hidden \u2014 where it starts",
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
    "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
    "armour":"id or null","protocol":["condition: order"]}]}`;
@@ -8194,7 +8202,14 @@ function legaliseScenario(raw, ctx){
      named unit for points would leave that text pointing at nothing, which is
      worse than a fight being a little smaller than asked for. So a unit the
      story already named is never simply cut: its count is scaled down to
-     fit, and only if it cannot fit even alone is it left out — loudly. */
+     fit, and only if it cannot fit even alone is it left out — loudly.
+     0.11.15: that same courtesy now applies to every unit the writer put
+     on the table, not only the ones the story happens to name — a unit
+     nobody mentioned by name is still something the writer meant to be
+     there, and cutting it can leave a spawn point or a guard post with
+     nothing standing on it. Everyone gets first claim to at least one
+     model; only if the budget cannot cover one of everything does the
+     least-important (unreferenced, priciest) unit give way. */
   const storyText = [
     out.twist, ...(out.specialRules || []),
     ...((out.mystery && out.mystery.envelopes) || []).map(e => e.title + " " + e.trigger + " " + e.text)
@@ -8209,23 +8224,34 @@ function legaliseScenario(raw, ctx){
     return {name, u, built, per: memberCost(built), want: num(u.count, 1, 10, 1),
             referenced: isReferenced(name)};
   }).filter(Boolean);
-  requested.sort((a, b) => (b.referenced - a.referenced));   // referenced units get first claim on the budget
+  /* referenced units get first claim; among equals, the cheaper unit gets
+     priority — it lets more of what was written actually make it on. */
+  requested.sort((a, b) => (b.referenced - a.referenced) || (a.per - b.per));
 
   let spent = 0;
+  const kept = [];
   requested.forEach(r => {
     const room = ctx.enemy - spent;
     if(room < r.per){
       out.notes.push((r.referenced
         ? "the story depends on " + r.name + ", but even one of it would not fit — raise the enemy budget or trim the brief"
-        : "left out " + r.name + " — it would not fit the points"));
+        : "left out " + r.name + " — even one of it would not fit the points"));
       return;
     }
-    const count = Math.min(r.want, Math.floor(room / r.per));
-    if(count < r.want) out.notes.push(r.name + " scaled from " + r.want + " to " + count + " to fit the points");
-    const cost = r.per * count;
-    spent += cost;
-    out.enemy.push({name: r.name, count, per: r.per, cost, built: r.built, hidden: !!r.u.hidden,
-      hint: str(r.u.hint, 90),
+    spent += r.per;
+    kept.push(Object.assign({count: 1}, r));
+  });
+  /* whatever room is left, grow toward what was asked for — referenced
+     units first, same order as the claim above. */
+  kept.forEach(r => {
+    while(r.count < r.want && (ctx.enemy - spent) >= r.per){
+      r.count++; spent += r.per;
+    }
+  });
+  kept.forEach(r => {
+    if(r.count < r.want) out.notes.push(r.name + " scaled from " + r.want + " to " + r.count + " to fit the points");
+    out.enemy.push({name: r.name, count: r.count, per: r.per, cost: r.per * r.count, built: r.built,
+      hidden: !!r.u.hidden, hint: str(r.u.hint, 90), deploy: r.u.hidden ? "" : str(r.u.deploy, 100),
       protocol: (Array.isArray(r.u.protocol) ? r.u.protocol : []).map(x => str(x, 90)).slice(0, 4)});
   });
   out.enemySpent = spent;
@@ -8309,18 +8335,23 @@ function scenarioHTML(s){
 
   ${s.events.length ? `<div class="slab">
     <div class="head"><span class="eyebrow">What happens, and when</span><span class="rule"></span>
-      <span class="chip">kept back until the round</span></div>
-    ${s.events.map(e => `<div class="grow">
-      <div class="grow-main"><div class="grow-name">Round ${e.round} \u00b7 ${esc(e.title)}</div>
-        <div class="grow-sub">hidden until then</div></div></div>`).join("")}
+      <span class="chip">${s.events.length} kept back</span></div>
+    <p class="quiet" style="margin:0">${s.events.length === 1 ? "Something is" : "A few things are"}
+      written into this scenario. Neither what nor when stays here \u2014 the app keeps it and
+      plays it as a surprise when its round actually comes.</p>
   </div>` : ""}
 
-  ${(s.specialRules.length || s.twist || env) ? `<div class="slab">
+  ${(s.specialRules.length || (s.twist && !s.sealed) || env) ? `<div class="slab">
     <div class="head"><span class="eyebrow">Also true here</span><span class="rule"></span></div>
     ${env ? `<div class="says"><div class="says-n">${esc(env.id.charAt(0).toUpperCase() + env.id.slice(1))}</div>
       <div class="says-d">${esc(env.effect)}</div></div>` : ""}
     ${s.specialRules.map(r => `<div class="says"><div class="says-d">${esc(maskSecrets(r, s))}</div></div>`).join("")}
-    ${s.twist ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(maskSecrets(s.twist, s))}</div></div>` : ""}
+    ${s.twist && !s.sealed ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(maskSecrets(s.twist, s))}</div></div>` : ""}
+  </div>` : ""}
+  ${s.twist && s.sealed ? `<div class="slab">
+    <div class="head"><span class="eyebrow">Also true here</span><span class="rule"></span></div>
+    <p class="quiet" style="margin:0">Something turns later on — kept with the mystery,
+      not read ahead.</p>
   </div>` : ""}
 
   <div class="slab">
@@ -8333,6 +8364,7 @@ function scenarioHTML(s){
     </div>` : `<div class="says">
       <div class="says-n">${esc(u.name)} <span class="chip">\u00d7${u.count}</span>
         <span class="chip mono">${u.cost}</span></div>
+      ${u.deploy ? `<div class="says-d"><b>Starts:</b> ${esc(u.deploy)}</div>` : ""}
       <div class="says-d">${esc(enemyLine(u.built))}</div>
       ${u.protocol.length ? `<div class="says-d quiet">${u.protocol.map(esc).join(" \u00b7 ")}</div>` : ""}
     </div>`).join("")}
@@ -8397,6 +8429,7 @@ function startFromScenario(s){
     f.protocol = u.protocol;
     f.points = u.cost;
     f.hint = u.hint;
+    f.deploy = u.deploy;
     Q.units.push(f);
   });
   questSave();
