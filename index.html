@@ -6929,8 +6929,8 @@ function openFoes(){
       <div class="head"><span class="eyebrow">Held back</span><span class="rule"></span>
         <span class="quiet">not on the table yet</span></div>
       ${waiting.map(u => `<div class="grow"><div class="grow-main">
-        <div class="grow-name">${esc(u.name)}</div>
-        <div class="grow-sub">${u.models.length} model${u.models.length === 1 ? "" : "s"}</div></div>
+        <div class="grow-name">Something unseen</div>
+        <div class="grow-sub">${esc(u.hint || "what it is stays unknown until it reveals itself")}</div></div>
         <div class="grow-r"><button class="btn sm" data-freveal="${esc(u.uid)}">Bring them on</button></div>
       </div>`).join("")}
     </div>` : ""}
@@ -7024,9 +7024,9 @@ function openBrief(){
       ${env ? `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(env.id)}</div>
         <div class="grow-sub">${esc(env.effect)}</div></div></div>` : ""}
       ${(s.specialRules || []).map(r => `<div class="grow"><div class="grow-main">
-        <div class="grow-sub">${esc(r)}</div></div></div>`).join("")}
+        <div class="grow-sub">${esc(maskHiddenNames(r, Q.units.filter(u => u.side === "them" && u.hidden)))}</div></div></div>`).join("")}
       ${s.twist ? `<div class="grow"><div class="grow-main"><div class="grow-name">Later</div>
-        <div class="grow-sub">${esc(s.twist)}</div></div></div>` : ""}
+        <div class="grow-sub">${esc(maskHiddenNames(s.twist, Q.units.filter(u => u.side === "them" && u.hidden)))}</div></div></div>` : ""}
     </div>
 
     ${s.sealed && (s.mystery && s.mystery.envelopes || []).length ? `<div class="slab">
@@ -7040,7 +7040,7 @@ function openBrief(){
         </div>` : `
         <div class="grow"><div class="grow-main">
           <div class="grow-name">Sealed</div>
-          <div class="grow-sub">opens when: ${esc(e.trigger)}</div></div>
+          <div class="grow-sub">opens when: ${esc(maskHiddenNames(e.trigger, Q.units.filter(u => u.side === "them" && u.hidden)))}</div></div>
           <div class="grow-r"><button class="btn sm" data-envelope="${esc(e.eid)}">Open it</button></div>
         </div>`).join("")}
       ${(s.mystery.finale && s.mystery.envelopes.every(e => e.opened)) ? `
@@ -7930,7 +7930,19 @@ ${sealed ? `
              to bottom, first true line wins.
              Conditions: ${sc.protocols.conditions.join(", ")}.
              Orders: ${sc.protocols.orders.join(", ")}.
-             Mark a unit "hidden": true if it is not on the table at the start.
+             Mark a unit "hidden": true if it is not on the table at the start, and give it
+             a "hint": what to physically prepare for it \u2014 size and shape, not its name or
+             stats (e.g. "something large, many-limbed" rather than "the Broodmother"). Nothing
+             hidden should be named or described recognisably anywhere else in this scenario
+             \u2014 not in an envelope's title or trigger, not in specialRules, not in the twist
+             \u2014 until the moment that reveals it. An envelope that brings a hidden unit on
+             should describe what happens, not name what did it.
+
+             EVERY UNIT YOU WRITE MUST FIT INSIDE ${enemy} POINTS TOGETHER. Total their cost
+             yourself before replying. If a unit is named or implied anywhere else in this
+             scenario (an envelope, a special rule, the twist), it must appear in this list \u2014
+             never write a creature into the story and then leave it out of the roster. If the
+             points are tight, write fewer models of it rather than omitting it.
 
 Model profile: fight, aim, will, wits are dice on ${RS.dice.ladder.join(", ")} (default ${statDefault("fight")});
 move in cm (default ${statDefault("move")}); ${RSX.stat.wounds.name.toLowerCase()} (default ${statDefault("wounds")});
@@ -7953,7 +7965,7 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
  "specialRules":["..."],"twist":"...",
  "woundFlavour":[{"cause":"...","text":"..."}],
  "markers":[{"n":1,"where":"..."}],
- "enemy":[{"name":"...","count":3,"hidden":false,
+ "enemy":[{"name":"...","count":3,"hidden":false,"hint":"only if hidden \u2014 what to prepare, no name",
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
    "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
    "armour":"id or null","protocol":["condition: order"]}]}`;
@@ -8080,20 +8092,65 @@ function legaliseScenario(raw, ctx){
     out.markers.push({n: i, where: mk ? str(mk.where, 120) : ""});
   }
 
-  let spent = 0;
-  (Array.isArray(raw.enemy) ? raw.enemy : []).slice(0, 6).forEach(u => {
+  /* Whatever the AI wrote elsewhere in this scenario may already depend on an
+     enemy existing — an envelope, a special rule, the twist. Dropping a
+     named unit for points would leave that text pointing at nothing, which is
+     worse than a fight being a little smaller than asked for. So a unit the
+     story already named is never simply cut: its count is scaled down to
+     fit, and only if it cannot fit even alone is it left out — loudly. */
+  const storyText = [
+    out.twist, ...(out.specialRules || []),
+    ...((out.mystery && out.mystery.envelopes) || []).map(e => e.title + " " + e.trigger + " " + e.text)
+  ].join(" ");
+  const escapeRe = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const isReferenced = name => name && new RegExp("\\b" + escapeRe(name) + "\\b", "i").test(storyText);
+
+  const requested = (Array.isArray(raw.enemy) ? raw.enemy : []).slice(0, 6).map(u => {
     const built = aiLegalise(Object.assign({}, u, {name: u.name}), 9999);
-    if(!built) return;
-    const count = num(u.count, 1, 10, 1);
-    const per = memberCost(built), cost = per * count;
-    if(spent + cost > ctx.enemy){ out.notes.push("left out " + (u.name || "a unit") + " \u2014 it would not fit the points"); return; }
+    if(!built) return null;
+    const name = built.name || u.name || "Enemy";
+    return {name, u, built, per: memberCost(built), want: num(u.count, 1, 10, 1),
+            referenced: isReferenced(name)};
+  }).filter(Boolean);
+  requested.sort((a, b) => (b.referenced - a.referenced));   // referenced units get first claim on the budget
+
+  let spent = 0;
+  requested.forEach(r => {
+    const room = ctx.enemy - spent;
+    if(room < r.per){
+      out.notes.push((r.referenced
+        ? "the story depends on " + r.name + ", but even one of it would not fit — raise the enemy budget or trim the brief"
+        : "left out " + r.name + " — it would not fit the points"));
+      return;
+    }
+    const count = Math.min(r.want, Math.floor(room / r.per));
+    if(count < r.want) out.notes.push(r.name + " scaled from " + r.want + " to " + count + " to fit the points");
+    const cost = r.per * count;
     spent += cost;
-    out.enemy.push({name: built.name || "Enemy", count, per, cost, built, hidden: !!u.hidden,
-      protocol: (Array.isArray(u.protocol) ? u.protocol : []).map(x => str(x, 90)).slice(0, 4)});
+    out.enemy.push({name: r.name, count, per: r.per, cost, built: r.built, hidden: !!r.u.hidden,
+      hint: str(r.u.hint, 90),
+      protocol: (Array.isArray(r.u.protocol) ? r.u.protocol : []).map(x => str(x, 90)).slice(0, 4)});
   });
   out.enemySpent = spent;
   if(!out.enemy.length) out.notes.push("no enemy came back that fitted the points");
   return out;
+}
+
+/* Hidden units are never named in the open, even by accident: anywhere a
+   scenario's own text might mention one before its reveal, swap the real
+   name for its hint (or a plain placeholder if it has none). Belt and
+   braces — the prompt already asks the writer not to do this. */
+function maskHiddenNames(text, hiddenUnits){
+  if(!text) return text;
+  (hiddenUnits || []).forEach(u => {
+    if(!u || !u.name) return;
+    const re = new RegExp("\\b" + u.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
+    text = text.replace(re, u.hint || "something hidden");
+  });
+  return text;
+}
+function maskSecrets(text, s){
+  return maskHiddenNames(text, (s.enemy || []).filter(u => u.hidden));
 }
 
 /* ---- showing it ---- */
@@ -8136,8 +8193,8 @@ function scenarioHTML(s){
   ${s.objectives.length ? (s.sealed ? `<div class="slab">
     <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
     <p class="quiet" style="margin:0">Sealed. ${s.objectives.length} objective${s.objectives.length === 1 ? "" : "s"}
-      are set, but nobody \u2014 including whoever runs this \u2014 sees them until round 2 or an
-      envelope opens them.</p>
+      are set, but nobody \u2014 not even whoever runs this \u2014 knows them yet. They come out
+      as the mystery does.</p>
   </div>` : `<div class="slab">
     <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
     ${s.objectives.map(o => `<div class="says">
@@ -8148,10 +8205,9 @@ function scenarioHTML(s){
 
   ${s.mystery && s.mystery.envelopes && s.mystery.envelopes.length ? `<div class="slab">
     <div class="head"><span class="eyebrow">Envelopes</span><span class="rule"></span>
-      <span class="quiet">sealed, for whoever runs it</span></div>
-    ${s.mystery.envelopes.map(e => `<div class="grow"><div class="grow-main">
-      <div class="grow-name">${esc(e.title)}</div>
-      <div class="grow-sub">opens when: ${esc(e.trigger)}</div></div></div>`).join("")}
+      <span class="quiet">${s.mystery.envelopes.length} sealed — opened during play, not read ahead</span></div>
+    <p class="quiet" style="margin:0">What each holds stays unknown, even to whoever is running
+      it, until the moment in play that opens it.</p>
   </div>` : ""}
 
   ${s.events.length ? `<div class="slab">
@@ -8166,17 +8222,20 @@ function scenarioHTML(s){
     <div class="head"><span class="eyebrow">Also true here</span><span class="rule"></span></div>
     ${env ? `<div class="says"><div class="says-n">${esc(env.id.charAt(0).toUpperCase() + env.id.slice(1))}</div>
       <div class="says-d">${esc(env.effect)}</div></div>` : ""}
-    ${s.specialRules.map(r => `<div class="says"><div class="says-d">${esc(r)}</div></div>`).join("")}
-    ${s.twist ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(s.twist)}</div></div>` : ""}
+    ${s.specialRules.map(r => `<div class="says"><div class="says-d">${esc(maskSecrets(r, s))}</div></div>`).join("")}
+    ${s.twist ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(maskSecrets(s.twist, s))}</div></div>` : ""}
   </div>` : ""}
 
   <div class="slab">
     <div class="head"><span class="eyebrow">Against you</span><span class="rule"></span>
       <span class="chip ${s.enemySpent > s.enemyBudget ? "bad" : "gilt"} mono">${s.enemySpent} of ${s.enemyBudget}</span></div>
-    ${s.enemy.map(u => `<div class="says">
+    ${s.enemy.map(u => u.hidden ? `<div class="says">
+      <div class="says-n">Something unseen <span class="chip mono">${u.cost}</span>
+        <span class="chip gilt">not on the table yet</span></div>
+      <div class="says-d">${esc(u.hint || "Kept back. What it is stays unknown until it reveals itself.")}</div>
+    </div>` : `<div class="says">
       <div class="says-n">${esc(u.name)} <span class="chip">\u00d7${u.count}</span>
-        <span class="chip mono">${u.cost}</span>
-        ${u.hidden ? `<span class="chip gilt">not on the table yet</span>` : ""}</div>
+        <span class="chip mono">${u.cost}</span></div>
       <div class="says-d">${esc(enemyLine(u.built))}</div>
       ${u.protocol.length ? `<div class="says-d quiet">${u.protocol.map(esc).join(" \u00b7 ")}</div>` : ""}
     </div>`).join("")}
@@ -8240,6 +8299,7 @@ function startFromScenario(s){
     f.profile = u.built;
     f.protocol = u.protocol;
     f.points = u.cost;
+    f.hint = u.hint;
     Q.units.push(f);
   });
   questSave();
