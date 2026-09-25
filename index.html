@@ -410,6 +410,24 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .mkres span{font-size:13px;color:var(--ash-dim);line-height:1.5}
 .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 
+/* ---- the round timeline: every round the scenario has run through, at a glance ---- */
+.tline{display:flex;gap:5px;overflow-x:auto;padding:2px 1px 4px;-webkit-overflow-scrolling:touch}
+.tl-t{flex:none;width:34px;height:34px;border-radius:var(--r-sm);border:1px solid var(--line);
+  background:var(--stone-2);color:var(--ash-mute);font:inherit;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative}
+.tl-t b{font-family:"Space Mono",monospace;font-size:13px;color:inherit;line-height:1}
+.tl-t.past{color:var(--ash-dim);border-color:var(--line)}
+.tl-t.now{border-color:var(--gilt);color:var(--gilt);background:var(--gilt-glow)}
+.tl-t.future{opacity:.45;cursor:default}
+.tl-t.ev::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;
+  border-radius:50%;background:var(--gilt)}
+.tl-t.past.ev::after{background:var(--ash-mute)}
+.journal{display:flex;flex-direction:column;gap:9px}
+.jrow{display:flex;gap:10px;align-items:baseline}
+.jrow b{flex:none;font-family:"Space Mono",monospace;font-size:11.5px;color:var(--gilt-deep);
+  min-width:26px}
+.jrow span{font-size:12.5px;color:var(--ash-dim);line-height:1.5}
+
 .qstrip.hurtonly{border-color:var(--rust)}
 .qstrip.hurtonly .qs-round{color:var(--rust)}
 .qs-top button.chip{cursor:pointer;font:inherit}
@@ -6972,6 +6990,29 @@ function questDue(){
 }
 
 /* The scenario as written, for looking back at mid-game. */
+/* Every round the scenario has run through, at a glance. A round only gets a
+   dot for having an event once that event has actually sprung — a future
+   round is just a dim number, never a hint that something is coming. */
+function roundTimelineHTML(s){
+  const cur = Q.round;
+  const eventRounds = (s.events || []).map(e => e.round || 1);
+  const tot = Math.max(s.rounds || 0, cur, ...(eventRounds.length ? eventRounds : [cur]));
+  let h = `<div class="tline" id="qTline">`;
+  for(let r = 1; r <= tot; r++){
+    const ev = r <= cur && (s.events || []).some(e => e.round === r && e.sprung);
+    h += `<button class="tl-t ${r < cur ? "past" : r === cur ? "now" : "future"} ${ev ? "ev" : ""}"
+      data-tljump="${r}" ${r > cur ? "disabled" : ""} title="Round ${r}"><b>${r}</b></button>`;
+  }
+  return h + `</div>`;
+}
+/* The table's own record of what happened, round by round — built from the
+   same log the app already keeps for itself (qlog), just finally shown. */
+function journalHTML(){
+  const entries = (Q.log || []).slice(0, 40);
+  if(!entries.length) return `<p class="quiet" style="margin:0">Nothing logged yet.</p>`;
+  return `<div class="journal">${entries.map(e => `<div class="jrow" data-jround="${e.r}">
+    <b>R${e.r}</b><span>${esc(e.t)}</span></div>`).join("")}</div>`;
+}
 function openBrief(){
   const s = Q.scenario; if(!s) return;
   const env = s.environment ? (RS.scenario.environment || []).find(e => e.id === s.environment) : null;
@@ -6990,6 +7031,17 @@ function openBrief(){
       ${s.premise ? `<div class="cardrole">${esc(s.premise)}</div>` : ""}
     </div>
     ${s.briefing ? `<p class="serif briefing">${esc(s.briefing)}</p>` : ""}
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Round by round</span><span class="rule"></span></div>
+      ${roundTimelineHTML(s)}
+    </div>
+
+    <div class="slab">
+      <div class="head"><span class="eyebrow">Journal</span><span class="rule"></span>
+        <span class="quiet">what the table has done</span></div>
+      ${journalHTML()}
+    </div>
 
     ${out.length ? `<div class="slab" style="border-color:var(--rust)">
       <div class="head"><span class="eyebrow">What has happened</span><span class="rule"></span></div>
@@ -7074,7 +7126,16 @@ function openBrief(){
     </div>` : ""}`;
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  const tl = $("#qTline");
+  if(tl){ const now = tl.querySelector(".tl-t.now");
+    if(now) tl.scrollLeft = Math.max(0, now.offsetLeft - tl.clientWidth / 2 + 17); }
   $("#brX").onclick = () => { events.forEach(e => { if(e.sprung) e.read = true; }); questSave(); closePicker(); render(); };
+  $("#sheet2In").querySelectorAll("[data-tljump]").forEach(b => b.onclick = () => {
+    const row = $("#sheet2In").querySelector(`.jrow[data-jround="${b.dataset.tljump}"]`);
+    if(row){ row.scrollIntoView({behavior: "smooth", block: "center"});
+      row.style.background = "var(--gilt-glow)";
+      setTimeout(() => row.style.background = "", 900); }
+  });
   $("#sheet2In").querySelectorAll("[data-envelope]").forEach(b => b.onclick = () => {
     openEnvelope(b.dataset.envelope);
     openBrief(); render();
