@@ -5533,7 +5533,43 @@ function questSave(){
   }
 }
 function questOn(){ return !!questLoad(); }
-function questEnd(){ Q = null; try{ localStorage.removeItem(QUEST_KEY); }catch(e){} }
+
+/* ---- what stays behind: a scenario ends, but the table remembers it ---- */
+const HISTORY_KEY = "ep_history_v1";
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){ return []; }
+}
+function saveHistory(list){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }catch(e){} }
+function sideCasualties(side){
+  const units = Q.units.filter(u => u.side === side && !u.hidden);
+  return {total: units.reduce((s, u) => s + u.models.length, 0),
+          lost: units.reduce((s, u) => s + u.models.filter(h => h <= 0).length, 0)};
+}
+function archiveQuest(){
+  if(!Q) return;
+  const us = sideCasualties("us"), them = sideCasualties("them");
+  const usBroke = breakState("us").at > 0, themBroke = breakState("them").at > 0;
+  let result = "Even";
+  if(usBroke && !themBroke) result = "Broken";
+  else if(themBroke && !usBroke) result = "Routed the enemy";
+  else if(Q.vp.us > Q.vp.them) result = "Won on points";
+  else if(Q.vp.them > Q.vp.us) result = "Lost on points";
+  const rec = {
+    id: uid(), at: Date.now(),
+    title: (Q.scenario && Q.scenario.name) || "Took them out",
+    round: Q.round, rounds: (Q.scenario && Q.scenario.rounds) || null,
+    vpUs: Q.vp.us, vpThem: Q.vp.them,
+    usLost: us.lost, usTotal: us.total,
+    themLost: them.lost, themTotal: them.total,
+    result
+  };
+  const list = loadHistory();
+  list.unshift(rec);
+  saveHistory(list.slice(0, 40));
+}
+function deleteHistory(id){ saveHistory(loadHistory().filter(r => r.id !== id)); }
+
+function questEnd(){ archiveQuest(); Q = null; try{ localStorage.removeItem(QUEST_KEY); }catch(e){} }
 
 /* ---- who is in it ---- */
 function questUnitFrom(m){
@@ -8591,6 +8627,29 @@ function tableHTML(){
         <button class="btn primary" id="tbScn" style="margin-left:0">Write a scenario</button>
         <button class="btn ghost" id="tbPlain">Just take them out</button>`}
     </div>
+  </div>
+  ${q ? "" : historyHTML()}`;
+}
+/* What the table has already been through. A scenario used to vanish the
+   moment it ended; now it stays here — what it was, how it went, and a
+   way to clear it out when it is no longer wanted. */
+function historyHTML(){
+  const list = loadHistory();
+  if(!list.length) return "";
+  const RESULT_CLASS = {Broken: "bad", "Lost on points": "bad",
+    "Routed the enemy": "good", "Won on points": "good"};
+  return `<div class="slab">
+    <div class="head"><span class="eyebrow">Past scenarios</span><span class="rule"></span>
+      <span class="quiet">${list.length}</span></div>
+    ${list.map(r => `<div class="grow">
+      <div class="grow-main">
+        <div class="grow-name">${esc(r.title)}
+          <span class="chip ${RESULT_CLASS[r.result] || ""}">${esc(r.result)}</span></div>
+        <div class="grow-sub">${esc(new Date(r.at).toLocaleDateString())} · round ${r.round}${r.rounds ? " of " + r.rounds : ""}
+          · VP ${r.vpUs}–${r.vpThem} · lost ${r.usLost}/${r.usTotal} of yours, ${r.themLost}/${r.themTotal} of theirs</div>
+      </div>
+      <div class="grow-r"><button class="tiny" data-histdel="${esc(r.id)}" aria-label="Delete">×</button></div>
+    </div>`).join("")}
   </div>`;
 }
 function bindTable(el){
@@ -8601,6 +8660,9 @@ function bindTable(el){
   go("tbFoes", openFoes);
   go("tbMarkers", () => openMarkers());
   go("tbEnd", askEnd);
+  el.querySelectorAll("[data-histdel]").forEach(b => b.onclick = () => {
+    deleteHistory(b.dataset.histdel); renderRealm(); toast("Removed");
+  });
 }
 
 function renderRealm(){
