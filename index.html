@@ -6010,6 +6010,7 @@ function scarsHTML(m){
           <span class="chip mono">d20 ${x.roll}</span>
           ${x.scar ? `<span class="chip bad">scar</span>` : ""}</div>
         <div class="says-d">${esc(x.effect)}</div>
+        ${x.flavourText ? `<div class="says-d serif" style="opacity:.85">${esc(x.flavourText)}</div>` : ""}
         ${x.mend ? `<div class="says-d quiet">Mendable in camp for ${x.mend.cost}: ${esc(x.mend.effect)}</div>` : ""}
       </div>`).join("")}
     ${notes.length ? `<p class="quiet" style="margin:9px 0 0">Also: ${esc(notes.join(", "))}.</p>` : ""}
@@ -7251,6 +7252,10 @@ function drawAfter(){
     const {id, rec, dice, mode} = S.showing;
     const m = b.members.find(x => x.id === id);
     const wantsEpithet = rec.scar || rec.id === "newOutlook" || (rec.hooks || []).length;
+    /* Nothing records what actually took a model Down, so this asks rather
+       than guesses. The scenario's own woundFlavour lines, if it has any,
+       are the choices — the host says what did it, in one tap. */
+    const flavours = (questOn() && Q.scenario && Q.scenario.woundFlavour) || [];
     $("#sheet2In").innerHTML = `
       <div class="sheet-head"><div class="eyebrow">Fate</div>
         <span class="chip mono">d20 ${dice.join(" / ")}${dice.length > 1 ? " — kept " + rec.roll : ""}</span></div>
@@ -7259,9 +7264,16 @@ function drawAfter(){
           <span class="chip mono">${rec.roll}</span></div>
         <div class="cardname" style="font-size:19px;margin-bottom:6px">${esc(rec.name)}</div>
         <p class="lead" style="margin:0">${esc(rec.effect)}</p>
+        ${rec.flavourText ? `<p class="serif" style="margin:9px 0 0;color:var(--ash-dim)">${esc(rec.flavourText)}</p>` : ""}
         ${rec.scar ? `<p class="quiet" style="margin:9px 0 0">A scar. It stays, and it shows on the card.</p>` : ""}
         ${rec.mend ? `<p class="quiet" style="margin:6px 0 0">Can be mended in camp for ${rec.mend.cost}: ${esc(rec.mend.effect)}</p>` : ""}
       </div>
+      ${flavours.length && !rec.flavourText ? `<div class="slab">
+        <div class="head"><span class="eyebrow">What did it</span><span class="rule"></span></div>
+        <div class="sheet-actions" style="flex-wrap:wrap;gap:7px">
+          ${flavours.map((f, i) => `<button class="btn sm ghost" data-flavour="${i}" style="margin-left:0">${esc(f.cause)}</button>`).join("")}
+        </div>
+      </div>` : ""}
       ${rec.dead ? `<p class="lead">Gone. Their gear returns to the stash.</p>` : ""}
       <div class="sheet-actions" style="margin-top:14px">
         ${wantsEpithet && !rec.dead ? `<button class="btn" id="afEpi" style="margin-left:0">Give them a name for it</button>` : ""}
@@ -7269,6 +7281,11 @@ function drawAfter(){
         <button class="btn primary" id="afNext" style="margin-left:auto">
           ${S.owed.length ? "Next — " + S.owed.length + " to go" : "On to the spoils"}</button>
       </div>`;
+    $("#sheet2In").querySelectorAll("[data-flavour]").forEach(bn => bn.onclick = () => {
+      const f = flavours[+bn.dataset.flavour];
+      rec.flavourCause = f.cause; rec.flavourText = f.text;
+      save(); drawAfter();
+    });
     const epi = $("#afEpi");
     if(epi) epi.onclick = () => openEpithet(m, rec);
     const bury = $("#afBury");
@@ -7800,9 +7817,21 @@ async function runGenerate(ai){
 
   const roles = "cover, blocking, high, objective, hazard, marker";
   const grounds = "even, rough, hazardous, impassable";
-  const prompt = `Write one scenario for ${RS.meta.name}, a grim tabletop skirmish game.
-A player's band is called the Unburied. Write like someone who has been there: concrete,
-unhurried, no adjectives doing work a noun could do.
+  const prompt = `You are running tonight's game of ${RS.meta.name} for a table that has shown
+up to play, not to read a rulebook. A player's band is called the Unburied.
+
+Write so the table wants to go in and see what is happening, and wants to stay once they are
+there. That means specifics, not adjectives: not "an eerie ruin" but what is actually standing,
+what it smells like, what sound stops when they arrive. Write like someone who has actually
+been to this place \u2014 concrete, unhurried, never explaining the mood, just describing the
+thing so the mood happens on its own. No sentence should tell the reader how to feel.
+
+For tone only, never to be copied or echoed \u2014 the kind of image this game wants:
+  "The last name on the wall is still wet."
+  "Someone built a door into the reactor housing. Someone else used it."
+  "The tide left fish in the rafters. They are still breathing."
+  "Every clock in the station stopped at the same second, years apart."
+  "The Unburied who came before you left their names carved by the gate. Yours goes under them."
 
 ${S.wish.trim() ? `WHAT THEY ASKED FOR \u2014 this matters more than anything below. Build the whole
 scenario out of it. The settings are only there to keep it legal.
@@ -7822,8 +7851,10 @@ WHAT TO WRITE
 
   title      four words or fewer.
   premise    one or two sentences. The hook.
-  briefing   four to six sentences, second person, present tense. What they see, hear and
-             smell as they arrive. This is the part read aloud.
+  briefing   four to six sentences, second person, present tense, read aloud at the table before
+             a model is placed. Ground it in one or two exact, physical details rather than an
+             overview \u2014 the thing they would actually notice first. Write it the way the
+             examples above read, not the way a field description reads.
   scenery    one or two sentences on what to put on the table.
   deployment where each side starts, by table edge or feature.
 
@@ -7832,10 +7863,11 @@ WHAT TO WRITE
              If a piece is something they probably do not own, say so in "note".
 
   events     two to four things that happen on a named round. Each: round, title, text
-             (atmospheric, ending with the measurable rule), and effect
+             (write the moment the way it is discovered, in the same voice as the briefing,
+             ending with the measurable rule stated plainly), and effect
              {type: damage|condition|spawn|terrain|none, amount, where, who}.
              Events are hidden from the players until their round arrives, so write them
-             as surprises, not as things announced up front.
+             as something that happens to the table, not as a rule being announced.
 
   map        a top-down plan. Coordinates are percentages: x 0 (left) to 100 (right),
              y 0 (top) to 100 (bottom).
@@ -7850,6 +7882,15 @@ ${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o =>
 
   specialRules  nought to three, one line each. Only if the place demands one.
   twist         one sentence. Something that turns in the second half.
+
+  woundFlavour  three to five short lines for what this specific place does to whoever is hurt
+                by it. Each: "cause" (an enemy name from your own enemy list, the environment
+                id, or a terrain piece's name \u2014 something that actually exists in this
+                scenario) and "text" (one sentence, present tense, what it looks or feels like
+                to be marked by that specific thing here). These do not invent new injuries or
+                change any rule \u2014 they give a scar earned in this scenario its own scene
+                instead of a generic one. Example shape only, invent your own: {"cause":"the
+                Drowned","text":"the cold gets into the wound and does not leave with it"}.
 ${sealed ? `
   THIS IS A SEALED SCENARIO. Nobody knows what is going on yet \u2014 write it the way an
   unnerving discovery feels: a thing is found, and nothing about it is understood at first.
@@ -7864,13 +7905,20 @@ ${sealed ? `
     question   what the players are actually trying to work out, one sentence
     truth      what is really going on \u2014 never told to the players directly, only
                through envelopes
-    envelopes  three to five moments of discovery. Each: "trigger" (a plain condition
-               someone running the game can judge for themselves, e.g. "a model enters
-               the chamber", "round 3", "someone searches the body", "a model takes
-               damage from it"), "title" (short), "text" (what is found or realised,
-               atmospheric, revealing a piece of the truth), and "revealsObjectives"
-               (true on whichever envelope is what makes the real objectives known).
-    finale     one or two sentences: what becomes clear once every envelope has opened
+    envelopes  four to six moments of discovery, IN ORDER from earliest to latest. Each one
+               reveals one more piece of the truth than the last — never the whole of it
+               at once. Build them so a table paying attention could guess the truth one
+               envelope before the last, then have it confirmed. Each: "trigger" (a plain
+               condition someone running the game can judge for themselves, e.g. "a model
+               enters the chamber", "round 3", "someone searches the body", "a model takes
+               damage from it" — prefer triggers tied to what the players DO over ones
+               tied only to the round), "title" (short, gives nothing away — the host
+               reads this before opening it), "text" (what is found or realised, written in
+               the same voice as the briefing, one image doing the work, not an explanation),
+               and "revealsObjectives" (true on whichever envelope is what makes the real
+               objectives known).
+    finale     one or two sentences: what becomes clear once every envelope has opened, and
+               what it changes about how the last part of the fight should feel
 ` : ""}
   markers    ${markers} numbered suspicion markers. For each give "where" \u2014 where it sits,
              naming a map feature if it suits. Do NOT say what is under them.
@@ -7903,6 +7951,7 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
         "features":[{"label":"...","role":"cover","ground":"rough","x":50,"y":50,"r":8}]},
  "objectives":[{"type":"allowed id","what":"what it is, in the fiction","vp":1}],
  "specialRules":["..."],"twist":"...",
+ "woundFlavour":[{"cause":"...","text":"..."}],
  "markers":[{"n":1,"where":"..."}],
  "enemy":[{"name":"...","count":3,"hidden":false,
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
@@ -7946,7 +7995,8 @@ function legaliseScenario(raw, ctx){
     players: ctx.players, perBand: ctx.perBand, chose: ctx.chose || {},
     sealed: !!ctx.type.sealed, mystery: null,
     terrain: [], events: [], map: {note: "", zones: [], features: []},
-    objectives: [], specialRules: [], markers: [], enemy: [], notes: []
+    objectives: [], specialRules: [], markers: [], enemy: [], notes: [],
+    woundFlavour: []
   };
 
   /* The mystery block: everything is optional prose, so it is trimmed rather
@@ -8015,6 +8065,15 @@ function legaliseScenario(raw, ctx){
 
   (Array.isArray(raw.specialRules) ? raw.specialRules : []).slice(0, 3)
     .forEach(r => { if(r) out.specialRules.push(str(r, 200)); });
+
+  /* What being hurt HERE looks like, keyed to something the scenario actually
+     has — never a new rule, only a scene for a scar the ruleset already
+     produces. Anything not tied to a real cause is dropped rather than shown
+     out of context. */
+  (Array.isArray(raw.woundFlavour) ? raw.woundFlavour : []).slice(0, 5).forEach(w => {
+    const cause = str(w && w.cause, 60), text = str(w && w.text, 200);
+    if(cause && text) out.woundFlavour.push({cause, text});
+  });
 
   for(let i = 1; i <= ctx.markers; i++){
     const mk = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
@@ -8171,7 +8230,8 @@ function startFromScenario(s){
                    the app \u2014 never the players \u2014 can check envelope triggers. */
                 sealed: !!s.sealed, objectivesKnown: !s.sealed,
                 mystery: s.mystery ? Object.assign({}, s.mystery,
-                  {envelopes: s.mystery.envelopes.map(e => Object.assign({}, e))}) : null};
+                  {envelopes: s.mystery.envelopes.map(e => Object.assign({}, e))}) : null,
+                woundFlavour: s.woundFlavour || []};
   /* the generator's placements, over the app's own secret contents */
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g) m.where = g.where; });
   s.enemy.forEach(u => {
