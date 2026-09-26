@@ -647,7 +647,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "key": "move",
       "name": "Move",
       "type": "cm",
-      "default": 12,
+      "default": 10,
       "min": 4,
       "max": 30,
       "step": 2,
@@ -2992,7 +2992,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "aim": "d6",
         "will": "d6",
         "wits": "d6",
-        "move": 12,
+        "move": 10,
         "wounds": 7,
         "actions": 2
       },
@@ -3716,7 +3716,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "aim": "d6",
         "will": "d6",
         "wits": "d6",
-        "move": 12,
+        "move": 10,
         "wounds": 5,
         "actions": 2
       },
@@ -4928,9 +4928,12 @@ function renderUnburied(b){
         <span class="chip">${bandActs(b)} activations a round</span>
         ${b.cash ? `<span class="chip gilt">${b.cash} Cash</span>` : ""}
         ${(b.reputation || 0) !== 0 ? `<span class="chip ${b.reputation > 0 ? "good" : "bad"}">${esc((repLevel(b) || {}).name || "")} ${signed(b.reputation)}</span>` : ""}
+        ${b.sealed ? `<span class="chip">sealed</span>` : ""}
       </div>
-    </div>`;
+    </div>
+    ${tetherHTML(b)}`;
 
+  bindTetherHTML($("#bandHead"));
   $("#bandName").oninput = e => { b.name = e.target.value; save(); };
   $("#bandBudget").oninput = e => {
     b.budget = Math.max(0, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
@@ -4967,6 +4970,7 @@ function renderUnburied(b){
         <div class="m-stat"><b>${m.wounds}</b><span>${esc(RSX.stat.wounds.name)}</span></div>
       </div>
       <div class="m-foot">
+        ${(m.traits || []).includes("leader") ? `<span class="chip gilt">Leader</span>` : ""}
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
         <span class="chip">${activationsOf(m)} act</span>
@@ -5037,7 +5041,21 @@ function boot(){
 let editId = null;
 function editing(){ return band().members.find(m => m.id === editId); }
 
+/* A member already in the band when it was sent on its first mission has
+   its build fixed from there — what happens to them after that comes
+   from play (XP, scars, finds), not free editing. A recruit who joins
+   later starts out just as editable as anyone did before the band sealed. */
+function memberLocked(m){
+  const b = band();
+  return b.sealed && (b.sealedMemberIds || []).includes(m.id);
+}
 function openMember(id){
+  const b = band(), m = b.members.find(x => x.id === id);
+  if(m && memberLocked(m)){
+    toast("Sealed — their build is fixed now. XP, scars and finds still change them in play.");
+    openCard(id);
+    return;
+  }
   editId = id;
   drawMember();
   $("#sheet").classList.add("show");
@@ -5634,6 +5652,19 @@ function questBegin(size, opts){
   const b = band();
   const mine = b.members.filter(fielded);
   if(!mine.length){ toast("Field someone first"); return false; }
+  /* The band's build is theirs to shape freely right up until they are
+     actually sent out. The first time that happens, whoever holds the
+     Leader trait is bound by a tether, and every member already in the
+     band at that moment has its build fixed from here on — recruits
+     added afterward are unaffected until their own first mission. */
+  if(!b.sealed){
+    const leader = leaderOf(b);
+    if(!leader){ toast("Someone needs the Leader trait before the band's first mission"); return false; }
+    b.sealed = true;
+    b.sealedMemberIds = b.members.map(m => m.id);
+    bindTether(b);
+    save();
+  }
   Q = {round: 1, step: "tempo", size,
        nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
        units: mine.map(questUnitFrom),
@@ -5707,9 +5738,13 @@ function questStep(){
     Q.step = "end";
   } else {
     const endingRound = Q.round;      // the round whose End step this is, before it advances
+    /* Everything the End step does that a host could otherwise miss is
+       collected here and handed back as Q.pending, for a popup that stays
+       up until it is dismissed rather than a toast that can be missed. */
+    const summary = [];
     Q.units.forEach(u => {
-      if((u.cond || []).includes("burning")) hurtUnit(u, 1, "burning");
-      if((u.cond || []).includes("tainted")) hurtUnit(u, 1, "tainted");
+      if((u.cond || []).includes("burning")){ hurtUnit(u, 1, "burning"); summary.push(u.name + " burns for 1"); }
+      if((u.cond || []).includes("tainted")){ hurtUnit(u, 1, "tainted"); summary.push(u.name + " is tainted for 1"); }
       u.ready = false;
       if(!u.pushed && u.strain > 0) u.strain = Math.max(0, u.strain - RS.strain.restDecay.amount);
       u.pushed = false;
@@ -5720,6 +5755,7 @@ function questStep(){
     if(sc2 && sc2.sealed && !sc2.objectivesKnown && endingRound >= 2){
       sc2.objectivesKnown = true;
       qlog("The objectives are revealed");
+      summary.push("The objectives are revealed");
     }
     Q.round++; Q.step = "tempo";
     qlog("End of round — Burning and Tainted bite, Ready cleared, Strain rested");
@@ -5729,13 +5765,14 @@ function questStep(){
     due.forEach(e => {
       e.sprung = true;
       qlog("Round " + e.round + " — " + e.title);
+      summary.push(e.title + (e.text ? ": " + e.text : ""));
       if(e.effect && e.effect.type === "spawn"){
         const hid = Q.units.filter(u => u.side === "them" && u.hidden);
         const one = hid.find(u => (e.effect.who || "").toLowerCase().includes(u.name.toLowerCase())) || hid[0];
         if(one) revealFoe(one.uid, e.title);
       }
     });
-    if(due.length) Q.pending = due.map(e => e.title);
+    Q.pending = {round: Q.round, lines: summary};
   }
   questSave();
 }
@@ -5899,6 +5936,14 @@ function attackHTML(m, e){
   </div>`;
 }
 
+/* Some catalogue entries (Extra arms is the worst of them) pack several
+   sentences of mechanics into one dense paragraph. Split those onto their
+   own lines so a card reads at a glance instead of as a wall of text —
+   short entries are left exactly as written. */
+function readableDesc(text){
+  if(!text || text.length < 90) return text;
+  return text.split(/(?<=[.!?])\s+(?=[A-Z(])/).join("\n");
+}
 /* A block of things that each have a name and their own words. */
 function saysHTML(m, title, field, tone){
   const arr = m[field] || []; if(!arr.length) return "";
@@ -5914,7 +5959,7 @@ function saysHTML(m, title, field, tone){
       return `<div class="says ${tone || ""}">
         <div class="says-n">${esc(shown)}${qty && (entry.qty || 1) > 1 ? ` ×${entry.qty}` : ""}
           ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""}</div>
-        <div class="says-d">${esc(o.desc)}</div>
+        <div class="says-d">${esc(readableDesc(o.desc))}</div>
       </div>`;
     }).join("")}
   </div>`;
@@ -5935,7 +5980,7 @@ function drawCard(){
       </button>
       <div class="eyebrow">${n > 1 ? "A squad of the Unburied" : "One of the Unburied"}</div>
       ${m.xp ? `<button class="btn sm" id="cXP">${m.xp} XP</button>` : ""}
-      <button class="btn sm ghost" id="cEdit">Edit</button>
+      <button class="btn sm ghost" id="cEdit">${memberLocked(m) ? "Sealed" : "Edit"}</button>
     </div>
 
     <div class="cardhead">
@@ -6256,7 +6301,10 @@ let aiAbort = null;
 async function openConjure(){
   const ai = await getAI();
   const b = band();
-  const budget = Math.max(RS.baseCost, b.budget - bandSpent(b));
+  const isFirst = b.members.length === 0;
+  const leader = isFirst ? null : leaderOf(b);
+  const leaderCost = isFirst ? ((catOf("traits").leader || {}).cost || 0) : 0;
+  const budget = Math.max(RS.baseCost, b.budget - bandSpent(b) - leaderCost);
 
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
@@ -6266,8 +6314,11 @@ async function openConjure(){
       <div class="eyebrow">Call something up</div>
     </div>
     ${!ai ? `<p class="lead">${esc(aiTrouble("not_granted"))}</p>` : `
-    <p class="lead">Describe what you want and four of them will be raised, built and
-      costed against the ruleset. Nothing is added until you choose one.</p>
+    <p class="lead">${isFirst
+      ? "The first of the Unburied you raise leads the rest — whoever you choose here is bound as the band's Leader. Describe what you want and four of them will be raised, built and costed against the ruleset."
+      : leader ? `Describe what you want and four of them will be raised as someone who fits alongside <b>${esc(leader.name)}</b>${leader.epithet ? ` (“${esc(leader.epithet)}”)` : ""}, built and costed against the ruleset.`
+      : "Describe what you want and four of them will be raised, built and costed against the ruleset."}
+      Nothing is added until you choose one.</p>
     <div class="field" style="margin:14px 0 10px"><label>What is it</label>
       <input class="input" id="cjBrief" maxlength="160"
         placeholder="a drowned bell-ringer, a thing made of doors, an old soldier who will not stop"></div>
@@ -6297,8 +6348,35 @@ async function openConjure(){
 A band is called the Unburied. A model can be anything: a person, a beast, a machine, an elemental, something worse.
 Tone: ${tone}.
 Brief: ${brief}.
+${isFirst ? `
+This one is the band's LEADER — the first of the Unburied, the one the rest will be raised
+around. Write someone the story can be told about, not necessarily the loudest voice in the
+room: authority can be quiet, earned, reluctant, or terrible. Do not mention a "leader" trait
+or any game term — just write who they are; the app handles the mechanics.` : leader ? `
+The band already has a Leader: ${leader.name}${leader.epithet ? ` ("${leader.epithet}")` : ""},
+${leader.role || "no stated role"}. Their story so far: ${leader.story || "(not written down)"}.
+Write these four as people who could plausibly stand with ${leader.name} — raised by them,
+bound to the same debt, following the same road — not as strangers. At least gesture at the
+connection in the story (how they came to be raised, or what ties them to the Leader), but do
+not just repeat the Leader's own concept back with a different name.` : ""}
 
-For each, give: a name; an EPITHET (what others call them — short, like "the Quiet" or "Ashmouth"); a role in three words or fewer; and two or three sentences of story.
+For each, give a NAME and an EPITHET, and make both do real work — this is the only thing at
+the table that is theirs alone, so it should not read like it was picked off a random list.
+
+The name is short and plain, the kind that survives being shouted across a table: one given
+name, sometimes a second word, never a title and never a string of invented syllables for
+their own sake. The epithet is what the rest of the Unburied actually call them — earned by
+something, never just decorative — and it is that contrast between a small ordinary name and
+a hard-won epithet that makes it land. It is one line, never a full sentence.
+
+For tone only, never to be copied or echoed:
+  "Mara Voss — 'the Uncounted'"
+  "Ibb Sarn — 'the Debt Walking'"
+  "Ostrun — 'Nine Times Down'"
+  "Kell — 'Ashmouth'"
+  "Petra — 'the Last One Home'"
+
+A role in three words or fewer; and two or three sentences of story.
 
 Also give a "build" that matches the story — a brawler fights, a marksman aims, a mystic has Will and powers, a coward takes a flaw.
 
@@ -6322,6 +6400,13 @@ No other text.`;
       const made = (Array.isArray(list) ? list : []).map(x => {
         const m = aiLegalise(Object.assign({}, x.build, {
           name:x.name, epithet:x.epithet, role:x.role, story:x.story}), budget);
+        /* The first of the Unburied is always the Leader — never left to
+           the AI to remember to include, since the whole band's tether
+           depends on someone actually holding this trait. */
+        if(m && isFirst && !m.traits.includes("leader")){
+          if(m.traits.length >= 4) m.traits.pop();
+          m.traits.push("leader");
+        }
         return m;
       }).filter(Boolean);
       if(!made.length){ out.innerHTML = `<p class="quiet">Nothing came up. Try again.</p>`; }
@@ -6577,7 +6662,11 @@ function questBarHTML(){
 function questBarBind(root){
   root.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
     switch(b.dataset.q){
-      case "step":    questStep(); render(); break;
+      case "step":
+        questStep();
+        if(Q.pending){ showRoundPopup(Q.pending); Q.pending = null; questSave(); }
+        else render();
+        break;
       case "nerve":   openNerve(); break;
       case "vp":      openVP(); break;
       case "markers": openMarkers(); break;
@@ -6585,6 +6674,21 @@ function questBarBind(root){
       case "end": askEnd(); break;
     }
   });
+}
+/* A new round only turns over once a step, so this is the one moment the
+   app can be sure the host is looking right at it — it stays up until
+   dismissed rather than fading like a toast, so nothing sprung this round
+   goes unread. */
+function showRoundPopup(pending){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">Round ${pending.round} begins</div></div>
+    <div class="slab">
+      ${(pending.lines.length ? pending.lines : ["Nothing else happened this round."]).map(l =>
+        `<div class="says"><div class="says-d">${esc(l)}</div></div>`).join("")}
+    </div>
+    <div class="sheet-actions"><button class="btn primary" id="rpOK" style="margin-left:auto">Got it</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#rpOK").onclick = () => { closePicker(); render(); };
 }
 function askEnd(){
   $("#sheet2In").innerHTML = `
@@ -6597,7 +6701,63 @@ function askEnd(){
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#qeX").onclick = closePicker;
-  $("#qeGo").onclick = () => { questEnd(); closePicker(); render(); toast("Quest ended"); };
+  $("#qeGo").onclick = () => {
+    const b = band();
+    if(b.tether && !b.tether.severed) askTether(b);
+    else finishEnd();
+  };
+}
+function finishEnd(){ questEnd(); closePicker(); render(); toast("Quest ended"); }
+
+/* The app has no way to see who actually took an enemy down or held an
+   objective at the End step, so — same as it already does for wound
+   flavour and for calls it can't detect — it asks. */
+function askTether(b){
+  const t = b.tether, kind = tetherKind(t.kindId);
+  const leader = (b.members || []).find(m => m.id === t.leaderId);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">The tether</div></div>
+    <p class="lead">${esc(leader ? leader.name : "The Leader")}'s tether is
+      <b>${esc(kind.name)}</b>: ${esc(kind.observance)}. Was it honoured this battle?</p>
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
+      <button class="btn primary" id="tqYes" style="margin-left:0">Honoured</button>
+      <button class="btn danger" id="tqNo">Forsaken</button>
+      <button class="btn ghost" id="tqNA">Couldn't be checked</button>
+    </div>`;
+  $("#tqYes").onclick = () => { tetherHonour(b); afterTetherCheck(b); };
+  $("#tqNA").onclick = () => afterTetherCheck(b);
+  $("#tqNo").onclick = () => {
+    if(obolAllowed(t) && (b.cash || 0) >= obolCost(t)){
+      const cost = obolCost(t);
+      $("#sheet2In").innerHTML = `
+        <div class="sheet-head"><div class="eyebrow">The tether</div></div>
+        <p class="lead">Forsaken. Pay the obol — ${cost} Cash — to still count the oath as kept,
+          or let the tether fray?</p>
+        <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
+          <button class="btn primary" id="tqObol" style="margin-left:0">Pay the obol</button>
+          <button class="btn ghost" id="tqFray">Let it fray</button>
+        </div>`;
+      $("#tqObol").onclick = () => { tetherPayObol(b); afterTetherCheck(b); };
+      $("#tqFray").onclick = () => { tetherForsake(b); afterTetherCheck(b); };
+    } else { tetherForsake(b); afterTetherCheck(b); }
+  };
+}
+function afterTetherCheck(b){
+  const t = b.tether;
+  if(t && t.severed === "paid"){
+    const leader = (b.members || []).find(m => m.id === t.leaderId);
+    $("#sheet2In").innerHTML = `
+      <div class="sheet-head"><div class="eyebrow">The tether is paid</div></div>
+      <p class="lead">Every oath is kept. What does ${esc(leader ? leader.name : "the Leader")} do now?</p>
+      <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
+        <button class="btn primary" id="tqUnbound" style="margin-left:0">Stay, Unbound</button>
+        <button class="btn ghost" id="tqRest">Lay them to rest — +2 Reputation</button>
+      </div>`;
+    $("#tqUnbound").onclick = () => { tetherStayUnbound(b); finishEnd(); };
+    $("#tqRest").onclick = () => { tetherLayToRest(b); finishEnd(); };
+    return;
+  }
+  finishEnd();
 }
 
 /* ---- the live strip at the top of a card ---- */
@@ -6870,90 +7030,46 @@ function openSearch(markerN){
   };
 }
 
-/* ---- starting one ---- */
-function openQuestStart(){
-  const b = band();
-  /* Game size is what the PLAYERS bring, summed across everyone at the table.
-     The enemy is then sized from it: enemy points = game size x difficulty.
-     In a campaign the ruleset bases it on the band's current total points,
-     so it grows as they do rather than sitting at a fixed number. */
-  const mine = bandSpent(b);
-  const st = questStartState || (questStartState = {mine, others: 0, difficulty: "standard"});
-  const size = st.mine + st.others;
-  const diff = (RS.scenario.difficulty || []).find(d => d.id === st.difficulty) || {enemyPct: 1, reward: 1};
-  const enemy = Math.round(size * diff.enemyPct);
-
+/* ---- enemies, entered by whoever is running it ---- */
+/* A read-only version of the player's own card, built from the same
+   profile shape — so the host can look an enemy up mid-battle instead of
+   working from the one-line summary alone. */
+function openEnemyCard(uid){
+  const u = Q.units.find(x => x.uid === uid); if(!u || !u.profile) return;
+  const m = u.profile;
+  const statCell = (label, value) => `<div class="cstat"><b>${esc(value)}</b><span>${esc(label)}</span></div>`;
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
-      <button class="iconbtn" id="qsX" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">Take them out</div></div>
-    <p class="lead">Everyone fielded goes. The app rolls suspicion markers for the table
-      and keeps what is under them to itself.</p>
-
-    <div class="slab" style="margin-top:14px">
-      <div class="head"><span class="eyebrow">Game size</span><span class="rule"></span>
-        <span class="chip gilt mono">${size}</span></div>
-      <p class="quiet" style="margin:0 0 11px">What the players bring between them \u2014 yours,
-        plus anyone else at the table.</p>
-      <div class="grow">
-        <div class="grow-main"><div class="grow-name">Your Unburied, fielded</div>
-          <div class="grow-sub">${b.members.filter(fielded).length} of ${b.members.length}</div></div>
-        <div class="grow-r"><span class="mono">${st.mine}</span></div>
-      </div>
-      <div class="field" style="margin-top:11px"><label>Other players, between them</label>
-        <input class="input mono" id="qsOthers" inputmode="numeric" value="${st.others}"></div>
+      <button class="iconbtn" id="ecBack" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">The enemy</div></div>
+    <div class="cardhead">
+      <div class="cardname">${esc(u.name)}</div>
+      <div class="cardrole">${u.models.length > 1 ? u.models.length + " models" : ""}
+        ${u.points ? `<span class="cardpts">${u.points} points</span>` : ""}</div>
     </div>
-
-    <div class="slab">
-      <div class="head"><span class="eyebrow">Difficulty</span><span class="rule"></span></div>
-      <div class="sheet-actions" style="flex-wrap:wrap;gap:7px;margin-bottom:11px">
-        ${(RS.scenario.difficulty || []).map(d => `
-          <button class="btn sm ${d.id === st.difficulty ? "primary" : "ghost"}" data-diff="${esc(d.id)}"
-            style="margin-left:0">${d.id.charAt(0).toUpperCase() + d.id.slice(1)}</button>`).join("")}
-      </div>
-      <div class="grow">
-        <div class="grow-main"><div class="grow-name">What you face</div>
-          <div class="grow-sub">${size} \u00d7 ${diff.enemyPct} \u00b7 up to ${Math.round((RS.scenario.budget.maxPct || 0) * 100)}% of it
-            may be traps, hazards and set pieces instead of models</div></div>
-        <div class="grow-r"><span class="mono" style="font-size:16px;color:var(--gilt)">${enemy}</span></div>
-      </div>
-      <div class="grow">
-        <div class="grow-main"><div class="grow-name">Pays</div>
-          <div class="grow-sub">a win is worth ${diff.reward}\u00d7</div></div>
-        <div class="grow-r"><span class="mono">\u00d7${diff.reward}</span></div>
-      </div>
+    <div class="cstats">
+      ${DIE_STATS.map(k => statCell(RSX.stat[k].name, m[k])).join("")}
+      ${statCell(RSX.stat.wounds.name, m.wounds)}
+      ${statCell(RSX.stat.move.name, m.move + "cm")}
+      ${statCell(RSX.stat.actions.name, m.actions)}
+      ${m.size !== statDefault("size") ? statCell(RSX.stat.size.name, m.size.charAt(0).toUpperCase() + m.size.slice(1)) : ""}
     </div>
-
-    <div class="sheet-actions">
-      <button class="btn primary" id="qsGo" style="margin-left:0" ${size ? "" : "disabled"}>
-        ${size ? "Begin" : "Field someone first"}</button></div>`;
-
-  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#qsX").onclick = () => { questStartState = null; closePicker(); };
-  $("#qsOthers").oninput = e => {
-    st.others = Math.max(0, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
-    openQuestStart();
-  };
-  $("#sheet2In").querySelectorAll("[data-diff]").forEach(bn => bn.onclick = () => {
-    st.difficulty = bn.dataset.diff; openQuestStart();
-  });
-  $("#qsGo").onclick = () => {
-    if(!size) return;
-    if(questBegin(size)){
-      Q.difficulty = st.difficulty;
-      Q.enemyPoints = enemy;
-      Q.reward = diff.reward;
-      questSave();
-      questStartState = null;
-      closePicker(); render();
-      toast("The quest begins \u2014 open a card to run it");
-    }
-  };
+    ${(m.weapons || []).length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">What it can do</span><span class="rule"></span></div>
+      ${m.weapons.map(e => attackHTML(m, e)).join("")}
+    </div>` : ""}
+    ${saysHTML(m, "Traits", "traits")}
+    ${saysHTML(m, "Abilities", "abilities")}
+    ${saysHTML(m, "Powers", "powers")}
+    ${(u.protocol || []).length ? `<div class="slab">
+      <div class="head"><span class="eyebrow">How it acts</span><span class="rule"></span></div>
+      ${u.protocol.map(p => `<div class="says"><div class="says-d quiet">${esc(p)}</div></div>`).join("")}
+    </div>` : ""}
+    <div class="sheet-actions"><button class="btn primary" id="ecDone" style="margin-left:auto">Done</button></div>`;
+  $("#ecBack").onclick = openFoes;
+  $("#ecDone").onclick = openFoes;
 }
-let questStartState = null;
-
-/* ---- enemies, entered by whoever is running it ---- */
 function openFoes(){
   const foes = Q.units.filter(u => u.side === "them" && !u.hidden);
   const waiting = Q.units.filter(u => u.side === "them" && u.hidden);
@@ -6966,6 +7082,7 @@ function openFoes(){
       <div class="slab">
         <div class="head"><span class="eyebrow">${esc(u.name)}</span><span class="rule"></span>
           <span class="chip">${u.used}/${u.acts} used</span>
+          ${u.profile ? `<button class="chip gilt" data-fcard="${esc(u.uid)}">Card</button>` : ""}
           <button class="tiny" data-fdel="${esc(u.uid)}" aria-label="Remove">×</button></div>
         <div class="qs-hp">${u.models.map((h, i) => `
           <span class="pip ${h <= 0 ? "dead" : h <= u.max * 0.5 ? "hurt" : ""}">
@@ -6978,6 +7095,8 @@ function openFoes(){
           <button class="qp-btn" data-fact="${esc(u.uid)}" ${u.used >= u.acts ? "disabled" : ""}>Activate</button>
           <button class="qp-btn ghost" data-funact="${esc(u.uid)}" ${!u.used ? "disabled" : ""}>undo</button>
         </div>
+        <p class="quiet" style="margin:5px 0 0">Marks one of its activations spent — move it, attack
+          with it, whatever its protocol says — not specifically that it moved.</p>
       </div>`).join("") : `<p class="quiet">Nothing against you yet.</p>`}
 
     ${waiting.length ? `<div class="slab">
@@ -7003,6 +7122,7 @@ function openFoes(){
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#feX").onclick = () => { closePicker(); render(); };
+  $("#sheet2In").querySelectorAll("[data-fcard]").forEach(b => b.onclick = () => openEnemyCard(b.dataset.fcard));
   const num = id => Math.max(1, parseInt(($("#" + id).value || "").replace(/\D/g, ""), 10) || 1);
   $("#feGo").onclick = () => {
     Q.units.push(questFoe($("#feName").value.trim(), num("feN"), num("feH"), num("feA")));
@@ -7641,6 +7761,163 @@ function openAdvance(mid){
   });
 }
 
+/* ---- tether.js ---- */
+/* =====================================================================
+   TETHERS
+   The Unburied are called back from the grave. By default only the
+   Leader is bound: one tether, one observance performed in every battle,
+   until its debt of oaths is paid. Nothing here changes a point cost —
+   the ruleset says so outright: "tethers are story, not points."
+
+   The app cannot see who actually took an enemy down or who stood on an
+   objective at the End step, so it does not pretend to: at the end of a
+   battle it asks whether the observance was kept, same as it already
+   asks about wound flavour and morale calls it cannot detect either.
+   ===================================================================== */
+
+function leaderOf(b){
+  return (b.members || []).find(m => (m.traits || []).includes("leader")) || null;
+}
+function tetherKind(id){
+  return (RS.tethers && RS.tethers.kinds || []).find(k => k.id === id) || null;
+}
+/* Rolled on the die the ruleset names, not hard-coded to 10 sides. */
+function bindTether(b){
+  const kinds = (RS.tethers && RS.tethers.kinds) || [];
+  const leader = leaderOf(b);
+  if(!leader || !kinds.length) return null;
+  const roll = kinds[Math.floor(Math.random() * kinds.length)];
+  const debt = ((RS.tethers.debt || {}).byKind || {})[roll.id];
+  b.tether = {leaderId: leader.id, kindId: roll.id, debt: debt || roll.debt || 10,
+              kept: 0, frayed: false, obols: 0, sworn: null, severed: null};
+  qlogBand(b, (leaderOf(b) || {}).name + " is bound: the " + roll.name + " tether");
+  return b.tether;
+}
+/* Quests don't all keep a Q.log the way a battle does — this just keeps a
+   short breadcrumb on the band itself so binding/severing is visible even
+   outside a battle. */
+function qlogBand(b, s){
+  b.log = b.log || [];
+  b.log.unshift({at: Date.now(), t: s});
+  b.log = b.log.slice(0, 30);
+}
+
+function obolCost(t){ return 15 * (t.obols + 1); }
+/* The final oath of a debt can never be bought — it must be honoured. */
+function obolAllowed(t){ return t.kept < t.debt - 1; }
+
+/* One battle's honour/forsake call, applied to the band's tether. */
+function tetherHonour(b){
+  const t = b.tether; if(!t || t.severed) return;
+  t.kept++;
+  if(t.kept >= t.debt) severTether(b);
+  else qlogBand(b, "The " + tetherKind(t.kindId).name + " tether is honoured — " + t.kept + " of " + t.debt);
+  save();
+}
+function tetherForsake(b){
+  const t = b.tether; if(!t || t.severed) return;
+  if(t.frayed) snapTether(b);
+  else { t.frayed = true; qlogBand(b, "The " + tetherKind(t.kindId).name + " tether frays"); }
+  save();
+}
+function tetherPayObol(b){
+  const t = b.tether; if(!t || t.severed || !obolAllowed(t)) return false;
+  const cost = obolCost(t);
+  if((b.cash || 0) < cost) return false;
+  b.cash -= cost; t.obols++; t.kept++;
+  qlogBand(b, "Paid the obol (" + cost + " Cash) — the oath counts as kept");
+  if(t.kept >= t.debt) severTether(b);
+  save();
+  return true;
+}
+function severTether(b){
+  const t = b.tether; if(!t) return;
+  t.severed = "paid";
+  qlogBand(b, "Every oath is kept — the " + tetherKind(t.kindId).name + " tether is severed");
+}
+/* Leader returns to the grave for good; the band picks a new one by
+   giving someone else the Leader trait, and binds a fresh tether next
+   time it is sent out. */
+function snapTether(b){
+  const t = b.tether;
+  const leader = (b.members || []).find(m => m.id === t.leaderId);
+  if(leader) leader.traits = (leader.traits || []).filter(id => id !== "leader");
+  b.reputation = (b.reputation || 0) - 2;
+  qlogBand(b, (leader ? leader.name : "The Leader") + "'s tether snaps — they return to the grave");
+  b.tether = null;
+}
+/* The debt is paid; the Leader chooses what that means for them. */
+function tetherStayUnbound(b){
+  const t = b.tether; if(!t) return;
+  const leader = (b.members || []).find(m => m.id === t.leaderId);
+  if(leader && !leader.epithet) leader.epithet = "the Unbound";
+  b.tether = null;
+  save();
+}
+function tetherLayToRest(b){
+  const t = b.tether; if(!t) return;
+  const leader = (b.members || []).find(m => m.id === t.leaderId);
+  if(leader) leader.fielded = false;
+  b.reputation = (b.reputation || 0) + 2;
+  qlogBand(b, (leader ? leader.name : "The Leader") + " is laid to rest, with honour");
+  b.tether = null;
+  save();
+}
+
+/* ---- mending a frayed tether: any time, not gated behind a camp phase
+   the app does not otherwise have ---- */
+function mendTether(b, how){
+  const t = b.tether; if(!t || !t.frayed) return false;
+  const leader = (b.members || []).find(m => m.id === t.leaderId);
+  if(how === "rite"){
+    if((b.cash || 0) < 10) return false;
+    b.cash -= 10;
+  } else if(how === "sacrifice"){
+    if(!leader || (leader.xp || 0) < 3) return false;
+    leader.xp -= 3;
+  } else if(how === "scar"){
+    if(!leader) return false;
+    /* "Fate rows 3-8" are the six specific-injury rows of the Fate table
+       (rows 1-2 are Dead/Mortal wound, 9+ are Laid up or better) — one is
+       picked for the Leader, same shape as a battle's own injury roll. */
+    const rows = INJ().slice(2, 8);
+    if(rows.length){
+      const inj = rows[Math.floor(Math.random() * rows.length)];
+      applyInjury(leader, inj, inj.roll[0]);
+    }
+  } else return false;
+  t.frayed = false;
+  qlogBand(b, "The tether is mended (" + how + ") — not counted as an oath kept");
+  save();
+  return true;
+}
+
+/* ---- the band head's tether summary ---- */
+function tetherHTML(b){
+  const t = b.tether;
+  if(!t) return "";
+  const kind = tetherKind(t.kindId); if(!kind) return "";
+  const leader = (b.members || []).find(m => m.id === t.leaderId);
+  return `<div class="slab" style="border-color:${t.frayed ? "var(--rust)" : "var(--gilt-deep)"}">
+    <div class="head"><span class="eyebrow">Tether — ${esc(kind.name)}</span><span class="rule"></span>
+      <span class="chip ${t.frayed ? "bad" : "gilt"}">${t.kept} of ${t.debt} oaths</span></div>
+    <p class="quiet" style="margin:0">${esc(leader ? leader.name : "The Leader")} must ${esc(kind.observance)}.
+      ${t.frayed ? "Forsaken once already — it will snap if that happens again." : ""}</p>
+    ${t.frayed ? `<div class="sheet-actions" style="flex-wrap:wrap;gap:7px">
+      <button class="btn sm" data-tmend="rite">Mend — 10 Cash</button>
+      <button class="btn sm" data-tmend="sacrifice">Mend — 3 XP</button>
+      <button class="btn sm ghost" data-tmend="scar">Mend — take a scar</button>
+    </div>` : ""}
+  </div>`;
+}
+function bindTetherHTML(el){
+  el.querySelectorAll("[data-tmend]").forEach(btn => btn.onclick = () => {
+    const ok = mendTether(band(), btn.dataset.tmend);
+    toast(ok ? "Mended" : "Can't afford that");
+    if(ok) renderUnburied(band());
+  });
+}
+
 /* ---- scnmap.js ---- */
 /* =====================================================================
    THE MAP
@@ -7855,7 +8132,11 @@ function drawGenerate(ai){
       <button class="btn primary" id="gGo" ${S.busy ? "disabled" : ""} style="margin-left:0">
         ${S.busy ? "Writing\u2026" : "Write it"}</button>
     </div>
-    <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) : ""}</div>`}`;
+    <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) + `
+      <div class="sheet-actions">
+        <button class="btn ghost" id="gAgain" style="margin-left:0">Write another</button>
+        <button class="btn primary" id="gSave">Save to the Realm</button>
+      </div>` : ""}</div>`}`;
 
   $("#gX").onclick = () => { closePicker(); };
   if(!ai) return;
@@ -8379,12 +8660,7 @@ function scenarioHTML(s){
   </div>
 
   ${s.notes.length ? `<div class="slab"><div class="head"><span class="eyebrow">What was trimmed</span><span class="rule"></span></div>
-    ${s.notes.map(n => `<p class="quiet" style="margin:0 0 5px">${esc(n)}</p>`).join("")}</div>` : ""}
-
-  <div class="sheet-actions">
-    <button class="btn ghost" id="gAgain" style="margin-left:0">Write another</button>
-    <button class="btn primary" id="gTake">Take them out</button>
-  </div>`;
+    ${s.notes.map(n => `<p class="quiet" style="margin:0 0 5px">${esc(n)}</p>`).join("")}</div>` : ""}`;
 }
 
 function enemyLine(m){
@@ -8394,9 +8670,51 @@ function enemyLine(m){
   return [bits, m.wounds + " " + RSX.stat.wounds.name, w, t].filter(Boolean).join("  ·  ");
 }
 function bindScenario(){
-  const again = $("#gAgain"), take = $("#gTake");
+  const again = $("#gAgain"), save = $("#gSave");
   if(again) again.onclick = async () => runGenerate(await getAI());
-  if(take) take.onclick = () => startFromScenario(genState.out);
+  if(save) save.onclick = () => {
+    addToLibrary(genState.out);
+    genState = null;
+    closePicker(); render();
+    toast("Saved — take them out from the Realm when you're ready");
+  };
+}
+
+/* ---- the library: written, not yet played ---- */
+const LIBRARY_KEY = "ep_library_v1";
+function loadLibrary(){
+  try{ return JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]"); }catch(e){ return []; }
+}
+function saveLibrary(list){ try{ localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); }catch(e){} }
+function addToLibrary(s){
+  const list = loadLibrary();
+  list.unshift({id: uid(), at: Date.now(), out: s});
+  saveLibrary(list.slice(0, 40));
+}
+function deleteFromLibrary(id){ saveLibrary(loadLibrary().filter(r => r.id !== id)); }
+
+/* Written ahead of time, looked at again before it is decided this is the
+   one to play — taking them out here is the only place a saved scenario
+   actually starts a quest. */
+function openLibraryScenario(id){
+  const rec = loadLibrary().find(r => r.id === id); if(!rec) return;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="lsX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Ready to play</div></div>
+    ${scenarioHTML(rec.out)}
+    <div class="sheet-actions">
+      <button class="btn danger ghost" id="lsDel" style="margin-left:0">Delete</button>
+      <button class="btn primary" id="lsGo">Take them out</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#lsX").onclick = closePicker;
+  $("#lsDel").onclick = () => { deleteFromLibrary(id); closePicker(); render(); toast("Deleted"); };
+  $("#lsGo").onclick = () => {
+    deleteFromLibrary(id);
+    startFromScenario(rec.out);
+  };
 }
 
 /* ---- into a quest ---- */
@@ -8657,11 +8975,30 @@ function tableHTML(){
         <button class="btn" id="tbMarkers">Markers</button>
         <button class="btn ghost" id="tbEnd" style="margin-left:auto">End the quest</button>`
       : `
-        <button class="btn primary" id="tbScn" style="margin-left:0">Write a scenario</button>
-        <button class="btn ghost" id="tbPlain">Just take them out</button>`}
+        <button class="btn primary" id="tbScn" style="margin-left:0">Write a scenario</button>`}
     </div>
   </div>
+  ${q ? "" : libraryHTML()}
   ${q ? "" : historyHTML()}`;
+}
+/* Writing a scenario never starts one on its own — it lands here, so it
+   can be read over (or several can be written ahead) before deciding which
+   one is actually the next mission. */
+function libraryHTML(){
+  const list = loadLibrary();
+  if(!list.length) return "";
+  return `<div class="slab">
+    <div class="head"><span class="eyebrow">Ready to play</span><span class="rule"></span>
+      <span class="quiet">${list.length}</span></div>
+    ${list.map(r => `<div class="grow">
+      <div class="grow-main">
+        <div class="grow-name">${esc(r.out.title)}</div>
+        <div class="grow-sub">${esc(new Date(r.at).toLocaleDateString())} · ${esc(r.out.type)}
+          · ${r.out.enemyBudget} enemy points</div>
+      </div>
+      <div class="grow-r"><button class="btn sm" data-libopen="${esc(r.id)}">Open</button></div>
+    </div>`).join("")}
+  </div>`;
 }
 /* What the table has already been through. A scenario used to vanish the
    moment it ended; now it stays here — what it was, how it went, and a
@@ -8688,11 +9025,11 @@ function historyHTML(){
 function bindTable(el){
   const go = (id, fn) => { const b = el.querySelector("#" + id); if(b) b.onclick = fn; };
   go("tbScn", openGenerate);
-  go("tbPlain", openQuestStart);
   go("tbBrief", openBrief);
   go("tbFoes", openFoes);
   go("tbMarkers", () => openMarkers());
   go("tbEnd", askEnd);
+  el.querySelectorAll("[data-libopen]").forEach(b => b.onclick = () => openLibraryScenario(b.dataset.libopen));
   el.querySelectorAll("[data-histdel]").forEach(b => b.onclick = () => {
     deleteHistory(b.dataset.histdel); renderRealm(); toast("Removed");
   });
