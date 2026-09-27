@@ -4667,6 +4667,10 @@ const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, m =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 const uid = () => Math.random().toString(36).slice(2, 9);
+/* The epithet is not a separate label — it is the second half of what
+   people actually call them. "James" who is "the Deadeye" is "James the
+   Deadeye" at the table, one name, not a name and a nickname underneath. */
+function fullName(m){ return [m.name, m.epithet].filter(Boolean).join(" "); }
 const signed = n => (n >= 0 ? "+" : "−") + Math.abs(n);
 
 /* ---------------------------------------------------------------- state */
@@ -4694,7 +4698,7 @@ function band(){ return store.bands.find(b => b.id === store.activeId) || store.
 function newMember(){
   const h = ((RS.campaign || {}).hire || {}).baseProfile || {};
   const m = {
-    id: uid(), name: "", epithet: "", role: "", story: "",
+    id: uid(), name: "", epithet: "", epitaph: "", role: "", story: "",
     fielded: true, count: 1,
     move: h.move !== undefined ? h.move : statDefault("move"),
     actions: h.actions !== undefined ? h.actions : statDefault("actions"),
@@ -4962,8 +4966,8 @@ function renderUnburied(b){
     el.className = "marker" + (fielded(m) ? "" : " benched");
     el.innerHTML = `
       <div class="m-cost">${cost}<small>points</small></div>
-      <span class="m-name">${esc(m.name) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
-      ${m.epithet ? `<span class="m-epithet">“${esc(m.epithet)}”</span>` : ""}
+      <span class="m-name">${esc(fullName(m)) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
+      ${m.epitaph ? `<span class="m-epithet">“${esc(m.epitaph)}”</span>` : ""}
       ${m.role ? `<span class="m-role">${esc(m.role)}</span>` : ""}
       <div class="m-stats">
         ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(m[k])}</b><span>${esc(RSX.stat[k].name)}</span></div>`).join("")}
@@ -5142,8 +5146,11 @@ function drawMember(){
     <div class="slab">
       <div class="field" style="margin-bottom:11px"><label>Name</label>
         <input class="input" id="fName" value="${esc(m.name)}" maxlength="42" placeholder="who were they"></div>
-      <div class="field" style="margin-bottom:11px"><label>Epithet</label>
-        <input class="input serif" id="fEpi" value="${esc(m.epithet)}" maxlength="90" placeholder="what they are called now"></div>
+      <div class="field" style="margin-bottom:11px"><label>Epithet — joins the name</label>
+        <input class="input serif" id="fEpi" value="${esc(m.epithet)}" maxlength="50" placeholder="the Deadeye, Ashmouth, One-Eye"></div>
+      <div class="field" style="margin-bottom:11px"><label>Epitaph — what the stone would say</label>
+        <input class="input serif" id="fEpitaph" value="${esc(m.epitaph || "")}" maxlength="140"
+          placeholder="He always gave his all and never missed"></div>
       <div class="field" style="margin-bottom:11px"><label>Role</label>
         <input class="input" id="fRole" value="${esc(m.role)}" maxlength="40" placeholder="what they do"></div>
       <div class="field"><label>Their story</label>
@@ -5196,6 +5203,7 @@ function drawMember(){
   const root = $("#sheetIn");
   root.querySelector("#fName").oninput = e => { m.name = e.target.value; renderUnburied(band()); save(); };
   root.querySelector("#fEpi").oninput = e => { m.epithet = e.target.value; renderUnburied(band()); save(); };
+  root.querySelector("#fEpitaph").oninput = e => { m.epitaph = e.target.value; renderUnburied(band()); save(); };
   root.querySelector("#fRole").oninput = e => { m.role = e.target.value; renderUnburied(band()); save(); };
   root.querySelector("#fStory").oninput = e => { m.story = e.target.value; save(); };
 
@@ -5984,8 +5992,8 @@ function drawCard(){
     </div>
 
     <div class="cardhead">
-      <div class="cardname">${esc(m.name) || "Unnamed"}</div>
-      ${m.epithet ? `<div class="cardepi">“${esc(m.epithet)}”</div>` : ""}
+      <div class="cardname">${esc(fullName(m)) || "Unnamed"}</div>
+      ${m.epitaph ? `<div class="cardepi">“${esc(m.epitaph)}”</div>` : ""}
       <div class="cardrole">${esc(m.role || "")}${n > 1 ? (m.role ? " · " : "") + n + " models" : ""}
         <span class="cardpts">${unitCost(m)} points</span></div>
     </div>
@@ -6290,7 +6298,8 @@ function aiLegalise(raw, budget){
     break;
   }
   m.name = String(raw.name || "").trim().slice(0, 42);
-  m.epithet = String(raw.epithet || "").trim().slice(0, 90);
+  m.epithet = String(raw.epithet || "").trim().slice(0, 50);
+  m.epitaph = String(raw.epitaph || "").trim().slice(0, 140);
   m.role = String(raw.role || "").trim().slice(0, 40);
   m.story = String(raw.story || "").trim();
   return m.name ? m : null;
@@ -6318,7 +6327,7 @@ async function openConjure(){
     ${!ai ? `<p class="lead">${esc(aiTrouble("not_granted"))}</p>` : `
     <p class="lead">${isFirst
       ? "The first of the Unburied you raise leads the rest — whoever you choose here is bound as the band's Leader. Describe what you want and four of them will be raised, built and costed against the ruleset."
-      : leader ? `Describe what you want and four of them will be raised as someone who fits alongside <b>${esc(leader.name)}</b>${leader.epithet ? ` (“${esc(leader.epithet)}”)` : ""}, built and costed against the ruleset.`
+      : leader ? `Describe what you want and four of them will be raised as someone who fits alongside <b>${esc(fullName(leader))}</b>, built and costed against the ruleset.`
       : "Describe what you want and four of them will be raised, built and costed against the ruleset."}
       Nothing is added until you choose one.</p>
     <div class="field" style="margin:14px 0 10px"><label>What is it</label>
@@ -6370,23 +6379,28 @@ bound to the same debt, following the same road — not as strangers. At least g
 connection in the story (how they came to be raised, or what ties them to the Leader), but do
 not just repeat the Leader's own concept back with a different name.` : ""}
 
-For each, give a NAME and an EPITHET that do real work, not filler. The name is short enough
-to be shouted across a table (unhuman is fine for an Alien or Strange concept, just keep it
-sayable). The epithet comes from their life before — a trade, a debt, a rumour, a habit, a
-thing they were known for while they still had a pulse — and can run from one word to a full
-descriptive phrase, whatever actually earns its place; it is only where they started, since
+For each, give a NAME and an EPITHET, and together they ARE the name — not a name plus a
+label underneath, one thing said in one breath: "James the Deadeye", not "James" with "the
+Deadeye" filed separately. The given name is short enough to shout across a table (unhuman is
+fine for an Alien or Strange concept, just keep it sayable). The epithet is a short tag, one
+to three words, earned in their life before — a trade, a debt, a rumour, a habit, a thing they
+were known for while they still had a pulse — and it is only where they started, since
 battles ahead will earn them new ones.
 
-For tone only, never to be copied or echoed — notice these aren't all grim, and not all short:
-  "Mara Voss — 'the Uncounted'"
-  "Petra — 'the Last One Home'"
-  "Corin Hale — 'Handsome'" (a joke that stuck, not a threat)
-  "Dame Osgeth — 'the Kept Promise'"
-  "Ibb Sarn — 'the Debt Walking'"
-  "Ostrun — 'the woman who rang the bell three towns running'"
-  "Vethrik — 'the Loud Silence'" (Alien)
-  "Bram Wick — 'the Understudy'" (Funny)
-  "Corwyn — 'the one everybody owed money'"
+For tone only, never to be copied or echoed — notice these aren't all grim:
+  "James the Deadeye"
+  "Mara the Uncounted"
+  "Petra Home-Again"
+  "Corin Handsome" (a joke that stuck, not a threat)
+  "Dame Osgeth the Kept Promise"
+  "Ibb Sarn the Debt Walker"
+  "Vethrik the Silent" (Alien)
+  "Bram the Understudy" (Funny)
+
+Also give an EPITAPH — one sentence, the kind of line that would actually be carved on their
+grave: what they were known for, what they always did, who they were to somebody. Past tense,
+plain, the way a stone would say it. "He always gave his all and never missed" is the shape —
+not a summary of the character sheet, a line an old friend would nod at.
 
 A role in three words or fewer, and a vivid 2-3 sentence background that fits the brief and
 tone — grounded in the fighting life they already have, not a horror story about being dead.
@@ -6405,14 +6419,14 @@ ${aiCatalogue()}
 Keep each build under ${budget} points. Make the four genuinely different.
 
 Reply with ONLY a JSON array of 4 objects:
-[{"name":"...","epithet":"...","role":"...","story":"...","build":{"stats":{"fight":"d8","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},"size":"man","traits":["id"],"abilities":["id"],"powers":["id"],"flaws":["id"],"weapons":[{"id":"id","as":"its own name","mods":["id"]}],"armour":"id","items":["id"]}}]
+[{"name":"...","epithet":"...","epitaph":"...","role":"...","story":"...","build":{"stats":{"fight":"d8","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},"size":"man","traits":["id"],"abilities":["id"],"powers":["id"],"flaws":["id"],"weapons":[{"id":"id","as":"its own name","mods":["id"]}],"armour":"id","items":["id"]}}]
 No other text.`;
 
     try{
       const list = await ai.json(prompt, {modelTier:"default", cache:false, signal:aiAbort.signal});
       const made = (Array.isArray(list) ? list : []).map(x => {
         const m = aiLegalise(Object.assign({}, x.build, {
-          name:x.name, epithet:x.epithet, role:x.role, story:x.story}), budget);
+          name:x.name, epithet:x.epithet, epitaph:x.epitaph, role:x.role, story:x.story}), budget);
         /* The first of the Unburied is always the Leader — never left to
            the AI to remember to include, since the whole band's tether
            depends on someone actually holding this trait. */
@@ -6425,8 +6439,8 @@ No other text.`;
       if(!made.length){ out.innerHTML = `<p class="quiet">Nothing came up. Try again.</p>`; }
       else out.innerHTML = made.map((m, i) => `
         <div class="pick" style="cursor:default;display:block">
-          <div class="pick-name" style="font-family:'Cinzel',serif;font-size:15px">${esc(m.name)}</div>
-          ${m.epithet ? `<div class="cardepi" style="font-size:14px;margin:3px 0 5px">“${esc(m.epithet)}”</div>` : ""}
+          <div class="pick-name" style="font-family:'Cinzel',serif;font-size:15px">${esc(fullName(m))}</div>
+          ${m.epitaph ? `<div class="cardepi" style="font-size:14px;margin:3px 0 5px">“${esc(m.epitaph)}”</div>` : ""}
           <div class="quiet">${esc(m.role)} · ${memberCost(m)} points</div>
           <div class="says-d" style="margin-top:6px">${esc(m.story)}</div>
           <div class="quiet" style="margin-top:7px">${esc(aiSummary(m))}</div>
@@ -7453,8 +7467,8 @@ function drawAfter(){
         </button><div class="eyebrow">Fate</div>
         <span class="chip">${S.owed.length} to roll</span></div>
       <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
-        <div class="cardname" style="font-size:22px">${esc(m.name) || "Unnamed"}</div>
-        ${m.epithet ? `<div class="cardepi">“${esc(m.epithet)}”</div>` : ""}
+        <div class="cardname" style="font-size:22px">${esc(fullName(m)) || "Unnamed"}</div>
+        ${m.epitaph ? `<div class="cardepi">“${esc(m.epitaph)}”</div>` : ""}
       </div>
       <p class="lead">Taken Down. ${mode === "advantage"
         ? "Stabilised by a friend — roll two d20 and keep the higher."
@@ -7626,12 +7640,13 @@ async function openEpithet(m, rec){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
       </button><div class="eyebrow">An epithet</div></div>
     <p class="lead">${esc(m.name)} came out of that with ${esc(rec.name.toLowerCase())}.
-      People will call them something for it.</p>
+      People will call them something for it — it joins their name, same as the one they
+      started with.</p>
     ${hooks ? `<p class="quiet" style="margin-top:8px">Words that fit: ${esc(hooks)}</p>` : ""}
     <div class="field" style="margin:14px 0">
       <label>Epithet</label>
-      <input class="input serif" id="epV" maxlength="90" value="${esc(m.epithet || "")}"
-        placeholder="the Quiet, Ashmouth, the one who never let go of the rope"></div>
+      <input class="input serif" id="epV" maxlength="50" value="${esc(m.epithet || "")}"
+        placeholder="the Quiet, Ashmouth, One-Eye"></div>
     ${ai ? `<div class="sheet-actions" style="margin-bottom:12px">
       <button class="btn" id="epAsk" style="margin-left:0">Suggest three</button></div>
       <div id="epOut"></div>` : ""}
@@ -7642,7 +7657,7 @@ async function openEpithet(m, rec){
   $("#epX").onclick = drawAfter;
   $("#epNone").onclick = drawAfter;
   $("#epGo").onclick = () => {
-    m.epithet = $("#epV").value.trim().slice(0, 90);
+    m.epithet = $("#epV").value.trim().slice(0, 50);
     save(); toast(m.name + (m.epithet ? " — “" + m.epithet + "”" : ""));
     drawAfter(); render();
   };
@@ -7741,8 +7756,8 @@ function openAdvance(mid){
       <span class="chip gilt mono">${have} XP</span></div>
 
     <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
-      <div class="cardname" style="font-size:21px">${esc(m.name) || "Unnamed"}</div>
-      ${m.epithet ? `<div class="cardepi">\u201c${esc(m.epithet)}\u201d</div>` : ""}
+      <div class="cardname" style="font-size:21px">${esc(fullName(m)) || "Unnamed"}</div>
+      ${m.epitaph ? `<div class="cardepi">\u201c${esc(m.epitaph)}\u201d</div>` : ""}
     </div>
 
     <p class="lead">XP buys anything at its points price, surcharge and all \u2014 so the
