@@ -4669,8 +4669,15 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, m =>
 const uid = () => Math.random().toString(36).slice(2, 9);
 /* The epithet is not a separate label — it is the second half of what
    people actually call them. "James" who is "the Deadeye" is "James the
-   Deadeye" at the table, one name, not a name and a nickname underneath. */
-function fullName(m){ return [m.name, m.epithet].filter(Boolean).join(" "); }
+   Deadeye" at the table, one name, not a name and a nickname underneath.
+   Guarded against the AI folding the epithet into the name itself and then
+   repeating it — never show the same words twice. */
+function fullName(m){
+  const name = (m.name || "").trim(), epi = (m.epithet || "").trim();
+  if(!epi) return name;
+  if(name.toLowerCase().includes(epi.toLowerCase())) return name;
+  return [name, epi].filter(Boolean).join(" ");
+}
 const signed = n => (n >= 0 ? "+" : "−") + Math.abs(n);
 
 /* ---------------------------------------------------------------- state */
@@ -6298,7 +6305,11 @@ function aiLegalise(raw, budget){
     break;
   }
   m.name = String(raw.name || "").trim().slice(0, 42);
-  m.epithet = String(raw.epithet || "").trim().slice(0, 50);
+  let epithet = String(raw.epithet || "").trim().slice(0, 50);
+  /* Belt and braces: the model sometimes folds the epithet into the name
+     itself and then repeats it — drop it here rather than show it twice. */
+  if(epithet && m.name.toLowerCase().includes(epithet.toLowerCase())) epithet = "";
+  m.epithet = epithet;
   m.epitaph = String(raw.epitaph || "").trim().slice(0, 140);
   m.role = String(raw.role || "").trim().slice(0, 40);
   m.story = String(raw.story || "").trim();
@@ -6379,23 +6390,25 @@ bound to the same debt, following the same road — not as strangers. At least g
 connection in the story (how they came to be raised, or what ties them to the Leader), but do
 not just repeat the Leader's own concept back with a different name.` : ""}
 
-For each, give a NAME and an EPITHET, and together they ARE the name — not a name plus a
-label underneath, one thing said in one breath: "James the Deadeye", not "James" with "the
-Deadeye" filed separately. The given name is short enough to shout across a table (unhuman is
-fine for an Alien or Strange concept, just keep it sayable). The epithet is a short tag, one
-to three words, earned in their life before — a trade, a debt, a rumour, a habit, a thing they
-were known for while they still had a pulse — and it is only where they started, since
-battles ahead will earn them new ones.
+For each, give a NAME and an EPITHET as two SEPARATE strings — the app joins them into one
+displayed name itself ("James" + "the Deadeye" becomes "James the Deadeye" on the card), so
+NEVER put the epithet inside the name string, and NEVER repeat any word from the name inside
+the epithet, or it will show up twice. "name" is only the given name, nothing else. The given
+name is short enough to shout across a table (unhuman is fine for an Alien or Strange concept,
+just keep it sayable). The epithet is a short tag, one to three words, earned in their life
+before — a trade, a debt, a rumour, a habit, a thing they were known for while they still had
+a pulse — and it is only where they started, since battles ahead will earn them new ones.
 
-For tone only, never to be copied or echoed — notice these aren't all grim:
-  "James the Deadeye"
-  "Mara the Uncounted"
-  "Petra Home-Again"
-  "Corin Handsome" (a joke that stuck, not a threat)
-  "Dame Osgeth the Kept Promise"
-  "Ibb Sarn the Debt Walker"
-  "Vethrik the Silent" (Alien)
-  "Bram the Understudy" (Funny)
+For tone only, never to be copied or echoed — shown here as name + epithet, notice these
+aren't all grim:
+  "James" + "the Deadeye"
+  "Mara" + "the Uncounted"
+  "Petra" + "Home-Again"
+  "Corin" + "Handsome" (a joke that stuck, not a threat)
+  "Dame Osgeth" + "the Kept Promise"
+  "Ibb Sarn" + "the Debt Walker"
+  "Vethrik" + "the Silent" (Alien)
+  "Bram" + "the Understudy" (Funny)
 
 Also give an EPITAPH — one sentence, the kind of line that would actually be carved on their
 grave: what they were known for, what they always did, who they were to somebody. Past tense,
