@@ -6348,20 +6348,13 @@ async function openConjure(){
     go.disabled = true; go.textContent = "Raising…";
     out.innerHTML = `<p class="quiet">Digging… this takes a few seconds.</p>`;
     aiAbort = new AbortController();
-    const prompt = `Invent 4 concepts for a single model in ${RS.meta.name}, a tabletop skirmish game.
-A band is called the Unburied. A model can be anything: a person, a beast, a machine, an elemental, something worse.
-
-In this world, being called back — Unburied, Tethered — is not automatically a horror story or
-a tragedy. It is simply a fact of how this world works, closer to a myth everyone already knows
-than a wound freshly taken: matter-of-fact, sometimes even mundane. It carries whatever weight
-the TONE below actually gives it, and no more — a grim character can find it a torment, but a
-funny one can find it an inconvenience, a noble one an honour, an alien one barely worth
-remarking on. Do not default to grief, horror or morbidity unless the tone you were given
-actually calls for it.
-
-Every one of the Unburied raised here is a working mercenary who has already seen battle —
-this is not their first fight, whatever they are. Their build and their story should read like
-someone with a trade and a history of it, not a fresh recruit.
+    const prompt = `Invent 4 distinct concepts for a single model in ${RS.meta.name} — a tabletop skirmish
+wargame of the Unburied: dead mercenaries, tethered back to fight one more war, one more
+contract, one more debt owed. A model can be anything (a person, a beast, a machine, an
+elemental, something worse) but every one of them is a warrior at the very least — they
+know battle, whatever else they are, and have already fought before this. Being called back
+is just how this world works, not automatically a tragedy: let the TONE below decide how it
+sits with them, not a genre default of grief and horror.
 
 Tone: ${tone}.
 Brief: ${brief}.
@@ -6377,20 +6370,12 @@ bound to the same debt, following the same road — not as strangers. At least g
 connection in the story (how they came to be raised, or what ties them to the Leader), but do
 not just repeat the Leader's own concept back with a different name.` : ""}
 
-For each, give a NAME and an EPITHET, and make both do real work — this is the only thing at
-the table that is theirs alone, so it should not read like it was picked off a random list.
-
-The name is short, the kind that survives being shouted across a table: one given name,
-sometimes a second word, never a string of invented syllables for their own sake. For an
-Alien or Strange concept it can sound genuinely unhuman — just keep it sayable.
-
-The epithet comes from their LIFE before, not from anything that has happened since they
-were raised — a trade, a debt, a rumour, a habit, a thing they were known for while they
-still had a pulse. It can be as short as one word or run to a whole descriptive phrase,
-whatever actually earns its place; do not pad it out, and do not shorten it artificially
-either. Say plainly, right after it, that this is only where they started: the table will
-give them a new one as the campaign goes, so it does not need to cover everything they'll
-ever be, only who they already were.
+For each, give a NAME and an EPITHET that do real work, not filler. The name is short enough
+to be shouted across a table (unhuman is fine for an Alien or Strange concept, just keep it
+sayable). The epithet comes from their life before — a trade, a debt, a rumour, a habit, a
+thing they were known for while they still had a pulse — and can run from one word to a full
+descriptive phrase, whatever actually earns its place; it is only where they started, since
+battles ahead will earn them new ones.
 
 For tone only, never to be copied or echoed — notice these aren't all grim, and not all short:
   "Mara Voss — 'the Uncounted'"
@@ -6403,14 +6388,8 @@ For tone only, never to be copied or echoed — notice these aren't all grim, an
   "Bram Wick — 'the Understudy'" (Funny)
   "Corwyn — 'the one everybody owed money'"
 
-A role in three words or fewer.
-
-The story is two or three sentences and it is mostly about the LIFE, not the manner of death:
-what they did, loved, chased, guarded or built, and who they were to somebody, before it says
-anything about being called back. Being Unburied is where the story continues, not where it
-starts over — treat it the way the tone actually wants it treated (a joke, a badge, a shrug,
-a horror, a marvel), never by default as a wound to dwell on. A tanner is a tanner first, and
-whatever they are now is the second fact about them, not the first.
+A role in three words or fewer, and a vivid 2-3 sentence background that fits the brief and
+tone — grounded in the fighting life they already have, not a horror story about being dead.
 
 Also give a "build" that matches the story — a brawler fights, a marksman aims, a mystic has Will and powers, a coward takes a flaw.
 
