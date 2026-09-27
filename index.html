@@ -5143,7 +5143,7 @@ function drawMember(){
       <div class="field" style="margin-bottom:11px"><label>Name</label>
         <input class="input" id="fName" value="${esc(m.name)}" maxlength="42" placeholder="who were they"></div>
       <div class="field" style="margin-bottom:11px"><label>Epithet</label>
-        <input class="input serif" id="fEpi" value="${esc(m.epithet)}" maxlength="42" placeholder="what they are called now"></div>
+        <input class="input serif" id="fEpi" value="${esc(m.epithet)}" maxlength="90" placeholder="what they are called now"></div>
       <div class="field" style="margin-bottom:11px"><label>Role</label>
         <input class="input" id="fRole" value="${esc(m.role)}" maxlength="40" placeholder="what they do"></div>
       <div class="field"><label>Their story</label>
@@ -6290,7 +6290,7 @@ function aiLegalise(raw, budget){
     break;
   }
   m.name = String(raw.name || "").trim().slice(0, 42);
-  m.epithet = String(raw.epithet || "").trim().slice(0, 42);
+  m.epithet = String(raw.epithet || "").trim().slice(0, 90);
   m.role = String(raw.role || "").trim().slice(0, 40);
   m.story = String(raw.story || "").trim();
   return m.name ? m : null;
@@ -6298,6 +6298,8 @@ function aiLegalise(raw, budget){
 
 /* ---- the conjuring ---- */
 let aiAbort = null;
+const CONJURE_TONES = ["Grim", "Warm", "Noble", "Alien", "Ominous", "Funny", "Strange"];
+let conjureTone = CONJURE_TONES[0];
 async function openConjure(){
   const ai = await getAI();
   const b = band();
@@ -6322,15 +6324,10 @@ async function openConjure(){
     <div class="field" style="margin:14px 0 10px"><label>What is it</label>
       <input class="input" id="cjBrief" maxlength="160"
         placeholder="a drowned bell-ringer, a thing made of doors, an old soldier who will not stop"></div>
-    <div class="field" style="margin-bottom:12px"><label>Tone</label>
-      <select class="input" id="cjTone">
-        <option value="grim and plain">grim and plain</option>
-        <option value="warm and human">warm and human</option>
-        <option value="proud and noble">proud and noble</option>
-        <option value="mythic and strange">mythic and strange</option>
-        <option value="wretched and funny">wretched and funny</option>
-        <option value="cold and clinical">cold and clinical</option>
-      </select></div>
+    <div class="field" style="margin-bottom:12px"><label>Tone — pick whatever this one actually is</label>
+      <div class="sheet-actions" style="flex-wrap:wrap;gap:7px" id="cjTones">
+        ${CONJURE_TONES.map(t => `<button type="button" class="chip ${t === conjureTone ? "gilt" : ""}" data-tone="${esc(t)}" style="cursor:pointer;font-size:13px;padding:7px 13px">${esc(t)}</button>`).join("")}
+      </div></div>
     <p class="quiet">Up to <b>${budget}</b> points each — what the band has left.</p>
     <div class="sheet-actions"><button class="btn primary" id="cjGo" style="margin-left:0">Raise four</button></div>
     <div id="cjOut" style="margin-top:14px"></div>`}`;
@@ -6339,15 +6336,33 @@ async function openConjure(){
   $("#cjX").onclick = () => { if(aiAbort) aiAbort.abort(); closePicker(); };
   if(!ai) return;
 
+  $("#sheet2In").querySelectorAll("[data-tone]").forEach(btn => btn.onclick = () => {
+    conjureTone = btn.dataset.tone;
+    $("#sheet2In").querySelectorAll("[data-tone]").forEach(b => b.classList.toggle("gilt", b.dataset.tone === conjureTone));
+  });
+
   $("#cjGo").onclick = async () => {
     const go = $("#cjGo"), out = $("#cjOut");
     const brief = $("#cjBrief").value.trim() || "whatever suits the Unburied";
-    const tone = $("#cjTone").value;
+    const tone = conjureTone;
     go.disabled = true; go.textContent = "Raising…";
     out.innerHTML = `<p class="quiet">Digging… this takes a few seconds.</p>`;
     aiAbort = new AbortController();
-    const prompt = `Invent 4 concepts for a single model in ${RS.meta.name}, a grim tabletop skirmish game.
+    const prompt = `Invent 4 concepts for a single model in ${RS.meta.name}, a tabletop skirmish game.
 A band is called the Unburied. A model can be anything: a person, a beast, a machine, an elemental, something worse.
+
+In this world, being called back — Unburied, Tethered — is not automatically a horror story or
+a tragedy. It is simply a fact of how this world works, closer to a myth everyone already knows
+than a wound freshly taken: matter-of-fact, sometimes even mundane. It carries whatever weight
+the TONE below actually gives it, and no more — a grim character can find it a torment, but a
+funny one can find it an inconvenience, a noble one an honour, an alien one barely worth
+remarking on. Do not default to grief, horror or morbidity unless the tone you were given
+actually calls for it.
+
+Every one of the Unburied raised here is a working mercenary who has already seen battle —
+this is not their first fight, whatever they are. Their build and their story should read like
+someone with a trade and a history of it, not a fresh recruit.
+
 Tone: ${tone}.
 Brief: ${brief}.
 ${isFirst ? `
@@ -6365,28 +6380,37 @@ not just repeat the Leader's own concept back with a different name.` : ""}
 For each, give a NAME and an EPITHET, and make both do real work — this is the only thing at
 the table that is theirs alone, so it should not read like it was picked off a random list.
 
-The name is short and plain, the kind that survives being shouted across a table: one given
-name, sometimes a second word, never a title and never a string of invented syllables for
-their own sake. The epithet is what the rest of the Unburied actually call them — earned by
-something, never just decorative — and it is that contrast between a small ordinary name and
-a hard-won epithet that makes it land. It is one line, never a full sentence.
+The name is short, the kind that survives being shouted across a table: one given name,
+sometimes a second word, never a string of invented syllables for their own sake. For an
+Alien or Strange concept it can sound genuinely unhuman — just keep it sayable.
 
-For tone only, never to be copied or echoed — notice these aren't all grim:
+The epithet comes from their LIFE before, not from anything that has happened since they
+were raised — a trade, a debt, a rumour, a habit, a thing they were known for while they
+still had a pulse. It can be as short as one word or run to a whole descriptive phrase,
+whatever actually earns its place; do not pad it out, and do not shorten it artificially
+either. Say plainly, right after it, that this is only where they started: the table will
+give them a new one as the campaign goes, so it does not need to cover everything they'll
+ever be, only who they already were.
+
+For tone only, never to be copied or echoed — notice these aren't all grim, and not all short:
   "Mara Voss — 'the Uncounted'"
   "Petra — 'the Last One Home'"
   "Corin Hale — 'Handsome'" (a joke that stuck, not a threat)
   "Dame Osgeth — 'the Kept Promise'"
   "Ibb Sarn — 'the Debt Walking'"
-  "Ostrun — 'Nine Times Down'"
+  "Ostrun — 'the woman who rang the bell three towns running'"
+  "Vethrik — 'the Loud Silence'" (Alien)
+  "Bram Wick — 'the Understudy'" (Funny)
+  "Corwyn — 'the one everybody owed money'"
 
 A role in three words or fewer.
 
-The story is two or three sentences about the LIFE, not the death. Being Unburied is
-where the story starts, not what it is about: skip the grave, the wound, the manner of
-dying, the years underground — say what they did, loved, chased, or built while they were
-alive, and who they were to somebody. One line may touch on being called back if it earns
-its place, but it should never be the whole story. A tanner is a tanner first; that they
-happen to be dead is the least interesting fact about them.
+The story is two or three sentences and it is mostly about the LIFE, not the manner of death:
+what they did, loved, chased, guarded or built, and who they were to somebody, before it says
+anything about being called back. Being Unburied is where the story continues, not where it
+starts over — treat it the way the tone actually wants it treated (a joke, a badge, a shrug,
+a horror, a marvel), never by default as a wound to dwell on. A tanner is a tanner first, and
+whatever they are now is the second fact about them, not the first.
 
 Also give a "build" that matches the story — a brawler fights, a marksman aims, a mystic has Will and powers, a coward takes a flaw.
 
@@ -7627,8 +7651,8 @@ async function openEpithet(m, rec){
     ${hooks ? `<p class="quiet" style="margin-top:8px">Words that fit: ${esc(hooks)}</p>` : ""}
     <div class="field" style="margin:14px 0">
       <label>Epithet</label>
-      <input class="input serif" id="epV" maxlength="42" value="${esc(m.epithet || "")}"
-        placeholder="the Quiet, Ashmouth, One-Eye"></div>
+      <input class="input serif" id="epV" maxlength="90" value="${esc(m.epithet || "")}"
+        placeholder="the Quiet, Ashmouth, the one who never let go of the rope"></div>
     ${ai ? `<div class="sheet-actions" style="margin-bottom:12px">
       <button class="btn" id="epAsk" style="margin-left:0">Suggest three</button></div>
       <div id="epOut"></div>` : ""}
@@ -7639,7 +7663,7 @@ async function openEpithet(m, rec){
   $("#epX").onclick = drawAfter;
   $("#epNone").onclick = drawAfter;
   $("#epGo").onclick = () => {
-    m.epithet = $("#epV").value.trim().slice(0, 42);
+    m.epithet = $("#epV").value.trim().slice(0, 90);
     save(); toast(m.name + (m.epithet ? " — “" + m.epithet + "”" : ""));
     drawAfter(); render();
   };
