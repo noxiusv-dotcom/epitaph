@@ -4901,7 +4901,7 @@ function closeSheet(){
 /* ---------------------------------------------------------------- render */
 function render(){
   const b = band();
-  $("#rsVer").textContent = RS.meta.name + " · ruleset " + RS.meta.version;
+  $("#rsVer").textContent = realmAvailable() ? RS.meta.name + " · ruleset " + RS.meta.version : "The Reliquary";
   $$(".way").forEach(w => w.classList.toggle("on", w.dataset.way === store.way));
   $("#viewUnburied").hidden = store.way !== "unburied";
   $("#viewRealm").hidden = store.way !== "realm";
@@ -5022,6 +5022,15 @@ function renderUnburied(b){
   };
   list.appendChild(add);
   list.appendChild(conj);
+  /* A Leader raised in the Reliquary to replace one who did not come back
+     — or anyone else sent alone — arrives here, never the other way. */
+  if(realmAvailable()){
+    const bring = document.createElement("button");
+    bring.className = "marker add";
+    bring.innerHTML = `<div class="plus">↓</div><span>Bring one in</span>`;
+    bring.onclick = openMemberBring;
+    list.appendChild(bring);
+  }
 }
 
 /* ---------------------------------------------------------------- boot */
@@ -5997,6 +6006,7 @@ function drawCard(){
       </button>
       <div class="eyebrow">${n > 1 ? "A squad of the Unburied" : "One of the Unburied"}</div>
       ${m.xp ? `<button class="btn sm" id="cXP">${m.xp} XP</button>` : ""}
+      ${realmAvailable() ? "" : `<button class="btn sm ghost" id="cSend">Send to camp</button>`}
       <button class="btn sm ghost" id="cEdit">${memberLocked(m) ? "Sealed" : "Edit"}</button>
     </div>
 
@@ -6064,6 +6074,8 @@ function drawCard(){
   root.querySelector("#cEdit").onclick = () => openMember(m.id);
   const xpb = root.querySelector("#cXP");
   if(xpb) xpb.onclick = () => openAdvance(m.id);
+  const sendb = root.querySelector("#cSend");
+  if(sendb) sendb.onclick = () => openMemberSend(m);
   if(live) questBind(root, m);
 }
 
@@ -6322,12 +6334,17 @@ function aiLegalise(raw, budget){
 let aiAbort = null;
 const CONJURE_TONES = ["Grim", "Warm", "Noble", "Alien", "Ominous", "Funny", "Strange"];
 let conjureTone = CONJURE_TONES[0];
+/* Which one to raise is the player's call, not a guess from how many are
+   already in this band — a Leader raised alone to replace one lost at
+   camp is still the first thing built in an otherwise-empty Reliquary
+   session. Defaults to Leader only the very first time it is asked. */
+let conjureLeader = null;
 async function openConjure(){
   const ai = await getAI();
   const b = band();
-  const isFirst = b.members.length === 0;
-  const leader = isFirst ? null : leaderOf(b);
-  const leaderCost = isFirst ? ((catOf("traits").leader || {}).cost || 0) : 0;
+  if(conjureLeader === null) conjureLeader = b.members.length === 0;
+  const leader = leaderOf(b);
+  const leaderCost = conjureLeader ? ((catOf("traits").leader || {}).cost || 0) : 0;
   const budget = Math.max(RS.baseCost, b.budget - bandSpent(b) - leaderCost);
 
   $("#sheet2In").innerHTML = `
@@ -6338,8 +6355,15 @@ async function openConjure(){
       <div class="eyebrow">Call something up</div>
     </div>
     ${!ai ? `<p class="lead">${esc(aiTrouble("not_granted"))}</p>` : `
-    <p class="lead">${isFirst
-      ? "The first of the Unburied you raise leads the rest — whoever you choose here is bound as the band's Leader. Describe what you want and four of them will be raised, built and costed against the ruleset."
+    <div class="field" style="margin-bottom:12px"><label>Raise as</label>
+      <div class="sheet-actions" style="flex-wrap:wrap;gap:7px" id="cjWho">
+        <button type="button" class="chip ${conjureLeader ? "gilt" : ""}" data-who="leader"
+          style="cursor:pointer;font-size:13px;padding:7px 13px">Leader</button>
+        <button type="button" class="chip ${conjureLeader ? "" : "gilt"}" data-who="member"
+          style="cursor:pointer;font-size:13px;padding:7px 13px">One of the band</button>
+      </div></div>
+    <p class="lead" id="cjWhoNote">${conjureLeader
+      ? "Whoever you choose here is bound as the band's Leader" + (leader ? `, replacing <b>${esc(fullName(leader))}</b>` : "") + ". Describe what you want and four of them will be raised, built and costed against the ruleset."
       : leader ? `Describe what you want and four of them will be raised as someone who fits alongside <b>${esc(fullName(leader))}</b>, built and costed against the ruleset.`
       : "Describe what you want and four of them will be raised, built and costed against the ruleset."}
       Nothing is added until you choose one.</p>
@@ -6350,13 +6374,18 @@ async function openConjure(){
       <div class="sheet-actions" style="flex-wrap:wrap;gap:7px" id="cjTones">
         ${CONJURE_TONES.map(t => `<button type="button" class="chip ${t === conjureTone ? "gilt" : ""}" data-tone="${esc(t)}" style="cursor:pointer;font-size:13px;padding:7px 13px">${esc(t)}</button>`).join("")}
       </div></div>
-    <p class="quiet">Up to <b>${budget}</b> points each — what the band has left.</p>
+    <p class="quiet" id="cjBudgetNote">Up to <b>${budget}</b> points each — what the band has left.</p>
     <div class="sheet-actions"><button class="btn primary" id="cjGo" style="margin-left:0">Raise four</button></div>
     <div id="cjOut" style="margin-top:14px"></div>`}`;
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#cjX").onclick = () => { if(aiAbort) aiAbort.abort(); closePicker(); };
   if(!ai) return;
+
+  $("#sheet2In").querySelectorAll("[data-who]").forEach(btn => btn.onclick = () => {
+    conjureLeader = btn.dataset.who === "leader";
+    openConjure();
+  });
 
   $("#sheet2In").querySelectorAll("[data-tone]").forEach(btn => btn.onclick = () => {
     conjureTone = btn.dataset.tone;
@@ -6380,11 +6409,12 @@ sits with them, not a genre default of grief and horror.
 
 Tone: ${tone}.
 Brief: ${brief}.
-${isFirst ? `
-This one is the band's LEADER — the first of the Unburied, the one the rest will be raised
-around. Write someone the story can be told about, not necessarily the loudest voice in the
-room: authority can be quiet, earned, reluctant, or terrible. Do not mention a "leader" trait
-or any game term — just write who they are; the app handles the mechanics.` : leader ? `
+${conjureLeader ? `
+This one is the band's LEADER${leader ? `, raised to replace ${leader.name}` : ""} — the one
+the rest are raised around, or follow already. Write someone the story can be told about, not
+necessarily the loudest voice in the room: authority can be quiet, earned, reluctant, or
+terrible. Do not mention a "leader" trait or any game term — just write who they are; the app
+handles the mechanics.` : leader ? `
 The band already has a Leader: ${leader.name}${leader.epithet ? ` ("${leader.epithet}")` : ""},
 ${leader.role || "no stated role"}. Their story so far: ${leader.story || "(not written down)"}.
 Write these four as people who could plausibly stand with ${leader.name} — raised by them,
@@ -6442,10 +6472,9 @@ No other text.`;
       const made = (Array.isArray(list) ? list : []).map(x => {
         const m = aiLegalise(Object.assign({}, x.build, {
           name:x.name, epithet:x.epithet, epitaph:x.epitaph, role:x.role, story:x.story}), budget);
-        /* The first of the Unburied is always the Leader — never left to
-           the AI to remember to include, since the whole band's tether
-           depends on someone actually holding this trait. */
-        if(m && isFirst && !m.traits.includes("leader")){
+        /* Never left to the AI to remember to include, since the whole
+           band's tether depends on someone actually holding this trait. */
+        if(m && conjureLeader && !m.traits.includes("leader")){
           if(m.traits.length >= 4) m.traits.pop();
           m.traits.push("leader");
         }
@@ -6491,15 +6520,18 @@ function aiSummary(m){
 
 /* ---- carry.js ---- */
 /* =====================================================================
-   CARRYING A BAND OUT
-   Your Unburied live on this phone, which means a dead phone loses them.
-   So a band can be written down as a code: short enough to paste into a
-   message, complete enough to raise the whole band again somewhere else.
-
-   The same code hands your band to whoever is running a game.
+   CARRYING THINGS OUT
+   Nothing raised in the Reliquary lives anywhere else, which means a dead
+   phone or a different origin loses it. So a band, and separately a
+   scenario, can each be written down as a code: short enough to paste
+   into a message, complete enough to raise the whole thing again
+   somewhere else — in camp, or in the Realm.
    ===================================================================== */
 
 const CARRY_TAG = "EPITAPH1";
+const SCENARIO_CARRY_TAG = "EPITAPHSCN1";
+const MEMBER_CARRY_TAG = "EPITAPHM1";
+const KNOWN_CARRY_TAGS = [CARRY_TAG, SCENARIO_CARRY_TAG, MEMBER_CARRY_TAG];
 
 /* Only what differs from a fresh model is written down. A band of six comes
    out a few hundred characters rather than several thousand. */
@@ -6522,8 +6554,10 @@ function bandPayload(b){
 }
 
 /* gzip where the browser has it, which is most places now; plain where not.
-   The prefix says which, so a code made on one device opens on another. */
-async function packCode(obj){
+   The prefix says which, and which of the known tags it is, so a code
+   made on one device for one purpose is never mistaken for the other. */
+async function packCode(obj, tag){
+  tag = tag || CARRY_TAG;
   const json = JSON.stringify(obj);
   const bytes = new TextEncoder().encode(json);
   let body, mark = "R";
@@ -6536,11 +6570,12 @@ async function packCode(obj){
     }catch(e){ body = bytes; }
   } else body = bytes;
   let s = ""; body.forEach(c => s += String.fromCharCode(c));
-  return CARRY_TAG + mark + ":" + btoa(s);
+  return tag + mark + ":" + btoa(s);
 }
 async function unpackCode(code){
   const raw = String(code || "").trim().replace(/\s+/g, "");
-  const m = raw.match(/^EPITAPH1([ZR]):(.+)$/);
+  const tag = KNOWN_CARRY_TAGS.find(t => raw.startsWith(t));
+  const m = tag && raw.slice(tag.length).match(/^([ZR]):(.+)$/);
   if(!m) throw new Error("That is not an Epitaph code.");
   const bin = atob(m[2]);
   const bytes = new Uint8Array(bin.length);
@@ -6552,7 +6587,7 @@ async function unpackCode(code){
     json = await new Response(ds.readable).text();
   } else json = new TextDecoder().decode(bytes);
   const obj = JSON.parse(json);
-  if(obj.t !== CARRY_TAG) throw new Error("That code is not from Epitaph.");
+  if(obj.t !== tag) throw new Error("That code is not from Epitaph.");
   return obj;
 }
 
@@ -6565,6 +6600,17 @@ function adoptBand(obj){
   mendBand(b);
   return b;
 }
+
+/* One of the Unburied, sent alone — a Leader raised to replace one who did
+   not come back, joining a band already at camp rather than starting a
+   new one. */
+function memberPayload(m){ return {t: MEMBER_CARRY_TAG, rs: RS.meta.version, member: thin(m)}; }
+function adoptMember(obj){ return Object.assign(newMember(), obj.member, {id: uid()}); }
+
+/* A scenario carries whole — it is already trimmed to what the ruleset
+   allowed when it was written, and there is no fresh-model shape to diff
+   it against the way a band member has. */
+function scenarioPayload(s){ return {t: SCENARIO_CARRY_TAG, rs: RS.meta.version, out: s}; }
 
 /* ---- the sheet ---- */
 async function openCarry(){
@@ -6584,7 +6630,7 @@ async function openCarry(){
     </div>
 
     <p class="lead">${sendOnly
-      ? "Your Unburied are raised here and nowhere else. This is how they leave for camp \u2014 copy the code or save the file, then bring it in there to take them into a game."
+      ? "Your Unburied are raised here in the Reliquary and nowhere else. This is how they leave for camp \u2014 copy the code or save the file, then bring it in there to take them into a game."
       : "Your Unburied live on this phone and nowhere else. This is how they leave it \u2014 to keep somewhere safe, to move to another phone, or to hand to whoever is running a game."}</p>
 
     <div class="slab" style="margin-top:14px">
@@ -6667,6 +6713,107 @@ async function openCarry(){
   if(go) go.onclick = () => bring($("#cyIn").value);
   const file = $("#cyFile");
   if(file) file.onchange = e => {
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => bring(String(r.result));
+    r.readAsText(f);
+  };
+}
+
+/* ---- sending one of the Unburied alone, out of the Reliquary ---- */
+async function openMemberSend(m){
+  const code = await packCode(memberPayload(m), MEMBER_CARRY_TAG);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="msX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Send to camp</div></div>
+    <p class="lead">${esc(fullName(m))} leaves the Reliquary alone \u2014 to join a band
+      already at camp, a Leader raised to replace one who did not come back, or
+      anyone else. Bring them in from the roster there.</p>
+    <div class="slab" style="margin-top:14px">
+      <div class="head"><span class="eyebrow">${esc(fullName(m))}</span><span class="rule"></span></div>
+      <textarea class="input mono" id="msCode" rows="4" readonly
+        style="font-size:11px;line-height:1.4">${esc(code)}</textarea>
+      <div class="sheet-actions" style="margin-top:10px">
+        <button class="btn sm" id="msSave">Save a file</button>
+        <button class="btn sm primary" id="msCopy" style="margin-left:auto">Copy the code</button>
+      </div>
+      <p class="quiet" style="margin:9px 0 0">${code.length} characters \u00b7 written against ruleset ${esc(RS.meta.version)}</p>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#msX").onclick = closePicker;
+  $("#msCopy").onclick = async () => {
+    try{ await navigator.clipboard.writeText(code); toast("Copied"); }
+    catch(e){ const t = $("#msCode"); t.focus(); t.select(); toast("Select it and copy"); }
+  };
+  $("#msSave").onclick = async () => {
+    const name = (m.name || "unburied").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() + ".json";
+    const data = JSON.stringify(memberPayload(m), null, 2);
+    let saver = null;
+    try{ saver = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; }catch(e){}
+    if(saver){
+      try{ await saver.save({filename: name, data}); toast("Saved"); }
+      catch(e){ toast("The save was declined"); }
+      return;
+    }
+    try{
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([data], {type: "application/json"}));
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast("Saved");
+    }catch(e){ toast("Files cannot be saved here \u2014 copy the code instead"); }
+  };
+}
+
+/* ---- bringing one in at camp, to join whichever band is active ---- */
+function openMemberBring(){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="mbX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Bring one in</div></div>
+    <p class="lead">Paste a code for one of the Unburied sent alone from the Reliquary
+      \u2014 a new Leader, or anyone else \u2014 and they join ${esc(band().name)}.</p>
+    <div class="slab" style="margin-top:14px">
+      <textarea class="input mono" id="mbIn" rows="3" placeholder="EPITAPHM1Z:\u2026"
+        style="font-size:11px;line-height:1.4"></textarea>
+      <div class="sheet-actions" style="margin-top:10px">
+        <label class="btn sm ghost" style="cursor:pointer">Open a file
+          <input type="file" id="mbFile" accept=".json,.txt,application/json" hidden></label>
+        <button class="btn sm primary" id="mbGo" style="margin-left:auto">Bring them in</button>
+      </div>
+      <p class="quiet" id="mbMsg" style="margin:9px 0 0"></p>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#mbX").onclick = closePicker;
+  const bring = async text => {
+    const msg = $("#mbMsg");
+    try{
+      let obj;
+      const t = String(text || "").trim();
+      if(t.startsWith("{")) obj = JSON.parse(t);
+      else obj = await unpackCode(t);
+      if(obj.t !== MEMBER_CARRY_TAG) throw new Error("That is not one of the Unburied.");
+      const m = adoptMember(obj);
+      const b = band();
+      /* Only one Leader at a time — an arriving one takes the trait cleanly
+         rather than sitting alongside whoever already holds it. */
+      if((m.traits || []).includes("leader") && leaderOf(b))
+        toast("Already has a Leader \u2014 give the trait to whoever should carry it, by hand");
+      b.members.push(m); save(); closePicker(); render();
+      toast(fullName(m) + " joins " + b.name);
+      if(obj.rs && obj.rs !== RS.meta.version)
+        setTimeout(() => toast("Written against ruleset " + obj.rs + "; costs may differ"), 2400);
+    }catch(e){
+      msg.textContent = e.message || "That did not open.";
+      msg.style.color = "var(--rust)";
+    }
+  };
+  $("#mbGo").onclick = () => bring($("#mbIn").value);
+  $("#mbFile").onchange = e => {
     const f = e.target.files && e.target.files[0]; if(!f) return;
     const r = new FileReader();
     r.onload = () => bring(String(r.result));
@@ -8725,7 +8872,7 @@ function bindScenario(){
     addToLibrary(genState.out);
     genState = null;
     closePicker(); render();
-    toast("Saved — take them out from the Realm when you're ready");
+    toast("Kept in the Reliquary — take them out from the Realm when you're ready");
   };
 }
 
@@ -8753,16 +8900,120 @@ function openLibraryScenario(id){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Ready to play</div></div>
     ${scenarioHTML(rec.out)}
-    <div class="sheet-actions">
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn danger ghost" id="lsDel" style="margin-left:0">Delete</button>
-      <button class="btn primary" id="lsGo">Take them out</button>
+      ${realmAvailable() ? "" : `<button class="btn" id="lsSend">Send to the Realm</button>`}
+      <button class="btn primary" id="lsGo" style="margin-left:${realmAvailable() ? "auto" : "0"}">Take them out</button>
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#lsX").onclick = closePicker;
   $("#lsDel").onclick = () => { deleteFromLibrary(id); closePicker(); render(); toast("Deleted"); };
+  const send = $("#lsSend");
+  if(send) send.onclick = () => openScenarioSend(rec);
   $("#lsGo").onclick = () => {
     deleteFromLibrary(id);
     startFromScenario(rec.out);
+  };
+}
+
+/* ---- sending a scenario out of the Reliquary, to the Realm ---- */
+async function openScenarioSend(rec){
+  const code = await packCode(scenarioPayload(rec.out), SCENARIO_CARRY_TAG);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="ssBack" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Send to the Realm</div></div>
+    <p class="lead">This scenario was written here in the Reliquary and lives nowhere
+      else yet. Copy the code or save the file, then bring it in from the Realm tab
+      where the game will actually be played.</p>
+    <div class="slab" style="margin-top:14px">
+      <div class="head"><span class="eyebrow">${esc(rec.out.title)}</span><span class="rule"></span></div>
+      <textarea class="input mono" id="ssCode" rows="4" readonly
+        style="font-size:11px;line-height:1.4">${esc(code)}</textarea>
+      <div class="sheet-actions" style="margin-top:10px">
+        <button class="btn sm" id="ssSave">Save a file</button>
+        <button class="btn sm primary" id="ssCopy" style="margin-left:auto">Copy the code</button>
+      </div>
+      <p class="quiet" style="margin:9px 0 0">${code.length} characters \u00b7 written against ruleset ${esc(RS.meta.version)}</p>
+    </div>`;
+  $("#ssBack").onclick = () => openLibraryScenario(rec.id);
+  $("#ssCopy").onclick = async () => {
+    try{ await navigator.clipboard.writeText(code); toast("Copied"); }
+    catch(e){ const t = $("#ssCode"); t.focus(); t.select(); toast("Select it and copy"); }
+  };
+  $("#ssSave").onclick = async () => {
+    const name = (rec.out.title || "scenario").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() + ".json";
+    const data = JSON.stringify(scenarioPayload(rec.out), null, 2);
+    let saver = null;
+    try{ saver = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; }catch(e){}
+    if(saver){
+      try{ await saver.save({filename: name, data}); toast("Saved"); }
+      catch(e){ toast("The save was declined"); }
+      return;
+    }
+    try{
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([data], {type: "application/json"}));
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast("Saved");
+    }catch(e){ toast("Files cannot be saved here \u2014 copy the code instead"); }
+  };
+}
+
+/* ---- bringing a scenario into the Realm ---- */
+function bringScenario(text){
+  return (async () => {
+    const t = String(text || "").trim();
+    let obj;
+    if(t.startsWith("{")) obj = JSON.parse(t);
+    else obj = await unpackCode(t);
+    if(obj.t !== SCENARIO_CARRY_TAG) throw new Error("That is not a scenario code.");
+    addToLibrary(obj.out);
+    return obj;
+  })();
+}
+function openScenarioBring(){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="sbX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Bring a scenario in</div></div>
+    <p class="lead">Paste a code written in the Reliquary, or open the file, and it
+      joins what is ready to play here.</p>
+    <div class="slab" style="margin-top:14px">
+      <textarea class="input mono" id="sbIn" rows="3" placeholder="EPITAPHSCN1Z:\u2026"
+        style="font-size:11px;line-height:1.4"></textarea>
+      <div class="sheet-actions" style="margin-top:10px">
+        <label class="btn sm ghost" style="cursor:pointer">Open a file
+          <input type="file" id="sbFile" accept=".json,.txt,application/json" hidden></label>
+        <button class="btn sm primary" id="sbGo" style="margin-left:auto">Bring it in</button>
+      </div>
+      <p class="quiet" id="sbMsg" style="margin:9px 0 0"></p>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#sbX").onclick = closePicker;
+  const bring = async text => {
+    const msg = $("#sbMsg");
+    try{
+      const obj = await bringScenario(text);
+      closePicker(); render();
+      toast((obj.out.title || "Scenario") + " is ready to play");
+      if(obj.rs && obj.rs !== RS.meta.version)
+        setTimeout(() => toast("Written against ruleset " + obj.rs + "; may need a look"), 2400);
+    }catch(e){
+      msg.textContent = e.message || "That did not open.";
+      msg.style.color = "var(--rust)";
+    }
+  };
+  $("#sbGo").onclick = () => bring($("#sbIn").value);
+  $("#sbFile").onchange = e => {
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => bring(String(r.result));
+    r.readAsText(f);
   };
 }
 
@@ -9035,18 +9286,20 @@ function tableHTML(){
    one is actually the next mission. */
 function libraryHTML(){
   const list = loadLibrary();
-  if(!list.length) return "";
+  const bringIn = realmAvailable();   // scenarios only ever arrive here in camp
+  if(!list.length && !bringIn) return "";
   return `<div class="slab">
     <div class="head"><span class="eyebrow">Ready to play</span><span class="rule"></span>
-      <span class="quiet">${list.length}</span></div>
-    ${list.map(r => `<div class="grow">
+      <span class="quiet">${list.length}</span>
+      ${bringIn ? `<button class="chip gilt" id="libBring">Bring one in</button>` : ""}</div>
+    ${list.length ? list.map(r => `<div class="grow">
       <div class="grow-main">
         <div class="grow-name">${esc(r.out.title)}</div>
         <div class="grow-sub">${esc(new Date(r.at).toLocaleDateString())} · ${esc(r.out.type)}
           · ${r.out.enemyBudget} enemy points</div>
       </div>
       <div class="grow-r"><button class="btn sm" data-libopen="${esc(r.id)}">Open</button></div>
-    </div>`).join("")}
+    </div>`).join("") : `<p class="quiet" style="margin:0">Nothing yet — bring one in from the Reliquary.</p>`}
   </div>`;
 }
 /* What the table has already been through. A scenario used to vanish the
@@ -9079,6 +9332,8 @@ function bindTable(el){
   go("tbMarkers", () => openMarkers());
   go("tbEnd", askEnd);
   el.querySelectorAll("[data-libopen]").forEach(b => b.onclick = () => openLibraryScenario(b.dataset.libopen));
+  const libBring = el.querySelector("#libBring");
+  if(libBring) libBring.onclick = openScenarioBring;
   el.querySelectorAll("[data-histdel]").forEach(b => b.onclick = () => {
     deleteHistory(b.dataset.histdel); renderRealm(); toast("Removed");
   });
