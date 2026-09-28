@@ -4917,7 +4917,9 @@ function renderUnburied(b){
   $("#bandHead").innerHTML = `
     <div class="band">
       <input class="band-name" id="bandName" value="${esc(b.name)}" maxlength="42" spellcheck="false">
-      <button class="iconbtn" id="bandCarry" aria-label="Carry this band out or bring one in" title="Carry out / bring in">
+      <button class="iconbtn" id="bandCarry"
+        aria-label="${realmAvailable() ? "Carry this band out or bring one in" : "Send this band to camp"}"
+        title="${realmAvailable() ? "Carry out / bring in" : "Send to camp"}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
           <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
       <button class="btn sm ghost" id="bandAfter">After the battle</button>
@@ -6569,17 +6571,21 @@ async function openCarry(){
   const b = band();
   const code = await packCode(bandPayload(b));
   const stale = (RS.meta.version !== undefined);
+  /* This build is where a band is raised with AI, nothing more — there is
+     nowhere here to bring one back in. It only ever leaves, on its way to
+     camp, where the game actually happens. */
+  const sendOnly = !realmAvailable();
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="cyX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
-      <div class="eyebrow">Carry them out</div>
+      <div class="eyebrow">${sendOnly ? "Send to camp" : "Carry them out"}</div>
     </div>
 
-    <p class="lead">Your Unburied live on this phone and nowhere else. This is how
-      they leave it \u2014 to keep somewhere safe, to move to another phone, or to hand
-      to whoever is running a game.</p>
+    <p class="lead">${sendOnly
+      ? "Your Unburied are raised here and nowhere else. This is how they leave for camp \u2014 copy the code or save the file, then bring it in there to take them into a game."
+      : "Your Unburied live on this phone and nowhere else. This is how they leave it \u2014 to keep somewhere safe, to move to another phone, or to hand to whoever is running a game."}</p>
 
     <div class="slab" style="margin-top:14px">
       <div class="head"><span class="eyebrow">${esc(b.name)}</span><span class="rule"></span>
@@ -6593,7 +6599,7 @@ async function openCarry(){
       <p class="quiet" style="margin:9px 0 0">${code.length} characters \u00b7 written against ruleset ${esc(RS.meta.version)}</p>
     </div>
 
-    <div class="slab">
+    ${sendOnly ? "" : `<div class="slab">
       <div class="head"><span class="eyebrow">Bring one in</span><span class="rule"></span></div>
       <p class="quiet" style="margin:0 0 9px">Paste a code and the band is raised alongside
         yours. Nothing you already have is touched.</p>
@@ -6605,7 +6611,7 @@ async function openCarry(){
         <button class="btn sm primary" id="cyGo" style="margin-left:auto">Raise them</button>
       </div>
       <p class="quiet" id="cyMsg" style="margin:9px 0 0"></p>
-    </div>`;
+    </div>`}`;
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#cyX").onclick = closePicker;
@@ -6657,8 +6663,10 @@ async function openCarry(){
       msg.style.color = "var(--rust)";
     }
   };
-  $("#cyGo").onclick = () => bring($("#cyIn").value);
-  $("#cyFile").onchange = e => {
+  const go = $("#cyGo");
+  if(go) go.onclick = () => bring($("#cyIn").value);
+  const file = $("#cyFile");
+  if(file) file.onchange = e => {
     const f = e.target.files && e.target.files[0]; if(!f) return;
     const r = new FileReader();
     r.onload = () => bring(String(r.result));
