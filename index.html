@@ -177,10 +177,11 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
   content:"";position:absolute;left:14px;right:14px;top:6px;height:1px;
   background:linear-gradient(90deg,transparent,var(--gilt-deep),transparent);opacity:.5;
 }
+.m-crown{display:inline-flex;flex:none;vertical-align:-2px;color:var(--gilt);margin-right:4px}
 .m-name{font-family:"Cinzel",Georgia,serif;font-size:15px;letter-spacing:.05em;
-  margin-bottom:2px;display:block}
+  margin-bottom:2px;display:block;padding-right:56px}
 .m-epithet{font-family:"Spectral",Georgia,serif;font-style:italic;color:var(--gilt);
-  font-size:12.5px;margin-bottom:8px;display:block}
+  font-size:12.5px;margin-bottom:8px;display:block;padding-right:56px}
 .m-role{color:var(--ash-mute);font-size:12px;margin-bottom:9px;display:block}
 .m-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:10px 0}
 .m-stat{text-align:center;padding:6px 2px;border-radius:var(--r-sm);
@@ -4700,6 +4701,15 @@ const uid = () => Math.random().toString(36).slice(2, 9);
    display term the ruleset owns, same as it owns "Unburied". Older
    rulesets without the term still read "Leader". */
 function leaderTerm(){ return (RS.meta.terms && RS.meta.terms.leader) || "Leader"; }
+/* A small crown ahead of the name, not just a chip below it — so the
+   band's Oathbearer reads as one at a glance, wherever their name appears. */
+function crownHTML(size){
+  size = size || 13;
+  return `<span class="m-crown" title="${esc(leaderTerm())}" style="width:${size}px;height:${size}px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}">
+      <path d="M3 8l4 3 5-6 5 6 4-3-2 10H5L3 8z"/><path d="M5 21h14"/></svg></span>`;
+}
+function isLeaderM(m){ return (m.traits || []).includes("leader"); }
 /* The epithet is not a separate label — it is the second half of what
    people actually call them. "James" who is "the Deadeye" is "James the
    Deadeye" at the table, one name, not a name and a nickname underneath.
@@ -5009,7 +5019,7 @@ function renderUnburied(b){
     el.className = "marker" + (fielded(m) ? "" : " benched");
     el.innerHTML = `
       <div class="m-cost">${cost}<small>points</small></div>
-      <span class="m-name">${esc(fullName(m)) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
+      <span class="m-name">${isLeaderM(m) ? crownHTML(13) : ""}${esc(fullName(m)) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
       ${m.epitaph ? `<span class="m-epithet">“${esc(m.epitaph)}”</span>` : ""}
       ${m.role ? `<span class="m-role">${esc(m.role)}</span>` : ""}
       <div class="m-stats">
@@ -5915,30 +5925,74 @@ function rollMarkers(size, opts){
   return pool.map((kind, i) => ({n: i + 1, kind, state: "hidden"}));
 }
 
+/* Armour saves on damage that is not an attack (traps): one save die per
+   point, each at the target number or better cancels 1. Only a model whose
+   band is on this device has a known armour, so a foe just takes the damage
+   and the text says to roll its saves by hand. */
+function saveDieOf(u){
+  const m = u && u.side === "us" && !u.remote ? band().members.find(x => x.id === u.uid) : null;
+  const a = m && m.armour && m.armour[0] ? RS.armour.find(x => x.id === m.armour[0]) : null;
+  return a && a.save ? dieNum(a.save) : 0;
+}
+function damageWithSaves(u, amount, why){
+  const die = saveDieOf(u), rolls = [];
+  let taken = amount;
+  if(die){
+    taken = 0;
+    for(let i = 0; i < amount; i++){
+      const r = 1 + Math.floor(Math.random() * die); rolls.push(r);
+      if(r < RS.dice.target) taken++;
+    }
+  }
+  if(taken) hurtUnit(u, taken, why);
+  return {taken, rolls, die};
+}
+function addCond(u, c){ if(!(u.cond || []).includes(c)) u.cond = (u.cond || []).concat([c]); }
+
 /* A model walked into it. The app knows which model, so a trap lands where
-   it should rather than on whoever the table remembers last. */
+   it should rather than on whoever the table remembers last.
+   A visible trap asks for a Wits test first (the model may pass it), so it
+   comes back as pending until trapFailed() is called; a hidden trap allows
+   no test and Pins as well. */
 function resolveMarker(num, uid){
   const mk = Q.markers.find(x => x.n === num); if(!mk) return null;
   const k = markerKinds()[mk.kind];
   const u = uid ? Q.units.find(x => x.uid === uid) : null;
   mk.state = mk.kind === "nothing" ? "gone" : "sprung";
-  let extra = "";
+  let extra = "", pending = null;
   if(mk.kind === "ambushTrigger" || mk.kind === "hiddenUnit"){
     const hid = Q.units.find(x => x.side === "them" && x.hidden);
     if(hid){ revealFoe(hid.uid, "marker " + num); extra += " " + hid.name + " was waiting here."; }
   }
-  if(k.hurt && u){
-    if(u.remote && typeof sendEvent === "function"){
-      /* Someone else's model: post what happened and let their app apply it. */
-      sendEvent(u.uid, {damage: k.hurt, why: "marker " + num});
-    } else {
-      hurtUnit(u, k.hurt, "marker " + num);
-    }
-    extra = " " + u.name + " takes " + k.hurt + ".";
+  if(k.hurt && u && mk.kind === "trapVisible"){
+    pending = {n: num, uid: u.uid};
+    extra = " " + u.name + " makes a Wits test; on a fail, tap it below.";
+  } else if(k.hurt && u){
+    extra = " " + trapHit(u, k.hurt, "marker " + num, true);
   }
   qlog("Marker " + num + " — " + k.label + (u ? ", triggered by " + u.name : ""));
   questSave();
-  return {label: k.label, text: k.sprung + extra, hurt: k.hurt && u ? u.name : null};
+  return {label: k.label, text: k.sprung + extra, hurt: k.hurt && u && !pending ? u.name : null, pending};
+}
+/* Damage from a trap, with saves; hidden ones also Pin. Returns the sentence. */
+function trapHit(u, amount, why, pin){
+  if(u.remote && typeof sendEvent === "function"){
+    /* Someone else's model: post what happened and let their app roll its own
+       saves and apply it. */
+    sendEvent(u.uid, Object.assign({damage: amount, saves: true, why}, pin ? {cond: "pinned"} : {}));
+    return u.name + " takes up to " + amount + " (their app rolls the saves)" + (pin ? " and is Pinned." : ".");
+  }
+  const r = damageWithSaves(u, amount, why);
+  if(pin) addCond(u, "pinned");
+  questSave();
+  const d = r.die ? " Saves d" + r.die + ": " + r.rolls.join(", ") + "." : (u.side === "them" ? " Roll its saves by hand." : "");
+  return u.name + " takes " + r.taken + " of " + amount + "." + d + (pin ? " Pinned." : "");
+}
+function trapFailed(num, uid){
+  const u = Q.units.find(x => x.uid === uid); if(!u) return null;
+  const t = trapHit(u, 2, "marker " + num, false);
+  qlog("Marker " + num + " — " + u.name + " failed the Wits test");
+  return {label: "Trap", text: t, hurt: u.name};
 }
 function revealMarkers(nums){
   const out = [];
@@ -6048,7 +6102,7 @@ function drawCard(){
     </div>
 
     <div class="cardhead">
-      <div class="cardname">${esc(fullName(m)) || "Unnamed"}</div>
+      <div class="cardname">${isLeaderM(m) ? crownHTML(19) : ""}${esc(fullName(m)) || "Unnamed"}</div>
       ${m.epitaph ? `<div class="cardepi">“${esc(m.epitaph)}”</div>` : ""}
       <div class="cardrole">${esc(m.role || "")}${n > 1 ? (m.role ? " · " : "") + n + " models" : ""}
         <span class="cardpts">${unitCost(m)} points</span></div>
@@ -6520,7 +6574,7 @@ No other text.`;
       if(!made.length){ out.innerHTML = `<p class="quiet">Nothing came up. Try again.</p>`; }
       else out.innerHTML = made.map((m, i) => `
         <div class="pick" style="cursor:default;display:block">
-          <div class="pick-name" style="font-family:'Cinzel',serif;font-size:15px">${esc(fullName(m))}</div>
+          <div class="pick-name" style="font-family:'Cinzel',serif;font-size:15px">${isLeaderM(m) ? crownHTML(13) : ""}${esc(fullName(m))}</div>
           ${m.epitaph ? `<div class="cardepi" style="font-size:14px;margin:3px 0 5px">“${esc(m.epitaph)}”</div>` : ""}
           <div class="quiet">${esc(m.role)} · ${memberCost(m)} points</div>
           <div class="says-d" style="margin-top:6px">${esc(m.story)}</div>
@@ -7176,7 +7230,8 @@ function openMarkers(result){
 
     ${result && result.length ? `<div class="mkout">${result.map(r =>
       `<div class="mkres"><b>Marker ${r.n !== undefined ? r.n : one} — ${esc(r.label)}</b>
-        <span>${esc(r.text)}</span></div>`).join("")}</div>` : ""}`;
+        <span>${esc(r.text)}</span>
+        ${r.pending ? `<button class="btn sm" data-fail="${r.pending.n}" data-failwho="${esc(r.pending.uid)}" style="margin:6px 0 0">Failed the Wits test</button>` : ""}</div>`).join("")}</div>` : ""}`;
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#mkX").onclick = () => { mkPicked = new Set(); closePicker(); render(); };
@@ -7194,6 +7249,11 @@ function openMarkers(result){
     render();
     if(r && r.hurt) toast(r.hurt + " takes it");
   };
+  $("#sheet2In").querySelectorAll("[data-fail]").forEach(b2 => b2.onclick = () => {
+    const r = trapFailed(+b2.dataset.fail, b2.dataset.failwho);
+    openMarkers(r ? [Object.assign({n: +b2.dataset.fail}, r)] : null);
+    render();
+  });
   $("#sheet2In").querySelectorAll("[data-search]").forEach(b2 => b2.onclick = () => {
     mkPicked = new Set(); openSearch(+b2.dataset.search);
   });
@@ -7210,7 +7270,18 @@ function openMarkers(result){
    numbers mean, so the app rolls the die and whoever is running it says what
    turned up. What is found goes to the model that searched, and is kept apart
    from bought gear: finding something does not make a model cost more. */
-let searchRoll = null, searchWho = null;
+let searchRoll = null, searchWho = null, searchRow = null, searchCash = null, searchTrapText = "";
+/* The d100 table straight from the ruleset. */
+function lootRow(n){
+  return ((RS.loot || {}).table || []).find(r => n >= r.roll[0] && n <= r.roll[1]) || null;
+}
+/* "d6 Cash." / "2d6 Cash." -> a number, or null when the row is not cash. */
+function rollCash(text){
+  const m = /^(\d*)d(\d+)\s+Cash/i.exec(text || "");
+  if(!m) return null;
+  let t = 0; for(let i = 0; i < (+m[1] || 1); i++) t += 1 + Math.floor(Math.random() * +m[2]);
+  return t;
+}
 function openSearch(markerN){
   const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));
   if(!searchWho && standing.length) searchWho = standing[0].uid;
@@ -7231,29 +7302,49 @@ function openSearch(markerN){
         <button class="btn" id="seRoll" style="margin-left:0">Roll ${RS.dice.lootDie}</button>
         ${searchRoll ? `<span class="chip gilt mono" style="font-size:15px">${searchRoll}</span>` : ""}
       </div>
+      ${searchRow ? `<p class="lead" style="margin:0 0 11px"><b>${esc(searchRow.result)}</b>
+        ${searchCash ? `<br>Rolled: <b>${searchCash} Cash</b>.` : ""}
+        ${searchTrapText ? `<br>${esc(searchTrapText)}` : ""}
+        ${searchRow.itemChoice ? `<br>Finder chooses one of the listed items below.` : ""}
+        ${searchRow.itemMaxCost ? `<br>Pick from the gear list, worth up to ${searchRow.itemMaxCost} points, in the box below.` : ""}</p>` : ""}
       <div class="field" style="margin-bottom:11px"><label>What they found</label>
         <input class="input" id="seName" maxlength="50" placeholder="a coil of wire, a wet ledger, someone's teeth"></div>
       <div class="field" style="margin-bottom:11px"><label>Or something from the list</label>
         <select class="input" id="seItem">
           <option value="">nothing from the list</option>
-          ${Object.values(catOf("items")).map(o => `<option value="${esc(o.id)}">${esc(o.name)} \u2014 ${esc(o.desc)}</option>`).join("")}
+          ${Object.values(catOf("items")).map(o => `<option value="${esc(o.id)}" ${searchRow && searchRow.item === o.id ? "selected" : ""}>${esc(o.name)} \u2014 ${esc(o.desc)}</option>`).join("")}
         </select></div>
       <div class="field"><label>A note, if it needs one</label>
         <input class="input" id="seNote" maxlength="90" placeholder="what it does, or where it came from"></div>
       <div class="sheet-actions" style="margin-top:12px">
-        <button class="btn primary" id="seGive" style="margin-left:0">They take it</button></div>
+        <button class="btn primary" id="seGive" style="margin-left:0">${searchCash ? "Add " + searchCash + " Cash to the band" : "They take it"}</button></div>
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#seX").onclick = () => { searchRoll = null; closePicker(); render(); };
+  $("#seX").onclick = () => { searchRoll = null; searchRow = null; searchCash = null; searchTrapText = ""; closePicker(); render(); };
   $("#seWho").onchange = e => searchWho = e.target.value;
   $("#seRoll").onclick = () => {
     searchRoll = 1 + Math.floor(Math.random() * (dieNum(RS.dice.lootDie) || 100));
     searchWho = $("#seWho").value;
+    searchRow = lootRow(searchRoll);
+    if(searchRow) searchCash = rollCash(searchRow.result);
+    else searchCash = null;
+    if(searchRow && /trapped/i.test(searchRow.result)){
+      const u = Q.units.find(x => x.uid === searchWho);
+      if(u){ hurtUnit(u, 1, "trapped cache"); searchTrapText = u.name + " takes 1 damage, no save."; }
+    } else searchTrapText = "";
     openSearch(markerN);
   };
   $("#seGive").onclick = () => {
     const uidSel = $("#seWho").value;
     const u = Q.units.find(x => x.uid === uidSel);
+    if(searchCash && !$("#seName").value.trim() && !$("#seItem").value){
+      const b = band(); b.cash = (b.cash || 0) + searchCash; save();
+      const searchCashToast = "+" + searchCash + " Cash";
+      qlog((u ? u.name : "Someone") + " found " + searchCash + " Cash (" + RS.dice.lootDie + " " + searchRoll + ")");
+      searchRoll = null; searchRow = null; searchCash = null; searchTrapText = "";
+      questSave(); closePicker(); render(); toast(searchCashToast);
+      return;
+    }
     const itemId = $("#seItem").value;
     const listed = itemId ? catOf("items")[itemId] : null;
     const name = ($("#seName").value.trim()) || (listed ? listed.name : "");
@@ -7268,7 +7359,7 @@ function openSearch(markerN){
       if(m) giveFound(m, what);
     }
     qlog((u ? u.name : "Someone") + " found " + what.name + (searchRoll ? " (" + RS.dice.lootDie + " " + searchRoll + ")" : ""));
-    searchRoll = null;
+    searchRoll = null; searchRow = null; searchCash = null; searchTrapText = "";
     questSave(); closePicker(); render();
     toast((u ? u.name : "They") + " take " + what.name);
   };
@@ -8294,7 +8385,7 @@ function genDefaults(){
   return {wish: "", mode: "coop", type: "", theme: "", difficulty: "standard",
           length: "standard", players: 1,
           perBand: Math.max(50, bandSpent(b) || b.budget),
-          table: "", more: false, out: null, busy: false,
+          table: "", more: false, out: null, busy: false, savedId: null,
           addingTerrain: false, terrainDraft: null};
 }
 
@@ -8392,9 +8483,11 @@ function drawGenerate(ai){
         ${S.busy ? "Writing\u2026" : "Write it"}</button>
     </div>
     <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) + addTerrainHTML(S) + `
+      <p class="quiet" style="margin:11px 0 0">Kept in the Reliquary already — write another to
+        replace it, or done is done.</p>
       <div class="sheet-actions">
         <button class="btn ghost" id="gAgain" style="margin-left:0">Write another</button>
-        <button class="btn primary" id="gSave">Save to the Realm</button>
+        <button class="btn primary" id="gSave">Done</button>
       </div>` : ""}</div>`}`;
 
   $("#gX").onclick = () => { closePicker(); };
@@ -8622,6 +8715,14 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
     S.out = legaliseScenario(raw, {size, enemy, objList, objCount, markers, diff, len, type, theme, mode,
                                    players: S.players, perBand: S.perBand,
                                    chose: {type: !S.type, theme: !S.theme}});
+    /* Saved the moment it exists, not on a later tap — stepping away to do
+       something else (make a leader, check a card) must never lose a
+       scenario that only ever lived in memory until now. Re-rolling with
+       "Write another" replaces this same entry rather than piling up drafts. */
+    if(S.out){
+      if(S.savedId) updateLibrary(S.savedId, S.out);
+      else S.savedId = addToLibrary(S.out);
+    }
   }catch(e){
     S.out = null;
     toast(aiTrouble(e && e.code) || "That did not work");
@@ -9000,6 +9101,7 @@ function bindAddTerrain(S, ai){
       ground: TERRAIN_GROUNDS.includes(d.ground) ? d.ground : "even",
       size: TERRAIN_SIZES.some(sz => sz.id === d.size) ? d.size : "medium"});
     S.addingTerrain = false; S.terrainDraft = null;
+    if(S.savedId) updateLibrary(S.savedId, S.out);
     drawGenerate(ai);
   };
 }
@@ -9007,8 +9109,9 @@ function bindAddTerrain(S, ai){
 function bindScenario(){
   const again = $("#gAgain"), save = $("#gSave");
   if(again) again.onclick = async () => runGenerate(await getAI());
+  /* Already saved the moment it was written (see runGenerate) — this just
+     closes the sheet rather than saving a second, duplicate copy. */
   if(save) save.onclick = () => {
-    addToLibrary(genState.out);
     genState = null;
     closePicker(); render();
     toast("Kept in the Reliquary — take them out from the Realm when you're ready");
@@ -9023,8 +9126,19 @@ function loadLibrary(){
 function saveLibrary(list){ try{ localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); }catch(e){} }
 function addToLibrary(s){
   const list = loadLibrary();
-  list.unshift({id: uid(), at: Date.now(), out: s});
+  const id = uid();
+  list.unshift({id, at: Date.now(), out: s});
   saveLibrary(list.slice(0, 40));
+  return id;
+}
+/* Replaces an existing entry in place rather than adding a new one — used
+   while a scenario is still being written, so re-rolling it doesn't leave
+   behind a trail of drafts nobody asked to keep. */
+function updateLibrary(id, s){
+  const list = loadLibrary();
+  const rec = list.find(r => r.id === id);
+  if(rec) rec.out = s; else list.unshift({id, at: Date.now(), out: s});
+  saveLibrary(list);
 }
 function deleteFromLibrary(id){ saveLibrary(loadLibrary().filter(r => r.id !== id)); }
 
@@ -9338,7 +9452,7 @@ function applyEvent(id, ev){
   let seen = Q.seen || (Q.seen = {});
   if(seen[id]) return;
   seen[id] = 1;
-  if(ev.damage) hurtUnit(u, ev.damage, ev.why || "the scenario");
+  if(ev.damage){ if(ev.saves) damageWithSaves(u, ev.damage, ev.why || "the scenario"); else hurtUnit(u, ev.damage, ev.why || "the scenario"); }
   if(ev.cond && !(u.cond || []).includes(ev.cond)) u.cond = (u.cond || []).concat([ev.cond]);
   if(ev.strain) strainUnit(u, ev.strain);
   if(ev.found){
