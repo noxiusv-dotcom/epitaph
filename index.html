@@ -528,7 +528,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.14",
+    "version": "0.11.17",
     "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced",
     "units": {
       "distance": "cm",
@@ -536,7 +536,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
     },
     "principles": [
       "one throw per action: all dice for an action are thrown together and read at once",
-      "every test: roll the stat die, 4+ succeeds, 8+ is a Critical",
+      "every test: roll the stat die, 4 or better succeeds, 8 or better is a Critical",
       "modifiers step dice up or down, never add numbers",
       "XP, points and Cash share one price scale"
     ],
@@ -559,14 +559,17 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "honour": "honour",
       "forsake": "forsaken",
       "oath": "oath (one unit of debt)",
-      "obol": "Obol"
+      "obol": "Obol",
+      "leader": "Oathbearer",
+      "leaderNote": "display name only; the trait id stays \"leader\". Enemy sides without the narrative call theirs \"the leader\""
     },
     "reskinNote": "A model may display its own name for any gear it carries; the stats and cost always come from the id. `examples` is fiction only and never affects play.",
     "ruleCategories": {
       "core": "needed to play",
       "campaign": "needed for campaign play",
       "narrative": "optional story rules the table may switch on (tethers); epithets, titles and the Epitaph wall are narrative-only and change no stats"
-    }
+    },
+    "wording": "write thresholds as \"4 or better\" / \"8 or better\", never \"4+\" (players read it as \"more than 4\"). A d4 succeeds only on a 4."
   },
   "dice": {
     "ladder": [
@@ -956,8 +959,8 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "id": "sprint",
         "name": "Sprint",
         "strain": 1,
-        "desc": "One Move action goes 6 cm further.",
-        "distance": 6
+        "desc": "One Move action goes 5 cm further.",
+        "distance": 5
       },
       {
         "id": "hardHit",
@@ -1029,7 +1032,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
   },
   "melee": {
     "opposed": true,
-    "hitRule": "higher roll hits only if it is also 4+; tie or higher-under-4 = nothing",
+    "hitRule": "higher roll hits only if it is also 4 or better; tie, or a higher roll under 4, = nothing",
     "defenderHitsBack": true,
     "outnumber": {
       "stepUpPerExtraModel": 1,
@@ -1038,7 +1041,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
     }
   },
   "damage": {
-    "armourSave": "one save die per point of damage, thrown with the attack; each 4+ cancels 1",
+    "armourSave": "one save die per point of damage, thrown with the attack; each 4 or better cancels 1",
     "criticalIgnoresArmour": true,
     "atZero": "Down",
     "marked": [
@@ -1118,7 +1121,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       ],
       "measure": "fraction of starting points Down, removed or fled",
       "test": "will",
-      "tester": "Leader, else highest-cost standing model",
+      "tester": "Oathbearer, else highest-cost standing model",
       "onFail": "withdraw next round; battle ends after that round",
       "result": "the broken side withdraws for one round and the battle ends; the winner is decided by victory points (see scenario.victory); breaking gives the enemy the rout bonus"
     },
@@ -1217,9 +1220,9 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
   "traits": [
     {
       "id": "leader",
-      "name": "Leader",
+      "name": "Oathbearer",
       "cost": 6,
-      "desc": "+1 Nerve each Tempo while standing. One per side. Rolls initiative and break tests.",
+      "desc": "The one who called the band back from the grave; the rest serve them. +1 Nerve each Tempo while standing. One per side. Rolls initiative and break tests.",
       "unique": true
     },
     {
@@ -1420,7 +1423,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "id": "mindless",
       "name": "Mindless",
       "cost": -4,
-      "desc": "Cannot spend or benefit from Nerve (no rerolls or cancels for it). Cannot be the Leader, carry objectives, or use Interact actions.",
+      "desc": "Cannot spend or benefit from Nerve (no rerolls or cancels for it). Cannot be the Oathbearer, carry objectives, or use Interact actions.",
       "verified": "0.9: was -6 with \"adds nothing to Nerve\", but Nerve is per side, so that half cost nothing; replaced with a real drawback and repriced"
     },
     {
@@ -2365,7 +2368,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
     }
   ],
   "casting": {
-    "knack": "one Power action, no roll; unwilling target may resist with Will 4+",
+    "knack": "one Power action, no roll; unwilling target may resist with Will 4 or better",
     "signature": {
       "throw": [
         "will",
@@ -3680,7 +3683,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
     },
     {
       "round": "0.11.1",
-      "result": "added tethers (kinds, debt, fraying, snapping, Unbound or Laid to rest) and the Epitaph wall; story only, no cost changes; 0.11.2 wording: observance / honoured / forsaken; 0.11.3 debt counted in oaths; tether kind Oath renamed Quarry; 0.11.4 added the obol (pay to count a forsaken oath as kept); 0.11.5 default is one band tether held by the Leader; personal tethers are the optional \"Every soul bound\" rule; 0.11.6 one observance per battle is enough; extra observances earn Grace (max 1), which can replace an obol; 0.11.7 removed Grace; each observance keeps one oath with no per-battle limit; default debt raised to 10; 0.11.8 each tether kind has its own debt (Blood/Tithe 15 down to Reckoning/Mercy 4) and a stated way each performance counts; 0.11.9 tether kinds revised: Blood = enemies taken Down; Ground includes suspicion markers; Vigil replaced by Last Rites (tend any fallen body); Tithe replaced by Offering (Burnouts); Mercy replaced by Lantern (Leader standing each round); Reckoning needs a caster; Quarry sworn kind explained; unwinnable battles not checked; 0.11.10 Last Rites is base contact, no action; Lantern replaced by Restraint (Leader wounds but never kills, debt 5); every tether has a reason the Leader is bound"
+      "result": "added tethers (kinds, debt, fraying, snapping, Unbound or Laid to rest) and the Epitaph wall; story only, no cost changes; 0.11.2 wording: observance / honoured / forsaken; 0.11.3 debt counted in oaths; tether kind Oath renamed Quarry; 0.11.4 added the obol (pay to count a forsaken oath as kept); 0.11.5 default is one band tether held by the Oathbearer; personal tethers are the optional \"Every soul bound\" rule; 0.11.6 one observance per battle is enough; extra observances earn Grace (max 1), which can replace an obol; 0.11.7 removed Grace; each observance keeps one oath with no per-battle limit; default debt raised to 10; 0.11.8 each tether kind has its own debt (Blood/Tithe 15 down to Reckoning/Mercy 4) and a stated way each performance counts; 0.11.9 tether kinds revised: Blood = enemies taken Down; Ground includes suspicion markers; Vigil replaced by Last Rites (tend any fallen body); Tithe replaced by Offering (Burnouts); Mercy replaced by Lantern (Leader standing each round); Reckoning needs a caster; Quarry sworn kind explained; unwinnable battles not checked; 0.11.10 Last Rites is base contact, no action; Lantern replaced by Restraint (Leader wounds but never kills, debt 5); every tether has a reason the Oathbearer is bound"
     },
     {
       "round": "0.11.12",
@@ -3701,6 +3704,22 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "result": "each Size gets benefits and drawbacks (Small hard to hit at range, Huge easy to hit but immovable and tramples)",
       "toSimulate": [
         "Size costs with effects: Small vs shooters, Huge vs shooters and vs melee; Large/Huge at +0 and +10"
+      ]
+    },
+    {
+      "round": "0.11.15",
+      "result": "Leader renamed Oathbearer (display only, id leader): the one who called the band back; the rest serve them"
+    },
+    {
+      "round": "0.11.16",
+      "result": "wording only: \"4+\"/\"8+\" written as \"4 or better\"/\"8 or better\" in rule text"
+    },
+    {
+      "round": 12,
+      "result": "Move 10 with current weapon ranges is close to even (shooters 41-48% vs melee depending on build); shrinking ranges x0.85 or moving zones to 50 cm helps melee further, so ranges stay as they are and zones stay 60 cm apart. Terrain about a third blocked; at 45% melee wins ~70%. Sprint set to +5 cm (round number, slightly more even). With rounds uncapped, ~240-point crews ran 9-11 rounds.",
+      "flags": [
+        "melee crews that took Heavy armour (d8 save, Move -4) won 62% in long games; armour at 18 looks underpriced for longer games - reprice test next round",
+        "the sim modelled \"ended its move in cover = no long shots\" as a board stand-in; it is not a rule"
       ]
     }
   ],
@@ -3809,7 +3828,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "id": "signature",
       "name": "Reckoning",
       "short": "Major",
-      "blurb": "Once a battle. Roll Will 4+ to make it work, and the Risk die can backfire on you.",
+      "blurb": "Once a battle. Roll Will 4 or better to make it work, and the Risk die can backfire on you.",
       "order": 2
     }
   ],
@@ -4222,8 +4241,8 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
     "defenceDominance": "round 9-10: 22 points spent on armour/Move or +2 Health won 83-85%; Aim/Fight steps 66%; Tough+Quick+Sight 47% vs a 51% control. Part is the line board (it ignores position, which Quick and Sight pay for). Co-design view: Health steps and Medium armour are the likeliest underpricings. Next sim round: test Health step 26 and Medium armour 17, and give the harness a hold/position policy before repricing positional upgrades."
   },
   "tethers": {
-    "desc": "The Unburied are called back from the grave. A tether binds each one to the living world. Each tether has an observance, a rite the Unburied must perform in every battle to honour it, until the debt is paid.",
-    "appliesTo": "default: the Leader only (band mode). Optional rule: every character and squad",
+    "desc": "The Oathbearer called the Unburied back from the grave, and they serve the Oathbearer, willing or not. The one who calls the dead owes the grave for it: a tether binds the Oathbearer to the living world, and the band is bound to them. The tether has an observance to be honoured until its debt of oaths is paid.",
+    "appliesTo": "default: the Oathbearer only (band mode). Optional rule: every character and squad",
     "assign": {
       "options": [
         "chosen at recruitment",
@@ -4321,9 +4340,9 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
         "id": "restraint",
         "name": "Restraint",
         "observance": "wound, but never kill",
-        "counts": "each battle in which the Leader deals damage to at least one enemy but takes no enemy Down (a Finish counts as taking Down)",
+        "counts": "each battle in which the Oathbearer deals damage to at least one enemy but takes no enemy Down (a Finish counts as taking Down)",
         "debt": 5,
-        "broken": "if the Leader takes an enemy Down, the oath is forsaken for that battle; other members may kill freely",
+        "broken": "if the Oathbearer takes an enemy Down, the oath is forsaken for that battle; other members may kill freely",
         "why": "Killed too freely in life. Now they must hold their hand: wound, but never kill."
       }
     ],
@@ -4398,20 +4417,20 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
       "default": "band",
       "optional": "everySoul",
       "band": {
-        "desc": "Only the Leader is tethered; the band is bound to the Leader. One tether, one observance, one debt of oaths per band.",
+        "desc": "Only the Oathbearer is tethered; the band is bound to the Oathbearer. One tether, one observance, one debt of oaths per band.",
         "honour": "any fielded member may perform the observance. Each time it is performed, one oath is kept; there is no limit per battle. At least one in a battle is needed or the tether frays",
-        "obolAndMend": "work as normal, on the Leader's tether",
-        "snap": "the Leader returns to the grave (stone on the Epitaph wall); the band chooses a new Leader, who binds a new tether (new kind, debt starts over); the band loses 2 Reputation",
-        "leaderDies": "if the Leader dies on the Fate table or is dismissed, the tether passes to the new Leader with its kept oaths intact",
-        "severed": "the Leader is free (stay Unbound or be laid to rest); the band then binds a new tether under its current or next Leader. Each tether is a chapter of the campaign",
-        "kindsNote": "Reckoning needs a caster in the band, not the Leader"
+        "obolAndMend": "work as normal, on the Oathbearer's tether",
+        "snap": "the Oathbearer returns to the grave (stone on the Epitaph wall); the band chooses a new Oathbearer, who binds a new tether (new kind, debt starts over); the band loses 2 Reputation",
+        "leaderDies": "if the Oathbearer dies on the Fate table or is dismissed, the tether passes to the new Oathbearer with its kept oaths intact",
+        "severed": "the Oathbearer is free (stay Unbound or be laid to rest); the band then binds a new tether under its current or next Oathbearer. Each tether is a chapter of the campaign",
+        "kindsNote": "Reckoning needs a caster in the band, not the Oathbearer"
       },
       "everySoul": {
         "desc": "Optional rule \"Every soul bound\": every character and squad has its own tether, as written above. More housekeeping, a story for every character."
       }
     },
     "notChecked": "a battle where a tether cannot possibly be honoured (Reckoning with no caster fielded, Quarry with none of the sworn kind) is not checked: no oath kept, no fraying",
-    "lore": "every tether says why the Leader was bound; the app shows it when the tether is bound and on the Epitaph wall",
+    "lore": "every tether says why the Oathbearer was bound; the app shows it when the tether is bound and on the Epitaph wall",
     "optional": true,
     "category": "narrative",
     "optionalNote": "story rule, off unless the table turns it on for a campaign; changes no points and nothing else depends on it"
@@ -4667,6 +4686,10 @@ const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, m =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 const uid = () => Math.random().toString(36).slice(2, 9);
+/* The trait id stays "leader" for good — what the table calls it is a
+   display term the ruleset owns, same as it owns "Unburied". Older
+   rulesets without the term still read "Leader". */
+function leaderTerm(){ return (RS.meta.terms && RS.meta.terms.leader) || "Leader"; }
 /* The epithet is not a separate label — it is the second half of what
    people actually call them. "James" who is "the Deadeye" is "James the
    Deadeye" at the table, one name, not a name and a nickname underneath.
@@ -4983,7 +5006,7 @@ function renderUnburied(b){
         <div class="m-stat"><b>${m.wounds}</b><span>${esc(RSX.stat.wounds.name)}</span></div>
       </div>
       <div class="m-foot">
-        ${(m.traits || []).includes("leader") ? `<span class="chip gilt">Leader</span>` : ""}
+        ${(m.traits || []).includes("leader") ? `<span class="chip gilt">${esc(leaderTerm())}</span>` : ""}
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
         <span class="chip">${activationsOf(m)} act</span>
@@ -5605,7 +5628,10 @@ function archiveQuest(){
     vpUs: Q.vp.us, vpThem: Q.vp.them,
     usLost: us.lost, usTotal: us.total,
     themLost: them.lost, themTotal: them.total,
-    result
+    result,
+    /* the pristine scenario, if this quest started from one — lets the
+       record be opened and read, or the same scenario started again fresh */
+    scenario: Q.scenarioSource || null
   };
   const list = loadHistory();
   list.unshift(rec);
@@ -5685,7 +5711,7 @@ function questBegin(size, opts){
      added afterward are unaffected until their own first mission. */
   if(!b.sealed){
     const leader = leaderOf(b);
-    if(!leader){ toast("Someone needs the Leader trait before the band's first mission"); return false; }
+    if(!leader){ toast("Someone needs to be the " + leaderTerm() + " before the band's first mission"); return false; }
     b.sealed = true;
     b.sealedMemberIds = b.members.map(m => m.id);
     bindTether(b);
@@ -6358,12 +6384,12 @@ async function openConjure(){
     <div class="field" style="margin-bottom:12px"><label>Raise as</label>
       <div class="sheet-actions" style="flex-wrap:wrap;gap:7px" id="cjWho">
         <button type="button" class="chip ${conjureLeader ? "gilt" : ""}" data-who="leader"
-          style="cursor:pointer;font-size:13px;padding:7px 13px">Leader</button>
+          style="cursor:pointer;font-size:13px;padding:7px 13px">${esc(leaderTerm())}</button>
         <button type="button" class="chip ${conjureLeader ? "" : "gilt"}" data-who="member"
           style="cursor:pointer;font-size:13px;padding:7px 13px">One of the band</button>
       </div></div>
     <p class="lead" id="cjWhoNote">${conjureLeader
-      ? "Whoever you choose here is bound as the band's Leader" + (leader ? `, replacing <b>${esc(fullName(leader))}</b>` : "") + ". Describe what you want and four of them will be raised, built and costed against the ruleset."
+      ? "Whoever you choose here is bound as the band's " + esc(leaderTerm()) + (leader ? `, replacing <b>${esc(fullName(leader))}</b>` : "") + ". Describe what you want and four of them will be raised, built and costed against the ruleset."
       : leader ? `Describe what you want and four of them will be raised as someone who fits alongside <b>${esc(fullName(leader))}</b>, built and costed against the ruleset.`
       : "Describe what you want and four of them will be raised, built and costed against the ruleset."}
       Nothing is added until you choose one.</p>
@@ -6410,17 +6436,17 @@ sits with them, not a genre default of grief and horror.
 Tone: ${tone}.
 Brief: ${brief}.
 ${conjureLeader ? `
-This one is the band's LEADER${leader ? `, raised to replace ${leader.name}` : ""} — the one
-the rest are raised around, or follow already. Write someone the story can be told about, not
-necessarily the loudest voice in the room: authority can be quiet, earned, reluctant, or
-terrible. Do not mention a "leader" trait or any game term — just write who they are; the app
-handles the mechanics.` : leader ? `
-The band already has a Leader: ${leader.name}${leader.epithet ? ` ("${leader.epithet}")` : ""},
+This one is the band's ${leaderTerm().toUpperCase()}${leader ? `, raised to replace ${leader.name}` : ""} —
+the one the rest are raised around, or follow already. Write someone the story can be told
+about, not necessarily the loudest voice in the room: authority can be quiet, earned,
+reluctant, or terrible. Do not mention a "leader" trait or any game term — just write who
+they are; the app handles the mechanics.` : leader ? `
+The band already has a ${leaderTerm()}: ${leader.name}${leader.epithet ? ` ("${leader.epithet}")` : ""},
 ${leader.role || "no stated role"}. Their story so far: ${leader.story || "(not written down)"}.
 Write these four as people who could plausibly stand with ${leader.name} — raised by them,
 bound to the same debt, following the same road — not as strangers. At least gesture at the
-connection in the story (how they came to be raised, or what ties them to the Leader), but do
-not just repeat the Leader's own concept back with a different name.` : ""}
+connection in the story (how they came to be raised, or what ties them to the ${leaderTerm()}),
+but do not just repeat the ${leaderTerm()}'s own concept back with a different name.` : ""}
 
 For each, give a NAME and an EPITHET as two SEPARATE strings — the app joins them into one
 displayed name itself ("James" + "the Deadeye" becomes "James the Deadeye" on the card), so
@@ -6729,7 +6755,7 @@ async function openMemberSend(m){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Send to camp</div></div>
     <p class="lead">${esc(fullName(m))} leaves the Reliquary alone \u2014 to join a band
-      already at camp, a Leader raised to replace one who did not come back, or
+      already at camp, a ${esc(leaderTerm())} raised to replace one who did not come back, or
       anyone else. Bring them in from the roster there.</p>
     <div class="slab" style="margin-top:14px">
       <div class="head"><span class="eyebrow">${esc(fullName(m))}</span><span class="rule"></span></div>
@@ -6776,7 +6802,7 @@ function openMemberBring(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Bring one in</div></div>
     <p class="lead">Paste a code for one of the Unburied sent alone from the Reliquary
-      \u2014 a new Leader, or anyone else \u2014 and they join ${esc(band().name)}.</p>
+      \u2014 a new ${esc(leaderTerm())}, or anyone else \u2014 and they join ${esc(band().name)}.</p>
     <div class="slab" style="margin-top:14px">
       <textarea class="input mono" id="mbIn" rows="3" placeholder="EPITAPHM1Z:\u2026"
         style="font-size:11px;line-height:1.4"></textarea>
@@ -6802,7 +6828,7 @@ function openMemberBring(){
       /* Only one Leader at a time — an arriving one takes the trait cleanly
          rather than sitting alongside whoever already holds it. */
       if((m.traits || []).includes("leader") && leaderOf(b))
-        toast("Already has a Leader \u2014 give the trait to whoever should carry it, by hand");
+        toast("Already has a " + leaderTerm() + " \u2014 give the trait to whoever should carry it, by hand");
       b.members.push(m); save(); closePicker(); render();
       toast(fullName(m) + " joins " + b.name);
       if(obj.rs && obj.rs !== RS.meta.version)
@@ -6912,7 +6938,7 @@ function askTether(b){
   const leader = (b.members || []).find(m => m.id === t.leaderId);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">The tether</div></div>
-    <p class="lead">${esc(leader ? leader.name : "The Leader")}'s tether is
+    <p class="lead">${esc(leader ? leader.name : "The " + leaderTerm())}'s tether is
       <b>${esc(kind.name)}</b>: ${esc(kind.observance)}. Was it honoured this battle?</p>
     <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn primary" id="tqYes" style="margin-left:0">Honoured</button>
@@ -6943,7 +6969,7 @@ function afterTetherCheck(b){
     const leader = (b.members || []).find(m => m.id === t.leaderId);
     $("#sheet2In").innerHTML = `
       <div class="sheet-head"><div class="eyebrow">The tether is paid</div></div>
-      <p class="lead">Every oath is kept. What does ${esc(leader ? leader.name : "the Leader")} do now?</p>
+      <p class="lead">Every oath is kept. What does ${esc(leader ? leader.name : "the " + leaderTerm())} do now?</p>
       <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
         <button class="btn primary" id="tqUnbound" style="margin-left:0">Stay, Unbound</button>
         <button class="btn ghost" id="tqRest">Lay them to rest — +2 Reputation</button>
@@ -7031,7 +7057,7 @@ function openNerve(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Nerve</div></div>
     <p class="lead"><b>${Q.nerve.us}</b> in the pool, capped at ${RS.nerve.cap}. It refills at Tempo:
-      ${RS.nerve.perRound} a round, +${RS.nerve.leaderStandingBonus} while your Leader stands,
+      ${RS.nerve.perRound} a round, +${RS.nerve.leaderStandingBonus} while your ${esc(leaderTerm())} stands,
       +${RS.nerve.underdogBonus} if you have lost more points than the enemy.</p>
     <div class="slab" style="margin-top:14px">
       ${RS.nerve.spends.map(sp => `
@@ -8039,7 +8065,7 @@ function snapTether(b){
   const leader = (b.members || []).find(m => m.id === t.leaderId);
   if(leader) leader.traits = (leader.traits || []).filter(id => id !== "leader");
   b.reputation = (b.reputation || 0) - 2;
-  qlogBand(b, (leader ? leader.name : "The Leader") + "'s tether snaps — they return to the grave");
+  qlogBand(b, (leader ? leader.name : "The " + leaderTerm()) + "'s tether snaps — they return to the grave");
   b.tether = null;
 }
 /* The debt is paid; the Leader chooses what that means for them. */
@@ -8055,7 +8081,7 @@ function tetherLayToRest(b){
   const leader = (b.members || []).find(m => m.id === t.leaderId);
   if(leader) leader.fielded = false;
   b.reputation = (b.reputation || 0) + 2;
-  qlogBand(b, (leader ? leader.name : "The Leader") + " is laid to rest, with honour");
+  qlogBand(b, (leader ? leader.name : "The " + leaderTerm()) + " is laid to rest, with honour");
   b.tether = null;
   save();
 }
@@ -8097,7 +8123,7 @@ function tetherHTML(b){
   return `<div class="slab" style="border-color:${t.frayed ? "var(--rust)" : "var(--gilt-deep)"}">
     <div class="head"><span class="eyebrow">Tether — ${esc(kind.name)}</span><span class="rule"></span>
       <span class="chip ${t.frayed ? "bad" : "gilt"}">${t.kept} of ${t.debt} oaths</span></div>
-    <p class="quiet" style="margin:0">${esc(leader ? leader.name : "The Leader")} must ${esc(kind.observance)}.
+    <p class="quiet" style="margin:0">${esc(leader ? leader.name : "The " + leaderTerm())} must ${esc(kind.observance)}.
       ${t.frayed ? "Forsaken once already — it will snap if that happens again." : ""}</p>
     ${t.frayed ? `<div class="sheet-actions" style="flex-wrap:wrap;gap:7px">
       <button class="btn sm" data-tmend="rite">Mend — 10 Cash</button>
@@ -8227,12 +8253,26 @@ function mapKeyHTML(map){
 
 let genState = null;
 
+/* A fixed vocabulary so the AI (and a hand-added piece) always names a size
+   the table can actually build to, instead of a free-text guess. */
+const TERRAIN_ROLES = ["cover", "blocking", "high", "objective", "hazard", "marker"];
+const TERRAIN_GROUNDS = ["even", "rough", "hazardous", "impassable"];
+const TERRAIN_SIZES = [
+  {id: "small", name: "Small", desc: "about the footprint of a crate or a boulder, 5–10cm across"},
+  {id: "medium", name: "Medium", desc: "about the footprint of a wall section or a wreck, 10–20cm across"},
+  {id: "large", name: "Large", desc: "about the footprint of a tower or a building, 20cm or more across"}
+];
+function terrainSizeName(id){
+  return (TERRAIN_SIZES.find(sz => sz.id === id) || TERRAIN_SIZES[1]).name;
+}
+
 function genDefaults(){
   const b = band();
   return {wish: "", mode: "coop", type: "", theme: "", difficulty: "standard",
           length: "standard", players: 1,
           perBand: Math.max(50, bandSpent(b) || b.budget),
-          table: "", more: false, out: null, busy: false};
+          table: "", more: false, out: null, busy: false,
+          addingTerrain: false, terrainDraft: null};
 }
 
 async function openGenerate(){
@@ -8328,7 +8368,7 @@ function drawGenerate(ai){
       <button class="btn primary" id="gGo" ${S.busy ? "disabled" : ""} style="margin-left:0">
         ${S.busy ? "Writing\u2026" : "Write it"}</button>
     </div>
-    <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) + `
+    <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) + addTerrainHTML(S) + `
       <div class="sheet-actions">
         <button class="btn ghost" id="gAgain" style="margin-left:0">Write another</button>
         <button class="btn primary" id="gSave">Save to the Realm</button>
@@ -8357,7 +8397,7 @@ function drawGenerate(ai){
   const df = $("#gDiff"); if(df) df.onchange = e => { keep(); S.difficulty = e.target.value; drawGenerate(ai); };
   const ln = $("#gLen"); if(ln) ln.onchange = e => { keep(); S.length = e.target.value; drawGenerate(ai); };
   $("#gGo").onclick = () => { keep(); runGenerate(ai); };
-  if(S.out) bindScenario();
+  if(S.out){ bindScenario(); bindAddTerrain(S, ai); }
 }
 
 /* ---- asking ---- */
@@ -8390,8 +8430,9 @@ async function runGenerate(ai){
   const objCount = sealed ? (type.baseObjectives || 2) : null;
   const markers = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
 
-  const roles = "cover, blocking, high, objective, hazard, marker";
-  const grounds = "even, rough, hazardous, impassable";
+  const roles = TERRAIN_ROLES.join(", ");
+  const grounds = TERRAIN_GROUNDS.join(", ");
+  const sizes = TERRAIN_SIZES.map(sz => sz.id + " (" + sz.desc + ")").join("; ");
   const prompt = `You are running tonight's game of ${RS.meta.name} for a table that has shown
 up to play, not to read a rulebook. A player's band is called the Unburied.
 
@@ -8434,7 +8475,8 @@ WHAT TO WRITE
   deployment where each side starts, by table edge or feature.
 
   terrain    four to eight pieces to build or stand in. Each: name, note (how many, what it
-             looks like), role (one of ${roles}), ground (one of ${grounds}).
+             looks like), role (one of ${roles}), ground (one of ${grounds}), size (one of
+             ${sizes} — pick the one closest to what the piece would actually take up).
              If a piece is something they probably do not own, say so in "note".
 
   events     two to four things that happen on a named round. Each: round, title, text
@@ -8538,7 +8580,7 @@ Reply with ONLY this JSON and nothing else:
 {"title":"...","premise":"...","briefing":"...","scenery":"...","deployment":"...",
 ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes":[{"trigger":"...","title":"...","text":"...","revealsObjectives":false}]},' : ""}
  "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
- "terrain":[{"name":"...","note":"...","role":"cover","ground":"even"}],
+ "terrain":[{"name":"...","note":"...","role":"cover","ground":"even","size":"medium"}],
  "events":[{"round":3,"title":"...","text":"...","effect":{"type":"damage","amount":"1","where":"within 10 cm of the bell tower (3)","who":"every model"}}],
  "map":{"note":"one line on the table","zones":[{"label":"...","side":"a","x":5,"y":40,"w":18,"h":30}],
         "features":[{"label":"...","role":"cover","ground":"rough","x":50,"y":50,"r":8}]},
@@ -8569,8 +8611,8 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
 function legaliseScenario(raw, ctx){
   if(!raw || typeof raw !== "object") return null;
   const str = (v, n) => String(v == null ? "" : v).slice(0, n);
-  const ROLES = ["cover", "blocking", "high", "objective", "hazard", "marker"];
-  const GROUNDS = ["even", "rough", "hazardous", "impassable"];
+  const ROLES = TERRAIN_ROLES;
+  const GROUNDS = TERRAIN_GROUNDS;
   const num = (v, lo, hi, dflt) => {
     const n = Math.round(+v);
     return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
@@ -8616,7 +8658,8 @@ function legaliseScenario(raw, ctx){
     if(!t || !t.name) return;
     out.terrain.push({name: str(t.name, 50), note: str(t.note, 140),
       role: ROLES.includes(t.role) ? t.role : "cover",
-      ground: GROUNDS.includes(t.ground) ? t.ground : "even"});
+      ground: GROUNDS.includes(t.ground) ? t.ground : "even",
+      size: TERRAIN_SIZES.some(sz => sz.id === t.size) ? t.size : "medium"});
   });
 
   /* the map, clamped to the table */
@@ -8786,6 +8829,7 @@ function scenarioHTML(s){
     ${s.scenery ? `<p class="quiet" style="margin:0 0 10px">${esc(s.scenery)}</p>` : ""}
     ${s.terrain.map(t => `<div class="says">
       <div class="says-n">${esc(t.name)} <span class="chip">${esc(t.role)}</span>
+        <span class="chip mono">${esc(terrainSizeName(t.size))}</span>
         ${t.ground !== "even" ? `<span class="chip bad">${esc(t.ground)}</span>` : ""}</div>
       ${t.note ? `<div class="says-d">${esc(t.note)}</div>` : ""}</div>`).join("")}
   </div>` : ""}
@@ -8865,6 +8909,72 @@ function enemyLine(m){
   const t = (m.traits || []).map(id => (catOf("traits")[id] || {}).name).filter(Boolean).join(", ");
   return [bits, m.wounds + " " + RSX.stat.wounds.name, w, t].filter(Boolean).join("  ·  ");
 }
+/* ---- adding a terrain piece by hand, after the AI has written its own ---- */
+function terrainDraftDefaults(){
+  return {name: "", note: "", role: "cover", ground: "even", size: "medium"};
+}
+function addTerrainHTML(S){
+  const t = S.out.terrain, full = t.length >= 8;
+  const d = S.terrainDraft || terrainDraftDefaults();
+  return `<div class="slab">
+    <div class="head"><span class="eyebrow">Add a piece by hand</span><span class="rule"></span>
+      ${full ? `<span class="quiet">eight is plenty for one table</span>` :
+        `<button class="chip ${S.addingTerrain ? "gilt" : ""}" id="atToggle">${S.addingTerrain ? "− cancel" : "+ add terrain"}</button>`}</div>
+    ${S.addingTerrain && !full ? `
+    <div class="field" style="margin-bottom:9px"><label>Name</label>
+      <input class="input" id="atName" value="${esc(d.name)}" placeholder="a broken cart, a well, a fallen idol"></div>
+    <div class="field" style="margin-bottom:9px"><label>Note (how many, what it looks like)</label>
+      <input class="input" id="atNote" value="${esc(d.note)}"></div>
+    <div class="row3" style="margin-bottom:9px">
+      <div class="field"><label>Role</label>
+        <select class="input" id="atRole">
+          ${TERRAIN_ROLES.map(r => `<option value="${esc(r)}" ${d.role === r ? "selected" : ""}>${esc(r)}</option>`).join("")}
+        </select></div>
+      <div class="field"><label>Ground</label>
+        <select class="input" id="atGround">
+          ${TERRAIN_GROUNDS.map(g => `<option value="${esc(g)}" ${d.ground === g ? "selected" : ""}>${esc(g)}</option>`).join("")}
+        </select></div>
+      <div class="field"><label>Size</label>
+        <select class="input" id="atSize">
+          ${TERRAIN_SIZES.map(sz => `<option value="${esc(sz.id)}" ${d.size === sz.id ? "selected" : ""}>${esc(sz.name)}</option>`).join("")}
+        </select></div>
+    </div>
+    <button class="btn sm" id="atAdd">Add</button>` : ""}
+  </div>`;
+}
+function bindAddTerrain(S, ai){
+  const toggle = $("#atToggle");
+  if(toggle) toggle.onclick = () => {
+    S.addingTerrain = !S.addingTerrain;
+    S.terrainDraft = S.addingTerrain ? terrainDraftDefaults() : null;
+    drawGenerate(ai);
+  };
+  const add = $("#atAdd");
+  if(!add) return;
+  const keepDraft = () => {
+    const d = S.terrainDraft;
+    const nm = $("#atName"); if(nm) d.name = nm.value;
+    const nt = $("#atNote"); if(nt) d.note = nt.value;
+    const rl = $("#atRole"); if(rl) d.role = rl.value;
+    const gr = $("#atGround"); if(gr) d.ground = gr.value;
+    const sz = $("#atSize"); if(sz) d.size = sz.value;
+  };
+  ["atName", "atNote"].forEach(id => { const el = $("#" + id); if(el) el.oninput = keepDraft; });
+  ["atRole", "atGround", "atSize"].forEach(id => { const el = $("#" + id); if(el) el.onchange = keepDraft; });
+  add.onclick = () => {
+    keepDraft();
+    const d = S.terrainDraft;
+    const name = (d.name || "").trim().slice(0, 50);
+    if(!name){ toast("Give it a name first"); return; }
+    S.out.terrain.push({name, note: (d.note || "").trim().slice(0, 140),
+      role: TERRAIN_ROLES.includes(d.role) ? d.role : "cover",
+      ground: TERRAIN_GROUNDS.includes(d.ground) ? d.ground : "even",
+      size: TERRAIN_SIZES.some(sz => sz.id === d.size) ? d.size : "medium"});
+    S.addingTerrain = false; S.terrainDraft = null;
+    drawGenerate(ai);
+  };
+}
+
 function bindScenario(){
   const again = $("#gAgain"), save = $("#gSave");
   if(again) again.onclick = async () => runGenerate(await getAI());
@@ -8914,6 +9024,27 @@ function openLibraryScenario(id){
     deleteFromLibrary(id);
     startFromScenario(rec.out);
   };
+}
+
+/* Past scenarios keep their own written brief and can be read again, or
+   started fresh as a brand new quest (its own history entry when that one
+   ends too — nothing here is destructive to what is already recorded). */
+function openHistoryScenario(id){
+  const rec = loadHistory().find(r => r.id === id); if(!rec || !rec.scenario) return;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="hsX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Played ${esc(new Date(rec.at).toLocaleDateString())}</div></div>
+    ${scenarioHTML(rec.scenario)}
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
+      <button class="btn danger ghost" id="hsDel" style="margin-left:0">Delete record</button>
+      <button class="btn primary" id="hsAgain" style="margin-left:auto">Play again</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#hsX").onclick = closePicker;
+  $("#hsDel").onclick = () => { deleteHistory(id); closePicker(); render(); toast("Removed"); };
+  $("#hsAgain").onclick = () => startFromScenario(rec.scenario);
 }
 
 /* ---- sending a scenario out of the Reliquary, to the Realm ---- */
@@ -9038,6 +9169,10 @@ function startFromScenario(s){
                 mystery: s.mystery ? Object.assign({}, s.mystery,
                   {envelopes: s.mystery.envelopes.map(e => Object.assign({}, e))}) : null,
                 woundFlavour: s.woundFlavour || []};
+  /* kept whole and untouched by play, so the scenario can be shown again
+     or started fresh later — Q.scenario above gets mutated as the quest
+     runs (envelopes opened, events sprung), this does not. */
+  try{ Q.scenarioSource = JSON.parse(JSON.stringify(s)); }catch(e){ Q.scenarioSource = null; }
   /* the generator's placements, over the app's own secret contents */
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g) m.where = g.where; });
   s.enemy.forEach(u => {
@@ -9317,10 +9452,13 @@ function historyHTML(){
       <div class="grow-main">
         <div class="grow-name">${esc(r.title)}
           <span class="chip ${RESULT_CLASS[r.result] || ""}">${esc(r.result)}</span></div>
-        <div class="grow-sub">${esc(new Date(r.at).toLocaleDateString())} · round ${r.round}${r.rounds ? " of " + r.rounds : ""}
+        <div class="grow-sub">${esc(new Date(r.at).toLocaleDateString())} ${esc(new Date(r.at).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}))} · round ${r.round}${r.rounds ? " of " + r.rounds : ""}
           · VP ${r.vpUs}–${r.vpThem} · lost ${r.usLost}/${r.usTotal} of yours, ${r.themLost}/${r.themTotal} of theirs</div>
       </div>
-      <div class="grow-r"><button class="tiny" data-histdel="${esc(r.id)}" aria-label="Delete">×</button></div>
+      <div class="grow-r">
+        ${r.scenario ? `<button class="btn sm" data-histopen="${esc(r.id)}">Open</button>` : ""}
+        <button class="tiny" data-histdel="${esc(r.id)}" aria-label="Delete">×</button>
+      </div>
     </div>`).join("")}
   </div>`;
 }
@@ -9337,6 +9475,7 @@ function bindTable(el){
   el.querySelectorAll("[data-histdel]").forEach(b => b.onclick = () => {
     deleteHistory(b.dataset.histdel); renderRealm(); toast("Removed");
   });
+  el.querySelectorAll("[data-histopen]").forEach(b => b.onclick = () => openHistoryScenario(b.dataset.histopen));
 }
 
 function renderRealm(){
