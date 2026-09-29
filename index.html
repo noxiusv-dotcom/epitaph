@@ -351,16 +351,26 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .marker.add.conjure .plus{color:var(--gilt)}
 .marker.add.conjure:hover{background:var(--gilt-glow)}
 
-/* ---- the quest ---- */
-.qbar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;justify-content:space-between;
-  margin:14px 0 0;padding:11px 13px;border-radius:var(--r-md);
-  background:var(--stone-1);border:1px solid var(--gilt-deep)}
-.qbar-l{display:flex;align-items:baseline;gap:9px}
-.qbar-l b{font-family:"Cinzel",serif;font-size:14px;letter-spacing:.06em}
-.qbar-l span{font-size:12px;color:var(--ash-mute)}
+/* ---- the quest: a turn tracker pinned to the bottom of the screen while
+   a battle is on, so the round and its controls are always one tap away,
+   however far the roster below it has been scrolled ---- */
+.qbar{display:flex;flex-direction:column;gap:9px;
+  position:sticky;bottom:calc(10px + env(safe-area-inset-bottom));z-index:35;
+  margin:14px 0 0;padding:10px 12px;border-radius:var(--r-md);
+  background:var(--stone-1);border:1px solid var(--gilt-deep);box-shadow:var(--shadow)}
+.qbar-top{display:flex;align-items:center;gap:9px}
+.qbar-fold{flex:none;width:27px;height:27px;border-radius:7px;border:1px solid var(--line);
+  background:var(--stone-2);color:var(--ash-mute);display:grid;place-items:center;cursor:pointer;font-size:13px;line-height:1}
+.qbar-fold:hover{color:var(--gilt);border-color:var(--gilt-deep)}
+.qbar-l{display:flex;align-items:baseline;gap:9px;flex:1;min-width:0}
+.qbar-l b{font-family:"Cinzel",serif;font-size:14px;letter-spacing:.06em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qbar-l span{font-size:12px;color:var(--ash-mute);white-space:nowrap;flex:none}
 .qbar-r{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
 .qbar-r button.chip{cursor:pointer;font:inherit;font-size:11.5px}
 .qbar-r button.chip:hover{border-color:var(--gilt)}
+.qbar.folded .qbar-r{display:none}
+body.has-qbar #toast{bottom:82px}
 
 .qstrip{margin:0 0 16px;padding:12px 13px;border-radius:var(--r-md);
   background:var(--stone-1);border:1px solid var(--gilt-deep)}
@@ -4929,6 +4939,7 @@ function render(){
   $("#viewUnburied").hidden = store.way !== "unburied";
   $("#viewRealm").hidden = store.way !== "realm";
   if(store.way === "unburied") renderUnburied(b); else renderRealm();
+  document.body.classList.toggle("has-qbar", store.way === "unburied" && questOn());
   save();
 }
 
@@ -6856,15 +6867,22 @@ function openMemberBring(){
    that is where you are already looking.
    ===================================================================== */
 
+let qbarFolded = false;
+try{ qbarFolded = localStorage.getItem("ep_qbar_fold") === "1"; }catch(e){}
+
 function questBarHTML(){
   if(!questOn()) return "";
   const g = questGroups(), brk = breakState("us");
   return `
-  <div class="qbar">
-    <div class="qbar-l">
-      <b>${Q.scenario ? esc(Q.scenario.name) + " · " : ""}Round ${Q.round}${
-        Q.scenario && Q.scenario.rounds ? " of " + Q.scenario.rounds : ""}</b>
-      <span>${Q.step === "tempo" ? "Tempo" : Q.step === "acts" ? "Activations" : "End step"}</span>
+  <div class="qbar ${qbarFolded ? "folded" : ""}">
+    <div class="qbar-top">
+      <button class="qbar-fold" id="qbarFold" aria-label="${qbarFolded ? "Show the tracker" : "Tuck the tracker away"}">${qbarFolded ? "›" : "‹"}</button>
+      <div class="qbar-l">
+        <b>${Q.scenario ? esc(Q.scenario.name) + " · " : ""}Round ${Q.round}${
+          Q.scenario && Q.scenario.rounds ? " of " + Q.scenario.rounds : ""}</b>
+        <span>${Q.step === "tempo" ? "Tempo" : Q.step === "acts" ? "Activations" : "End step"}</span>
+      </div>
+      <button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">${Q.step === "end" ? "Next round ▸" : Q.step === "tempo" ? "Begin ▸" : "End step ▸"}</button>
     </div>
     <div class="qbar-r">
       <button class="chip gilt" data-q="nerve">◆ ${Q.nerve.us} Nerve</button>
@@ -6873,7 +6891,6 @@ function questBarHTML(){
       <button class="chip ${Q.markers.some(m => m.state === "hidden") ? "" : "good"}" data-q="markers">
         ◈ ${Q.markers.filter(m => m.state === "hidden").length} unknown</button>
       ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}% — break test</span>` : ""}
-      <button class="btn sm" data-q="step">${Q.step === "end" ? "Next round" : Q.step === "tempo" ? "Begin" : "End step"}</button>
       ${Q.scenario ? `<button class="chip ${questDue() ? "bad" : ""}" data-q="brief">${
         questDue() ? "⚠ " + questDue() + " happening" : "The brief"}</button>` : ""}
       <button class="btn sm ghost" data-q="end">End</button>
@@ -6881,6 +6898,12 @@ function questBarHTML(){
   </div>`;
 }
 function questBarBind(root){
+  const fold = root.querySelector("#qbarFold");
+  if(fold) fold.onclick = () => {
+    qbarFolded = !qbarFolded;
+    try{ localStorage.setItem("ep_qbar_fold", qbarFolded ? "1" : "0"); }catch(e){}
+    render();
+  };
   root.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
     switch(b.dataset.q){
       case "step":
@@ -8803,17 +8826,21 @@ function scenarioHTML(s){
   return `
   <div class="slab" style="border-color:var(--gilt-deep)">
     <div class="cardname" style="font-size:22px;margin-bottom:6px">${esc(s.title)}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px">
       <span class="chip">${esc(s.mode === "coop" ? "Co-op" : s.mode === "pvp" ? "Player vs player" : "Solo")}</span>
       <span class="chip ${s.chose && s.chose.type ? "gilt" : ""}">${esc(s.type)}</span>
       <span class="chip ${s.chose && s.chose.theme ? "gilt" : ""}">${esc(s.theme)}</span>
-      <span class="chip">${s.players || 1}\u00d7${s.perBand || 0}</span>
-      <span class="chip">${esc(s.difficulty)}</span>
-      ${s.rounds ? `<span class="chip">${s.rounds} rounds</span>` : ""}
+      ${s.sealed ? `<span class="chip gilt">sealed</span>` : ""}
+    </div>
+    <div class="cstats" style="margin-bottom:13px">
+      <div class="cstat"><b>${s.players || 1}\u00d7${s.perBand || 0}</b><span>On the table</span></div>
+      <div class="cstat"><b>${s.enemyBudget}</b><span>Enemy points</span></div>
+      <div class="cstat"><b>${s.rounds || "\u2014"}</b><span>${s.rounds ? "Rounds" : "Open length"}</span></div>
+      <div class="cstat"><b style="font-size:15px;text-transform:capitalize">${esc(s.difficulty)}</b><span>Difficulty</span></div>
     </div>
     ${s.premise ? `<p class="lead" style="margin:0 0 11px">${esc(s.premise)}</p>` : ""}
     ${s.briefing ? `<p class="serif briefing">${esc(s.briefing)}</p>` : ""}
-    ${s.sealed ? `<div class="chip gilt" style="margin-top:11px">sealed \u2014 what it really is stays hidden until it is opened</div>` : ""}
+    ${s.sealed ? `<p class="quiet" style="margin:11px 0 0">Sealed \u2014 what it really is stays hidden until it is opened.</p>` : ""}
   </div>
 
   ${s.map && s.map.features.length ? `<div class="slab">
@@ -8878,6 +8905,8 @@ function scenarioHTML(s){
   <div class="slab">
     <div class="head"><span class="eyebrow">Against you</span><span class="rule"></span>
       <span class="chip ${s.enemySpent > s.enemyBudget ? "bad" : "gilt"} mono">${s.enemySpent} of ${s.enemyBudget}</span></div>
+    <div class="bar" style="margin-bottom:12px"><i class="${s.enemySpent > s.enemyBudget ? "over" : ""}"
+      style="width:${Math.min(100, s.enemyBudget ? s.enemySpent / s.enemyBudget * 100 : 0)}%"></i></div>
     ${s.enemy.map(u => u.hidden ? `<div class="says">
       <div class="says-n">Something unseen <span class="chip mono">${u.cost}</span>
         <span class="chip gilt">not on the table yet</span></div>
