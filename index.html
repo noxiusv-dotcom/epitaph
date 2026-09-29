@@ -187,9 +187,30 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .m-stat{text-align:center;padding:6px 2px;border-radius:var(--r-sm);
   background:var(--stone-2);border:1px solid var(--line-soft)}
 .m-stat b{display:block;font-size:14px;font-family:"Space Mono",monospace}
-.m-stat span{display:block;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+.m-stat span{display:block;font-size:8px;letter-spacing:.05em;white-space:nowrap;text-transform:uppercase;
   color:var(--ash-mute);margin-top:2px}
 .m-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:9px}
+.m-gear{font-size:11.5px;color:var(--ash-dim);margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-gear b{color:var(--ash-mute);font-weight:500;margin-right:4px;letter-spacing:.08em;font-size:9.5px;text-transform:uppercase;font-family:"Cinzel",serif}
+.m-row2{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--line-soft)}
+.m-ic{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;border:1px solid var(--line);
+  color:var(--ash-dim);font-family:"Space Mono",monospace;font-size:11px;line-height:1.4}
+.m-ic svg{flex:none}
+.m-ic.bad{color:var(--rust);border-color:var(--rust)}
+.m-ic.gilt{color:var(--gilt);border-color:var(--gilt-deep)}
+.m-ic.good{color:var(--verdigris);border-color:var(--verdigris)}
+.m-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;cursor:pointer;
+  border:1px solid var(--line);color:var(--ash-mute);font-size:11.5px;background:var(--stone-2)}
+.m-toggle i{width:7px;height:7px;border-radius:50%;background:var(--ash-mute)}
+.m-toggle.on{color:var(--gilt);border-color:var(--gilt-deep);background:var(--gilt-glow)}
+.m-toggle.on i{background:var(--gilt)}
+.ctabs{display:flex;gap:2px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+.ctab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--ash-mute);padding:9px 14px;cursor:pointer;
+  font-family:"Cinzel",Georgia,serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase}
+.ctab:hover{color:var(--ash)}
+.ctab.on{color:var(--gilt);border-bottom-color:var(--gilt)}
+.statusrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.statusrow .chip{cursor:pointer;font:inherit;font-size:12px}
 .m-cost{position:absolute;top:12px;right:14px;font-family:"Space Mono",monospace;
   font-size:15px;color:var(--gilt)}
 .m-cost small{display:block;font-size:8px;letter-spacing:.12em;text-transform:uppercase;
@@ -319,12 +340,13 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .cardrole{color:var(--ash-mute);font-size:13px;margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
 .cardpts{margin-left:auto;font-family:"Space Mono",monospace;color:var(--gilt);font-size:13px}
 
-.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin-bottom:14px}
+.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:7px;margin-bottom:14px}
 .cstat{text-align:center;padding:11px 6px;border-radius:var(--r-md);
   background:var(--stone-1);border:1px solid var(--line)}
-.cstat b{display:block;font-family:"Space Mono",monospace;font-size:21px;line-height:1}
+.cstat b{display:block;font-family:"Space Mono",monospace;font-size:19px;line-height:1}
 .cstat span{display:block;font-family:"Cinzel",serif;font-size:9.5px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--ash-dim);margin-top:5px}
+.cstat span{font-size:8.5px;letter-spacing:.08em}
 .cstat small{display:block;font-size:9.5px;color:var(--ash-mute);margin-top:3px}
 
 .atk{padding:11px 0;border-bottom:1px solid var(--line-soft)}
@@ -504,7 +526,7 @@ body.has-qbar #toast{bottom:82px}
   <nav class="ways">
     <button class="way on" data-way="unburied">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 21V9a6 6 0 0 1 12 0v12"/><path d="M4 21h16"/></svg>
-      Unburied
+      The Barrow
     </button>
     <button class="way" data-way="realm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg>
@@ -2274,7 +2296,7 @@ body.has-qbar #toast{bottom:82px}
     },
     {
       "id": "tether",
-      "name": "Tether",
+      "name": "Pall",
       "tier": "knack",
       "cost": 5,
       "range": 20,
@@ -4738,6 +4760,43 @@ function load(){
 }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
 
+/* A band can be reshaped freely until its first quest. That quest locks it:
+   after it, a member changes only through XP (Train) and Cash (Gear, Surgery).
+   Anyone who has not yet gone out on a quest (a newcomer, or someone benched)
+   stays editable until they do. */
+function lockIcon(locked, size){
+  size = size || 14;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="5" y="11" width="14" height="10" rx="2"/>${locked ? '<path d="M8 11V8a4 4 0 0 1 8 0v3"/>' : '<path d="M8 11V8a4 4 0 0 1 7.5-2"/>'}</svg>`;
+}
+function lockNoteHTML(b){
+  if(!b.members.length) return "";
+  const open = b.members.filter(m => !memberLocked(m)).length;
+  if(!b.sealed)
+    return `<div class="slab" style="margin-top:12px;border-color:var(--verdigris)">
+      <div class="head" style="margin-bottom:6px"><span class="eyebrow" style="color:var(--verdigris)">${lockIcon(false)} Unlocked</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0">This band can still be edited freely. It locks the moment it goes on its first quest; after that a member
+        changes only through XP (Train) and Cash (Gear and Surgery).</p></div>`;
+  return `<div class="slab" style="margin-top:12px;border-color:var(--gilt-deep)">
+    <div class="head" style="margin-bottom:6px"><span class="eyebrow" style="color:var(--gilt)">${lockIcon(true)} Locked</span><span class="rule"></span>
+      ${open ? `<span class="chip good">${open} still editable</span>` : ""}</div>
+    <p class="quiet" style="margin:0">This band has been on a quest, so its builds are fixed. They change only through XP (Train) and Cash
+      (Gear and Surgery).${open ? " Newcomers and anyone benched stay editable until they go out on a quest." : ""}</p></div>`;
+}
+/* The lock and the tether, on one slim line. Tap either to open the full text. */
+let statusOpen = false;
+function statusStripHTML(b){
+  if(!b.members.length) return "";
+  const t = ruleOn("narrative", b) && b.tether && tetherKind(b.tether.kindId) ? b.tether : null;
+  const open = b.members.filter(m => !memberLocked(m)).length;
+  const strip = `<div class="slab" style="margin-top:12px;padding:9px 12px">
+    <div class="statusrow">
+      <button class="chip ${b.sealed ? "gilt" : "good"}" data-status="1">${lockIcon(!!b.sealed, 12)} ${b.sealed ? "Locked" : "Unlocked"}${b.sealed && open ? " · " + open + " editable" : ""}</button>
+      ${t ? `<button class="chip ${t.frayed ? "bad" : "gilt"}" data-status="1">${esc(tetherKind(t.kindId).name)} tether · ${t.kept} of ${t.debt} oaths${t.frayed ? " · frayed" : ""}</button>` : ""}
+      <span class="rule"></span>
+      <button class="tiny" data-status="1" aria-label="${statusOpen ? "Hide details" : "Show details"}">${statusOpen ? "▴" : "▾"}</button>
+    </div></div>`;
+  return strip + (statusOpen ? lockNoteHTML(b) + (t ? tetherHTML(b) : "") : "");
+}
 function newBand(name){
   return {id: uid(), name: name || "The Unburied", budget: 500, members: [], sealed: false};
 }
@@ -4944,7 +5003,7 @@ function closeSheet(){
 /* ---------------------------------------------------------------- render */
 function render(){
   const b = band();
-  $("#rsVer").textContent = realmAvailable() ? RS.meta.name + " · ruleset " + RS.meta.version : "The Reliquary";
+  $("#rsVer").textContent = realmAvailable() ? "Camp of the Unburied · ruleset " + RS.meta.version : "The Reliquary";
   $$(".way").forEach(w => w.classList.toggle("on", w.dataset.way === store.way));
   $("#viewUnburied").hidden = store.way !== "unburied";
   $("#viewRealm").hidden = store.way !== "realm";
@@ -4954,6 +5013,7 @@ function render(){
 }
 
 function renderUnburied(b){
+  if(realmAvailable() && typeof syncTether === "function") syncTether(b);
   const spent = bandSpent(b), over = spent > b.budget;
   const pct = b.budget > 0 ? Math.min(100, spent / b.budget * 100) : 0;
   const nField = b.members.filter(fielded).length;
@@ -4962,11 +5022,12 @@ function renderUnburied(b){
     <div class="band">
       <input class="band-name" id="bandName" value="${esc(b.name)}" maxlength="42" spellcheck="false">
       <button class="iconbtn" id="bandCarry"
-        aria-label="${realmAvailable() ? "Carry this band out or bring one in" : "Send this band to camp"}"
-        title="${realmAvailable() ? "Carry out / bring in" : "Send to camp"}">
+        aria-label="${realmAvailable() ? "Carry this band out or call one to the barrow" : "Send this band to camp"}"
+        title="${realmAvailable() ? "Carry out / call in" : "Send to camp"}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
           <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
-      <button class="btn sm ghost" id="bandAfter">After the battle</button>
+      ${realmAvailable() ? `<button class="iconbtn" id="bandCampMenu" aria-label="Camp menu" title="Camp menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>` : ""}
       <button class="btn sm ghost" id="bandMenu">Bands</button>
     </div>
     <div class="gauge">
@@ -4985,10 +5046,10 @@ function renderUnburied(b){
         <span class="chip">${bandActs(b)} activations a round</span>
         ${b.cash ? `<span class="chip gilt">${b.cash} Cash</span>` : ""}
         ${(b.reputation || 0) !== 0 ? `<span class="chip ${b.reputation > 0 ? "good" : "bad"}">${esc((repLevel(b) || {}).name || "")} ${signed(b.reputation)}</span>` : ""}
-        ${b.sealed ? `<span class="chip">sealed</span>` : ""}
+
       </div>
     </div>
-    ${tetherHTML(b)}`;
+    ${realmAvailable() ? statusStripHTML(b) : (ruleOn("narrative", b) ? tetherHTML(b) : "")}`;
 
   bindTetherHTML($("#bandHead"));
   $("#bandName").oninput = e => { b.name = e.target.value; save(); };
@@ -4998,7 +5059,8 @@ function renderUnburied(b){
   };
   $("#bandMenu").onclick = openBands;
   $("#bandCarry").onclick = openCarry;
-  $("#bandAfter").onclick = openAfter;
+  const bCM = $("#bandCampMenu"); if(bCM) bCM.onclick = openCampMenu;
+  $$("[data-status]").forEach(x => x.onclick = () => { statusOpen = !statusOpen; renderUnburied(b); });
 
   const qb = $("#questBar");
   qb.innerHTML = questOn() ? questBarHTML() : "";
@@ -5010,34 +5072,47 @@ function renderUnburied(b){
     list.insertAdjacentHTML("beforeend", `
       <div class="empty" style="grid-column:1/-1">
         <div class="big">No one yet</div>
-        <div class="quiet">The Unburied are what you make of them. Raise the first.</div>
+        <div class="quiet">${realmAvailable() ? "Nobody is at camp yet. Bring your Unburied in from the Reliquary." : "The Unburied are what you make of them. Raise the first."}</div>
       </div>`);
   }
   b.members.slice().sort((x, y) => (fielded(y) - fielded(x))).forEach(m => {
     const n = squadOf(m), cost = unitCost(m);
     const el = document.createElement("button");
     el.className = "marker" + (fielded(m) ? "" : " benched");
+    const gear = [].concat(
+      (m.weapons || []).map(e => { const w = catOf("weapons")[e.id]; return w ? skinOf(m, e.id, w.name) + ((e.qty || 1) > 1 ? " ×" + e.qty : "") : ""; }),
+      (m.armour || []).map(id => { const o = catOf("armour")[id]; return o ? skinOf(m, id, o.name) : ""; })).filter(Boolean);
+    const nScars = (m.scars || []).filter(x => x.scar).length;
+    const ic = (svg, txt, tone, title) => `<span class="m-ic ${tone || ""}" title="${esc(title)}">${svg}${txt !== "" ? esc(txt) : ""}</span>`;
+    const I = p => `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    const icons = [
+      nScars ? ic(I('<path d="M12 4v16M4 12h16"/>'), nScars, "bad", nScars + " scar" + (nScars > 1 ? "s" : "")) : "",
+      isHurt(m) ? ic(I('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'), healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + m.wounds * n, "bad", "Health left") : "",
+      m.xp ? ic(I('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), m.xp, "gilt", m.xp + " XP to spend") : "",
+      (m.found || []).length ? ic(I('<path d="M12 3l8 5v8l-8 5-8-5V8z"/>'), m.found.length, "good", m.found.length + " found in the field") : "",
+      (m.flaws || []).length ? ic(I('<path d="M12 4l9 16H3z"/>'), m.flaws.length, "bad", m.flaws.length + " flaw" + (m.flaws.length > 1 ? "s" : "")) : "",
+      realmAvailable() && b.sealed ? (memberLocked(m) ? ic(lockIcon(true, 12), "", "", "Locked: changes only through XP and Cash")
+                                                        : ic(lockIcon(false, 12), "", "good", "Editable until they go out on a quest")) : ""
+    ].filter(Boolean).join("");
     el.innerHTML = `
       <div class="m-cost">${cost}<small>points</small></div>
       <span class="m-name">${isLeaderM(m) ? crownHTML(13) : ""}${esc(fullName(m)) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
       ${m.epitaph ? `<span class="m-epithet">“${esc(m.epitaph)}”</span>` : ""}
       ${m.role ? `<span class="m-role">${esc(m.role)}</span>` : ""}
       <div class="m-stats">
-        ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(m[k])}</b><span>${esc(RSX.stat[k].name)}</span></div>`).join("")}
-        <div class="m-stat"><b>${m.wounds}</b><span>${esc(RSX.stat.wounds.name)}</span></div>
+        ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(effDie(m, k))}</b><span>${esc(RSX.stat[k].name)}</span></div>`).join("")}
+        <div class="m-stat"><b>${effWounds(m)}</b><span>${esc(RSX.stat.wounds.name)}</span></div>
       </div>
+      <div class="m-gear"><b>${gear.length ? "Carries" : ""}</b>${gear.length ? esc(gear.join(" · ")) : `<span style="color:var(--ash-mute)">Unarmed</span>`}</div>
       <div class="m-foot">
         ${(m.traits || []).includes("leader") ? `<span class="chip gilt">${esc(leaderTerm())}</span>` : ""}
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
         <span class="chip">${activationsOf(m)} act</span>
-        ${(m.scars || []).filter(x => x.scar).length ? `<span class="chip bad">${(m.scars || []).filter(x => x.scar).length} scar${(m.scars || []).filter(x => x.scar).length > 1 ? "s" : ""}</span>` : ""}
-        ${m.xp ? `<span class="chip gilt">${m.xp} XP</span>` : ""}
-        ${(m.found || []).length ? `<span class="chip good">${m.found.length} found</span>` : ""}
-        ${isHurt(m) ? `<span class="chip bad">${healthOf(m).reduce((s2, h) => s2 + h, 0)}/${m.wounds * n} ${esc(RSX.stat.wounds.name.toLowerCase())}${n > 1 ? " · " + standing(m) + " standing" : ""}</span>` : ""}
-        ${(m.flaws || []).length ? `<span class="chip bad">${m.flaws.length} flaw${m.flaws.length > 1 ? "s" : ""}</span>` : ""}
-        <span class="rule"></span>
-        <span class="chip ${fielded(m) ? "gilt" : ""}" data-field>${fielded(m) ? "fielded" : "benched"}</span>
+      </div>
+      <div class="m-row2">
+        ${icons}
+        <span class="m-toggle ${fielded(m) ? "on" : ""}" data-field role="switch" aria-checked="${fielded(m)}" tabindex="0"><i></i>${fielded(m) ? "Fielded" : "Benched"}</span>
       </div>`;
     el.onclick = ev => {
       if(ev.target.closest("[data-field]")){ m.fielded = !fielded(m); renderUnburied(b); return; }
@@ -5064,14 +5139,15 @@ function renderUnburied(b){
     b.members.push(m); save();
     openMember(m.id);
   };
-  list.appendChild(add);
-  list.appendChild(conj);
+  /* Camp is where the Unburied live, not where they are made: raising and
+     calling up happen in the Reliquary and arrive here by code or file. */
+  if(!realmAvailable()){ list.appendChild(add); list.appendChild(conj); }
   /* A Leader raised in the Reliquary to replace one who did not come back
      — or anyone else sent alone — arrives here, never the other way. */
   if(realmAvailable()){
     const bring = document.createElement("button");
     bring.className = "marker add";
-    bring.innerHTML = `<div class="plus">↓</div><span>Bring one in</span>`;
+    bring.innerHTML = `<div class="plus">↓</div><span>Call one to the barrow</span>`;
     bring.onclick = openMemberBring;
     list.appendChild(bring);
   }
@@ -5110,7 +5186,7 @@ function editing(){ return band().members.find(m => m.id === editId); }
 /* A member already in the band when it was sent on its first mission has
    its build fixed from there — what happens to them after that comes
    from play (XP, scars, finds), not free editing. A recruit who joins
-   later starts out just as editable as anyone did before the band sealed. */
+   later, or one who was benched, is just as editable until they go out. */
 function memberLocked(m){
   const b = band();
   return b.sealed && (b.sealedMemberIds || []).includes(m.id);
@@ -5118,7 +5194,7 @@ function memberLocked(m){
 function openMember(id){
   const b = band(), m = b.members.find(x => x.id === id);
   if(m && memberLocked(m)){
-    toast("Sealed — their build is fixed now. XP, scars and finds still change them in play.");
+    toast("Locked — their build is fixed now. XP and Cash still change them.");
     openCard(id);
     return;
   }
@@ -5247,6 +5323,7 @@ function drawMember(){
     ${gearSlab(m, "Abilities", "abilities")}
     ${gearSlab(m, "Powers", "powers")}
     ${gearSlab(m, "Flaws", "flaws")}
+    ${(m.traits || []).includes("leader") && ruleOn("narrative") ? tetherEditorHTML(m) : ""}
 
     <div class="slab">
       <div class="head"><span class="eyebrow">What it costs</span><span class="rule"></span>
@@ -5296,6 +5373,7 @@ function drawMember(){
   });
 
   bindGear(root, m);
+  bindTetherEditor(root, m, redraw);
   root.querySelector("#mBack").onclick = closeSheet;
   root.querySelector("#mDone").onclick = closeSheet;
   root.querySelector("#mDel").onclick = () => {
@@ -5554,7 +5632,7 @@ function openBands(){
       </button>
       <div class="grow-r">
         <button class="tiny" data-bcopy="${b.id}" title="Copy">⧉</button>
-        ${store.bands.length > 1 ? `<button class="tiny" data-bdel="${b.id}" aria-label="Delete">×</button>` : ""}
+        <button class="tiny" data-bdel="${b.id}" aria-label="Delete this band">×</button>
       </div>
     </div>`).join("");
   $("#sheet2In").innerHTML = `
@@ -5565,7 +5643,8 @@ function openBands(){
       <div class="eyebrow">Your bands</div>
     </div>
     ${rows}
-    <button class="btn sm ghost" id="bNew" style="margin-top:12px">Begin another band</button>`;
+    ${realmAvailable() ? `<p class="quiet" style="margin:12px 0 0">More bands arrive from the Reliquary — use the carry icon to call one to the barrow.</p>`
+      : `<button class="btn sm ghost" id="bNew" style="margin-top:12px">Begin another band</button>`}`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#bX").onclick = closePicker;
   $("#sheet2In").querySelectorAll("[data-band]").forEach(b => b.onclick = () => {
@@ -5579,11 +5658,19 @@ function openBands(){
     store.bands.push(copy); save(); openBands(); toast("Copied");
   });
   $("#sheet2In").querySelectorAll("[data-bdel]").forEach(b => b.onclick = () => {
-    store.bands = store.bands.filter(x => x.id !== b.dataset.bdel);
-    if(!store.bands.some(x => x.id === store.activeId)) store.activeId = store.bands[0].id;
-    save(); openBands(); render(); toast("Band removed");
+    const bd = store.bands.find(x => x.id === b.dataset.bdel); if(!bd) return;
+    askDelete("Delete " + (bd.name || "this band") + "?",
+      bd.members.length + " of the Unburied go with it, along with their scars, XP, Cash and anything in the Cenotaph. This cannot be undone."
+        + (store.bands.length === 1 ? " It is your only band, so you will start again from an empty one." : ""),
+      () => {
+        store.bands = store.bands.filter(x => x.id !== bd.id);
+        if(!store.bands.length) store.bands = [newBand("The Unburied")];
+        if(!store.bands.some(x => x.id === store.activeId)) store.activeId = store.bands[0].id;
+        save(); openBands(); render(); toast("Band deleted");
+      }, openBands);
   });
-  $("#bNew").onclick = () => {
+  const bNew = $("#bNew");
+  if(bNew) bNew.onclick = () => {
     const b = newBand("The Unburied");
     store.bands.push(b); store.activeId = b.id;
     closePicker(); render(); toast("A new band");
@@ -5734,10 +5821,18 @@ function questBegin(size, opts){
     const leader = leaderOf(b);
     if(!leader){ toast("Someone needs to be the " + leaderTerm() + " before the band's first mission"); return false; }
     b.sealed = true;
-    b.sealedMemberIds = b.members.map(m => m.id);
-    bindTether(b);
+    b.sealedMemberIds = mine.map(m => m.id);      // only those who actually go; the benched stay editable
+    save();
+  } else {
+    /* whoever goes is locked by it: a newcomer or a benched member is locked
+       only by the first quest they actually take part in */
+    b.sealedMemberIds = b.sealedMemberIds || [];
+    mine.forEach(m => { if(!b.sealedMemberIds.includes(m.id)) b.sealedMemberIds.push(m.id); });
     save();
   }
+  /* the tether is normally rolled already, back at the barrow; this catches a band
+     with none (a severed one, or narrative switched on late) */
+  if(ruleOn("narrative", b) && leaderOf(b) && !b.tether){ bindTether(b); save(); }
   Q = {round: 1, step: "tempo", size,
        nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
        units: mine.map(questUnitFrom),
@@ -6082,6 +6177,55 @@ function saysHTML(m, title, field, tone){
   </div>`;
 }
 
+let cardTab = "combat";
+function combatTabHTML(m){
+  return `${(m.weapons || []).length ? `
+      <div class="slab">
+        <div class="head"><span class="eyebrow">What it can do</span><span class="rule"></span>
+          <span class="quiet">one Attack an activation</span></div>
+        ${m.weapons.map(e => attackHTML(m, e)).join("")}
+      </div>` : `
+      <div class="slab"><p class="quiet" style="margin:0">Unarmed. It has no weapon.</p></div>`}
+    ${saysHTML(m, "Traits", "traits")}
+    ${saysHTML(m, "Abilities", "abilities")}
+    ${saysHTML(m, "Powers", "powers")}
+    ${saysHTML(m, "Flaws", "flaws", "bad")}
+    ${saysHTML(m, "Carried", "items")}
+    ${sizeHTML(m)}`;
+}
+function storyTabHTML(m){
+  const k = isLeaderM(m) ? tetherKind(m.tetherKind) : null;
+  const parts = [
+    k ? `<div class="slab"><div class="head"><span class="eyebrow">Tether — ${esc(k.name)}</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0">They must ${esc(tetherObservance(m.tetherKind, m.tetherSworn))}.</p>
+      <p class="serif" style="margin:8px 0 0;color:var(--ash-dim);font-size:13.5px;line-height:1.55">${esc(k.why)}</p></div>` : "",
+    m.story ? `<div class="slab"><div class="head"><span class="eyebrow">Their story</span><span class="rule"></span></div>
+      <p class="serif" style="margin:0;font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(m.story)}</p></div>` : "",
+    scarsHTML(m), foundHTML(m)].filter(Boolean);
+  return parts.length ? parts.join("") : `<div class="empty"><div class="big">Nothing written yet</div>
+    <div class="quiet">Their story, scars and finds gather here as they play.</div></div>`;
+}
+function trainTabHTML(m){
+  const locked = memberLocked(m), camp = realmAvailable();
+  return `<div class="slab">
+    <div class="head"><span class="eyebrow">Advancement</span><span class="rule"></span>${m.xp ? `<span class="chip gilt">${m.xp} XP</span>` : ""}</div>
+    <p class="quiet" style="margin:0 0 10px">${m.xp
+      ? "XP buys anything at its points price, surcharge and all."
+      : "No XP to spend yet. It comes from battles."}</p>
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px;margin:0">
+      <button class="btn ${m.xp ? "primary" : ""}" id="ctTrain" style="margin-left:0" ${m.xp ? "" : "disabled"}>Spend XP</button>
+      ${camp ? `<button class="btn" id="ctGear">Gear</button>` : ""}
+      ${camp && treatable(m) ? `<button class="btn" id="ctSurg">Surgery</button>` : ""}
+    </div>
+  </div>
+  <div class="slab">
+    <div class="head"><span class="eyebrow">${lockIcon(locked, 13)} ${locked ? "Locked" : "Editable"}</span><span class="rule"></span></div>
+    <p class="quiet" style="margin:0">${locked
+      ? "They have been on a quest, so their build is fixed. XP and Cash are the only things that change it."
+      : "They have not yet been on a quest, so their build can still be edited freely."}</p>
+    ${locked ? "" : `<div class="sheet-actions" style="margin:10px 0 0"><button class="btn" id="ctEdit" style="margin-left:0">Edit</button></div>`}
+  </div>`;
+}
 function drawCard(){
   const m = carded(); if(!m) return closeSheet();
   const n = squadOf(m), live = questUnit(m);
@@ -6098,7 +6242,7 @@ function drawCard(){
       <div class="eyebrow">${n > 1 ? "A squad of the Unburied" : "One of the Unburied"}</div>
       ${m.xp ? `<button class="btn sm" id="cXP">${m.xp} XP</button>` : ""}
       ${realmAvailable() ? "" : `<button class="btn sm ghost" id="cSend">Send to camp</button>`}
-      <button class="btn sm ghost" id="cEdit">${memberLocked(m) ? "Sealed" : "Edit"}</button>
+      <button class="btn sm ghost" id="cEdit">${memberLocked(m) ? "Locked" : "Edit"}</button>
     </div>
 
     <div class="cardhead">
@@ -6123,25 +6267,12 @@ function drawCard(){
       ${m.size !== statDefault("size") ? statCell(RSX.stat.size.name, m.size.charAt(0).toUpperCase() + m.size.slice(1), "") : ""}
     </div>
 
-    ${(m.weapons || []).length ? `
-      <div class="slab">
-        <div class="head"><span class="eyebrow">What it can do</span><span class="rule"></span>
-          <span class="quiet">one Attack an activation</span></div>
-        ${m.weapons.map(e => attackHTML(m, e)).join("")}
-      </div>` : `
-      <div class="slab"><p class="quiet" style="margin:0">Unarmed. It has no weapon — edit to give it one.</p></div>`}
+    <div class="ctabs" role="tablist">
+      ${[["combat", "Combat"], ["story", "Story"], ["train", "Training"]].map(([id, label]) =>
+        `<button class="ctab ${cardTab === id ? "on" : ""}" role="tab" aria-selected="${cardTab === id}" data-ctab="${id}">${label}</button>`).join("")}
+    </div>
 
-    ${saysHTML(m, "Traits", "traits")}
-    ${saysHTML(m, "Abilities", "abilities")}
-    ${saysHTML(m, "Powers", "powers")}
-    ${saysHTML(m, "Flaws", "flaws", "bad")}
-    ${saysHTML(m, "Carried", "items")}
-    ${sizeHTML(m)}
-    ${scarsHTML(m)}
-    ${foundHTML(m)}
-
-    ${m.story ? `<div class="slab"><div class="head"><span class="eyebrow">Their story</span><span class="rule"></span></div>
-      <p class="serif" style="margin:0;font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(m.story)}</p></div>` : ""}
+    ${cardTab === "combat" ? combatTabHTML(m) : cardTab === "story" ? storyTabHTML(m) : trainTabHTML(m)}
 
     <div class="sheet-actions">
       <span class="quiet">${n > 1 ? "Every model shares this profile." : ""}</span>
@@ -6160,6 +6291,11 @@ function drawCard(){
     else { const hp = healthOf(m); hp[+i] = hp[+i] + +d; setHealth(m, hp); }
     drawCard(); renderUnburied(band());
   });
+  root.querySelectorAll("[data-ctab]").forEach(btn => btn.onclick = () => { cardTab = btn.dataset.ctab; drawCard(); $("#sheet").scrollTop = 0; });
+  const tr = root.querySelector("#ctTrain"); if(tr) tr.onclick = () => openAdvance(m.id);
+  const ge = root.querySelector("#ctGear"); if(ge) ge.onclick = () => openBuy(m.id);
+  const su = root.querySelector("#ctSurg"); if(su) su.onclick = () => openTreat(m.id);
+  const ed = root.querySelector("#ctEdit"); if(ed) ed.onclick = () => openMember(m.id);
   root.querySelector("#cBack").onclick = closeSheet;
   root.querySelector("#cDone").onclick = closeSheet;
   root.querySelector("#cEdit").onclick = () => openMember(m.id);
@@ -6276,6 +6412,8 @@ let _aiPending = null;
 function claudeReady(){ return !!(window.claude && typeof window.claude.use === "function"); }
 
 async function getAI(){
+  /* Camp has no AI behind it, so never wait ten seconds to find that out. */
+  if(typeof realmAvailable === "function" && realmAvailable() && !AI_ENDPOINT){ _ai = null; _aiTried = true; return null; }
   if(_aiTried) return _ai;
   if(_aiPending) return _aiPending;
   _aiPending = (async () => {
@@ -6430,6 +6568,7 @@ let conjureTone = CONJURE_TONES[0];
    camp is still the first thing built in an otherwise-empty Reliquary
    session. Defaults to Leader only the very first time it is asked. */
 let conjureLeader = null;
+let conjureTether = null, conjureTetherRerolled = false, conjureSworn = "";
 async function openConjure(){
   const ai = await getAI();
   const b = band();
@@ -6465,6 +6604,7 @@ async function openConjure(){
       <div class="sheet-actions" style="flex-wrap:wrap;gap:7px" id="cjTones">
         ${CONJURE_TONES.map(t => `<button type="button" class="chip ${t === conjureTone ? "gilt" : ""}" data-tone="${esc(t)}" style="cursor:pointer;font-size:13px;padding:7px 13px">${esc(t)}</button>`).join("")}
       </div></div>
+    ${conjureLeader ? conjureTetherHTML() : ""}
     <p class="quiet" id="cjBudgetNote">Up to <b>${budget}</b> points each — what the band has left.</p>
     <div class="sheet-actions"><button class="btn primary" id="cjGo" style="margin-left:0">Raise four</button></div>
     <div id="cjOut" style="margin-top:14px"></div>`}`;
@@ -6478,12 +6618,22 @@ async function openConjure(){
     openConjure();
   });
 
+  const swornBox = $("#cjSworn"); if(swornBox) swornBox.oninput = () => { conjureSworn = swornBox.value; };
+  $("#sheet2In").querySelectorAll("[data-ctether]").forEach(btn => btn.onclick = () => {
+    if(btn.dataset.ctether === "roll"){
+      if(conjureTether){ if(conjureTetherRerolled) return; conjureTether = rollTetherKind(conjureTether); conjureTetherRerolled = true; }
+      else conjureTether = rollTetherKind();
+      openConjure();
+    } else openTetherChoose(kind => { conjureTether = kind; openConjure(); });
+  });
   $("#sheet2In").querySelectorAll("[data-tone]").forEach(btn => btn.onclick = () => {
     conjureTone = btn.dataset.tone;
     $("#sheet2In").querySelectorAll("[data-tone]").forEach(b => b.classList.toggle("gilt", b.dataset.tone === conjureTone));
   });
 
   $("#cjGo").onclick = async () => {
+    if(conjureLeader && !conjureTether) conjureTether = rollTetherKind();
+    if(conjureLeader && conjureTether === "quarry" && !conjureSworn.trim()){ toast("Say what they hunt"); return; }
     const go = $("#cjGo"), out = $("#cjOut");
     const brief = $("#cjBrief").value.trim() || "whatever suits the Unburied";
     const tone = conjureTone;
@@ -6500,7 +6650,12 @@ sits with them, not a genre default of grief and horror.
 
 Tone: ${tone}.
 Brief: ${brief}.
-${conjureLeader ? `
+${conjureLeader && tetherKind(conjureTether) ? `
+THE TETHER. Whoever calls the dead back is tied to the grave by something they did in life. For this
+one it is: ${tetherKind(conjureTether).why} They must ${tetherObservance(conjureTether, conjureSworn)}. Build
+their story on exactly that: what they did, why it holds them, what they are doing about it. Do not
+name the tether or use game words.
+` : ""}${conjureLeader ? `
 This one is the band's ${leaderTerm().toUpperCase()}${leader ? `, raised to replace ${leader.name}` : ""} —
 the one the rest are raised around, or follow already. Write someone the story can be told
 about, not necessarily the loudest voice in the room: authority can be quiet, earned,
@@ -6569,6 +6724,7 @@ No other text.`;
           if(m.traits.length >= 4) m.traits.pop();
           m.traits.push("leader");
         }
+        if(m && conjureLeader){ m.tetherKind = conjureTether; m.tetherRerolled = conjureTetherRerolled; if(conjureTether === "quarry") m.tetherSworn = conjureSworn; }
         return m;
       }).filter(Boolean);
       if(!made.length){ out.innerHTML = `<p class="quiet">Nothing came up. Try again.</p>`; }
@@ -6594,6 +6750,20 @@ No other text.`;
       go.textContent = "Raise four";
     }finally{ go.disabled = false; aiAbort = null; }
   };
+}
+
+/* The Oathbearer's tether is settled before they are written, because it is the
+   reason they are here and the story is built on it. */
+function conjureTetherHTML(){
+  const k = tetherKind(conjureTether);
+  return `<div class="field" style="margin:0 0 12px"><label>Their tether — the reason they are bound</label>
+    ${k ? `<p class="quiet" style="margin:0 0 6px"><b style="color:var(--ash)">${esc(k.name)}.</b> ${esc(k.why)}</p>` : ""}
+    ${k && k.id === "quarry" ? `<input class="input" id="cjSworn" maxlength="30" value="${esc(conjureSworn)}" placeholder="What do they hunt? wolves, cultists, machines"
+      style="margin:0 0 8px">` : ""}
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:7px;margin:0">
+      <button type="button" class="btn sm ${k ? "" : "primary"}" data-ctether="roll" style="margin-left:0" ${k && conjureTetherRerolled ? "disabled" : ""}>${k ? (conjureTetherRerolled ? "Rolled again already" : "Roll again — once") : "Roll the tether"}</button>
+      <button type="button" class="btn sm ghost" data-ctether="choose">Choose one</button>
+    </div></div>`;
 }
 
 function aiSummary(m){
@@ -6737,7 +6907,7 @@ async function openCarry(){
     </div>
 
     ${sendOnly ? "" : `<div class="slab">
-      <div class="head"><span class="eyebrow">Bring one in</span><span class="rule"></span></div>
+      <div class="head"><span class="eyebrow">Call a band to the barrow</span><span class="rule"></span></div>
       <p class="quiet" style="margin:0 0 9px">Paste a code and the band is raised alongside
         yours. Nothing you already have is touched.</p>
       <textarea class="input mono" id="cyIn" rows="3" placeholder="EPITAPH1Z:\u2026"
@@ -6745,7 +6915,7 @@ async function openCarry(){
       <div class="sheet-actions" style="margin-top:10px">
         <label class="btn sm ghost" style="cursor:pointer">Open a file
           <input type="file" id="cyFile" accept=".json,.txt,application/json" hidden></label>
-        <button class="btn sm primary" id="cyGo" style="margin-left:auto">Raise them</button>
+        <button class="btn sm primary" id="cyGo" style="margin-left:auto">Call them in</button>
       </div>
       <p class="quiet" id="cyMsg" style="margin:9px 0 0"></p>
     </div>`}`;
@@ -6821,7 +6991,7 @@ async function openMemberSend(m){
       </button><div class="eyebrow">Send to camp</div></div>
     <p class="lead">${esc(fullName(m))} leaves the Reliquary alone \u2014 to join a band
       already at camp, a ${esc(leaderTerm())} raised to replace one who did not come back, or
-      anyone else. Bring them in from the roster there.</p>
+      anyone else. Call them to the barrow from the roster there.</p>
     <div class="slab" style="margin-top:14px">
       <div class="head"><span class="eyebrow">${esc(fullName(m))}</span><span class="rule"></span></div>
       <textarea class="input mono" id="msCode" rows="4" readonly
@@ -6865,7 +7035,7 @@ function openMemberBring(){
     <div class="sheet-head">
       <button class="iconbtn" id="mbX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">Bring one in</div></div>
+      </button><div class="eyebrow">Call one to the barrow</div></div>
     <p class="lead">Paste a code for one of the Unburied sent alone from the Reliquary
       \u2014 a new ${esc(leaderTerm())}, or anyone else \u2014 and they join ${esc(band().name)}.</p>
     <div class="slab" style="margin-top:14px">
@@ -6874,7 +7044,7 @@ function openMemberBring(){
       <div class="sheet-actions" style="margin-top:10px">
         <label class="btn sm ghost" style="cursor:pointer">Open a file
           <input type="file" id="mbFile" accept=".json,.txt,application/json" hidden></label>
-        <button class="btn sm primary" id="mbGo" style="margin-left:auto">Bring them in</button>
+        <button class="btn sm primary" id="mbGo" style="margin-left:auto">Call them in</button>
       </div>
       <p class="quiet" id="mbMsg" style="margin:9px 0 0"></p>
     </div>`;
@@ -7001,11 +7171,20 @@ function askEnd(){
   $("#qeX").onclick = closePicker;
   $("#qeGo").onclick = () => {
     const b = band();
-    if(b.tether && !b.tether.severed) askTether(b);
-    else finishEnd();
+    if(b.tether && !b.tether.severed && ruleOn("narrative", b)){
+      if(tetherUnchecked(b)){ toast("No one who can call a Reckoning took the field, so the tether is not checked"); finishEnd(); }
+      else askTether(b);
+    } else finishEnd();
   };
 }
-function finishEnd(){ questEnd(); closePicker(); render(); toast("Quest ended"); }
+/* Ending a quest hands straight on to the after-battle sheet, with what just
+   happened already filled in. */
+function finishEnd(){
+  const b = band();
+  const snap = typeof afterSnapshot === "function" && ruleOn("campaign", b) ? afterSnapshot() : null;
+  questEnd(); closePicker(); render();
+  if(snap) openAfter(snap); else toast("Quest ended");
+}
 
 /* The app has no way to see who actually took an enemy down or held an
    objective at the End step, so — same as it already does for wound
@@ -7016,7 +7195,7 @@ function askTether(b){
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">The tether</div></div>
     <p class="lead">${esc(leader ? leader.name : "The " + leaderTerm())}'s tether is
-      <b>${esc(kind.name)}</b>: ${esc(kind.observance)}. Was it honoured this battle?</p>
+      <b>${esc(kind.name)}</b>: ${esc(tetherObservance(kind.id, t.sworn))}. Was it honoured this battle?</p>
     <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn primary" id="tqYes" style="margin-left:0">Honoured</button>
       <button class="btn danger" id="tqNo">Forsaken</button>
@@ -7713,6 +7892,9 @@ function applyInjury(m, inj, roll){
                scar: !!inj.scar, hooks: inj.epithetHooks || [],
                mend: inj.mend || null, replace: inj.replace || []};
   if(inj.id === "dead"){ rec.dead = true; }
+  /* Laid up means they miss the NEXT battle: sat out until then, and told
+     apart from one that was only just rolled by the fresh mark. */
+  if(inj.id === "laidUp"){ rec.fresh = true; m.fielded = false; }
   /* The bought profile is never touched. A Health change from an injury is a
      scar modifier, applied by effWounds — writing it into m.wounds would both
      double-count it and quietly re-price the model. */
@@ -7723,14 +7905,25 @@ function applyInjury(m, inj, roll){
 }
 
 /* ---- what the band takes away ---- */
-function awardBattle(b, {won, size, difficultyMult}){
+/* Won pays in full, a draw 75% each (scenario.victory.rewards), a loss the ruleset's
+   loss factor. A win on Hard or Extreme is worth one more Reputation. */
+const DRAW_FACTOR = 0.75;
+function outcomeFactor(outcome){
+  return outcome === "won" ? 1 : outcome === "draw" ? DRAW_FACTOR : RS.campaign.awards.cash.lossFactor;
+}
+function repFor(outcome, difficulty){
+  const r = RS.campaign.awards.reputation;
+  if(outcome === "won") return r.win + (difficulty === "hard" || difficulty === "extreme" ? r.hardOrExtremeWin : 0);
+  return outcome === "draw" ? 0 : r.withdrawOrBreak;
+}
+function awardBattle(b, {outcome, size, difficultyMult, difficulty}){
   const aw = RS.campaign.awards;
-  const cash = Math.round((size || 0) * aw.cash.winPayoutPctOfGameSize *
-                          (won ? 1 : aw.cash.lossFactor) * (difficultyMult || 1));
+  const cash = Math.round((size || 0) * aw.cash.winPayoutPctOfGameSize * outcomeFactor(outcome) * (difficultyMult || 1));
+  const rep = repFor(outcome, difficulty);
   b.cash = (b.cash || 0) + cash;
-  b.reputation = (b.reputation || 0) + (won ? aw.reputation.win : aw.reputation.withdrawOrBreak);
+  b.reputation = (b.reputation || 0) + rep;
   save();
-  return {cash, rep: won ? aw.reputation.win : aw.reputation.withdrawOrBreak};
+  return {cash, rep};
 }
 function repLevel(b){
   const n = b.reputation || 0;
@@ -7742,21 +7935,46 @@ function repLevel(b){
    ===================================================================== */
 let afterState = null;
 
-function openAfter(){
+/* What the quest that has just ended leaves for the after-battle sheet. The quest is
+   cleared the moment it ends, so this is taken first and kept on the band until the
+   sheet is finished, so closing it half way and coming back loses nothing. */
+function afterSnapshot(){
+  if(!Q) return null;
   const b = band();
-  /* Who rolls: the ruleset says anyone Down at the end, or Marked at any point. */
-  const owed = b.members.filter(m => {
-    const u = questOn() ? questUnit(m) : null;
-    const down = u ? unitDown(u) : healthOf(m).every(h => h <= 0);
-    const marked = u ? (u.cond || []).includes("marked") : false;
-    return down || marked;
-  }).map(m => ({id: m.id, marked: questOn() && questUnit(m) ? (questUnit(m).cond || []).includes("marked") : false,
-                stabilised: questOn() && questUnit(m) ? (questUnit(m).cond || []).includes("stabilised") : false}));
+  const owed = b.members.map(m => ({m, u: questUnit(m)})).filter(x => x.u && (unitDown(x.u) || (x.u.cond || []).includes("marked")))
+    .map(x => ({id: x.m.id, marked: (x.u.cond || []).includes("marked"), stabilised: (x.u.cond || []).includes("stabilised")}));
+  const usBroke = breakState("us").at > 0, themBroke = breakState("them").at > 0;
+  let outcome = "draw";
+  if(usBroke && !themBroke) outcome = "lost";
+  else if(themBroke && !usBroke) outcome = "won";
+  else if(Q.vp.us > Q.vp.them) outcome = "won";
+  else if(Q.vp.them > Q.vp.us) outcome = "lost";
+  return {owed, went: Q.units.filter(u => u.side === "us" && !u.remote).map(u => u.uid), outcome,
+          size: Q.size, mult: Q.reward || 1, difficulty: Q.difficulty || null,
+          flavours: (Q.scenario && Q.scenario.woundFlavour) || [],
+          bosses: Q.units.filter(u => u.side === "them" && u.boss).map(u => u.name),
+          namings: (Q.scenario && Q.scenario.namings) || null,
+          title: (Q.scenario && Q.scenario.name) || "The battle", vp: [Q.vp.us, Q.vp.them], step: null};
+}
 
-  afterState = {owed, done: [], step: owed.length ? "fate" : "spoils", won: true,
-                size: (questOn() && Q.size) || bandSpent(b),
-                mult: (questOn() && Q.reward) || 1,
-                difficulty: (questOn() && Q.difficulty) || null};
+function openAfter(snap){
+  const b = band();
+  if(!snap) snap = b.pendingAfter || null;
+  if(!snap){
+    /* opened by hand with nothing to go on: whoever is at zero Health owes a roll */
+    snap = {owed: b.members.filter(m => healthOf(m).every(h => h <= 0)).map(m => ({id: m.id, marked: false, stabilised: false})),
+            went: b.members.filter(fielded).map(m => m.id), outcome: "won", size: bandSpent(b), mult: 1, difficulty: null,
+            flavours: [], title: "The battle", vp: null};
+  }
+  b.pendingAfter = snap;                 // owed is shared with the state below, so a rolled fate is never rolled twice
+  save();
+  const went = new Set(snap.went || []);
+  const x = {};
+  b.members.forEach(m => x[m.id] = {took: went.has(m.id), kills: 0, obj: false, boss: false});
+  afterState = {owed: snap.owed, total: snap.owed.length, done: [], step: snap.owed.length ? "fate" : "spoils",
+                outcome: snap.outcome, size: snap.size, mult: snap.mult, difficulty: snap.difficulty,
+                flavours: snap.flavours || [], title: snap.title, vp: snap.vp, bosses: snap.bosses || [], namings: snap.namings || null, x};
+  b.lastNamings = snap.namings || b.lastNamings || null;      // camp may need "survived" names later
   drawAfter();
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
 }
@@ -7772,8 +7990,7 @@ function drawAfter(){
       <div class="sheet-head">
         <button class="iconbtn" id="afX" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button><div class="eyebrow">Fate</div>
-        <span class="chip">${S.owed.length} to roll</span></div>
+        </button><div class="eyebrow">${stepLine(S, "fate")}</div></div>
       <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
         <div class="cardname" style="font-size:22px">${esc(fullName(m)) || "Unnamed"}</div>
         ${m.epitaph ? `<div class="cardepi">“${esc(m.epitaph)}”</div>` : ""}
@@ -7808,21 +8025,21 @@ function drawAfter(){
     /* Nothing records what actually took a model Down, so this asks rather
        than guesses. The scenario's own woundFlavour lines, if it has any,
        are the choices — the host says what did it, in one tap. */
-    const flavours = (questOn() && Q.scenario && Q.scenario.woundFlavour) || [];
+    const flavours = S.flavours || (questOn() && Q.scenario && Q.scenario.woundFlavour) || [];
     $("#sheet2In").innerHTML = `
-      <div class="sheet-head"><div class="eyebrow">Fate</div>
+      <div class="sheet-head"><div class="eyebrow">${stepLine(S, "fate")}</div>
         <span class="chip mono">d20 ${dice.join(" / ")}${dice.length > 1 ? " — kept " + rec.roll : ""}</span></div>
       <div class="slab" style="margin-top:6px;border-color:${rec.dead ? "var(--rust)" : rec.scar ? "var(--rust)" : "var(--gilt-deep)"}">
         <div class="head"><span class="eyebrow">${esc(m.name)}</span><span class="rule"></span>
           <span class="chip mono">${rec.roll}</span></div>
-        <div class="cardname" style="font-size:19px;margin-bottom:6px">${esc(rec.name)}</div>
+        <div class="cardname" style="font-size:19px;margin-bottom:6px">${esc(rec.name)}${rec.baseName ? ` <span class="quiet" style="font-size:12px;letter-spacing:0;font-family:Inter,sans-serif">(${esc(rec.baseName.toLowerCase())})</span>` : ""}</div>
         <p class="lead" style="margin:0">${esc(rec.effect)}</p>
         ${rec.flavourText ? `<p class="serif" style="margin:9px 0 0;color:var(--ash-dim)">${esc(rec.flavourText)}</p>` : ""}
         ${rec.scar ? `<p class="quiet" style="margin:9px 0 0">A scar. It stays, and it shows on the card.</p>` : ""}
         ${rec.mend ? `<p class="quiet" style="margin:6px 0 0">Can be mended in camp for ${rec.mend.cost}: ${esc(rec.mend.effect)}</p>` : ""}
       </div>
       ${flavours.length && !rec.flavourText ? `<div class="slab">
-        <div class="head"><span class="eyebrow">What did it</span><span class="rule"></span></div>
+        <div class="head"><span class="eyebrow">What did it</span><span class="rule"></span><span class="quiet">names the scar and offers words</span></div>
         <div class="sheet-actions" style="flex-wrap:wrap;gap:7px">
           ${flavours.map((f, i) => `<button class="btn sm ghost" data-flavour="${i}" style="margin-left:0">${esc(f.cause)}</button>`).join("")}
         </div>
@@ -7837,57 +8054,74 @@ function drawAfter(){
     $("#sheet2In").querySelectorAll("[data-flavour]").forEach(bn => bn.onclick = () => {
       const f = flavours[+bn.dataset.flavour];
       rec.flavourCause = f.cause; rec.flavourText = f.text;
+      rec.epithetOptions = (f.epithets || []).slice(0, 3); rec.epitaphOptions = (f.epitaphs || []).slice(0, 3);
+      if(f.scar && rec.scar && !rec.baseName){ rec.baseName = rec.name; rec.name = f.scar.charAt(0).toUpperCase() + f.scar.slice(1); }
       save(); drawAfter();
     });
     const epi = $("#afEpi");
-    if(epi) epi.onclick = () => openEpithet(m, rec);
+    if(epi) epi.onclick = () => openEpithet(m, rec, {options: rec.epithetOptions});
     const bury = $("#afBury");
     if(bury) bury.onclick = () => {
-      const bb = band();
-      bb.members = bb.members.filter(x => x.id !== m.id);
-      save(); toast(m.name + " is buried");
-      S.step = S.owed.length ? "fate" : "spoils"; drawAfter(); render();
+      const cause = rec.flavourCause;
+      const how = cause ? "Killed by " + cause : "Dead on the Fate table";
+      openEpitaph(m, {reason: cause ? "killed by " + cause : "they did not get up", options: rec.epitaphOptions, back: drawAfter,
+        done: ep => {
+          layToGrave(band(), m, how, false, ep, rec.epitaphOptions);
+          toast(m.name + " is buried");
+          S.step = S.owed.length ? "fate" : "spoils"; drawAfter(); render();
+        }});
     };
     $("#afNext").onclick = () => { S.step = S.owed.length ? "fate" : "spoils"; drawAfter(); };
     return;
   }
 
+  if(S.step === "done") return drawAfterDone();
+
   /* ---- the spoils ---- */
   const aw = RS.campaign.awards;
   const lvl = repLevel(b);
+  const OUT = [["won", "Won"], ["draw", "Drawn"], ["lost", "Lost or withdrew"]];
+  const rep = repFor(S.outcome, S.difficulty);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="afX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">What you take away</div></div>
+      </button><div class="eyebrow">${stepLine(S, "spoils")}</div></div>
 
     <div class="slab" style="margin-top:6px">
-      <div class="head"><span class="eyebrow">How it went</span><span class="rule"></span></div>
-      <div class="sheet-actions" style="margin-bottom:12px">
-        <button class="btn ${S.won ? "primary" : "ghost"}" id="afWon" style="margin-left:0">Won</button>
-        <button class="btn ${S.won ? "ghost" : "primary"}" id="afLost">Lost or withdrew</button>
+      <div class="head"><span class="eyebrow">${esc(S.title)}</span><span class="rule"></span>
+        ${S.vp ? `<span class="chip mono">VP ${S.vp[0]}\u2013${S.vp[1]}</span>` : ""}</div>
+      <div class="sheet-actions" style="margin:0 0 12px;flex-wrap:wrap;gap:7px">
+        ${OUT.map(([id, label]) => `<button class="btn ${S.outcome === id ? "primary" : "ghost"}" data-out="${id}" style="margin-left:0">${label}</button>`).join("")}
       </div>
       <div class="field"><label>Game size in points</label>
         <input class="input mono" id="afSize" inputmode="numeric" value="${S.size}"></div>
-      <p class="quiet" style="margin:9px 0 0">Cash is ${Math.round(aw.cash.winPayoutPctOfGameSize * 100)}% of
-        the game size${S.won ? "" : ", halved for a loss"}${S.difficulty && S.mult !== 1
-          ? ", ×" + S.mult + " for a " + S.difficulty + " one" : ""}.</p>
+      <p class="quiet" style="margin:9px 0 0">Cash is ${Math.round(aw.cash.winPayoutPctOfGameSize * 100)}% of the game size${
+        S.outcome === "won" ? "" : S.outcome === "draw" ? ", at " + Math.round(DRAW_FACTOR * 100) + "% for a draw" : ", halved for a loss"}${
+        S.difficulty && S.mult !== 1 ? ", \u00d7" + S.mult + " for a " + S.difficulty + " one" : ""}.</p>
     </div>
 
     <div class="slab">
       <div class="head"><span class="eyebrow">XP</span><span class="rule"></span>
-        <span class="quiet">${aw.xp.participate} each for being there${S.won ? ", +" + aw.xp.win + " for the win" : ""}</span></div>
-      ${b.members.map(m => `
-        <div class="grow">
-          <div class="grow-main"><div class="grow-name">${esc(m.name) || "Unnamed"}</div>
-            <div class="grow-sub">${m.xp || 0} XP saved up</div></div>
-          <div class="grow-r"><div class="stepper sm">
-            <button data-xp="${esc(m.id)}|-1">−</button>
-            <span>${(S.xp && S.xp[m.id]) !== undefined ? S.xp[m.id] : defaultXP(m, S)}</span>
-            <button data-xp="${esc(m.id)}|1">+</button></div></div>
-        </div>`).join("")}
-      <p class="quiet" style="margin:10px 0 0">Add ${aw.xp.takeEnemyDown} for each enemy taken Down
-        (up to ${aw.xp.takeEnemyDownMax}) and ${aw.xp.objectiveAction} for an objective action.</p>
+        <span class="quiet">tick what each of them did</span></div>
+      ${b.members.map(m => { const x = S.x[m.id];
+        return `<div class="grow" style="flex-wrap:wrap;align-items:center">
+          <div class="grow-main" style="min-width:130px">
+            <div class="grow-name">${esc(m.name) || "Unnamed"}${x.took ? "" : ` <span class="chip">did not go</span>`}</div>
+            <div class="grow-sub">${m.xp || 0} XP saved up</div>
+            ${(m.scars || []).filter(sc => sc.scar).length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${
+              (m.scars || []).filter(sc => sc.scar).map(sc => `<span class="chip bad" title="${esc(sc.effect)}">${esc(sc.name)}${sc.mended ? " \u00b7 mended" : ""}${sc.fitted ? " \u00b7 fitted" : ""}</span>`).join("")}</div>` : ""}</div>
+          <div class="grow-r" style="flex-wrap:wrap;justify-content:flex-end;gap:6px">
+            <button class="chip ${x.took ? "gilt" : ""}" data-xt="${esc(m.id)}|took">Took part</button>
+            <span class="chip" style="gap:2px;padding:1px 3px 1px 9px">Enemies down
+              <span class="stepper sm" style="border:0;background:none"><button data-xk="${esc(m.id)}|-1" ${x.kills ? "" : "disabled"}>\u2212</button><span>${x.kills}</span><button data-xk="${esc(m.id)}|1" ${x.kills < aw.xp.takeEnemyDownMax ? "" : "disabled"}>+</button></span></span>
+            <button class="chip ${x.obj ? "gilt" : ""}" data-xt="${esc(m.id)}|obj">Objective</button>
+            <button class="chip ${x.boss ? "gilt" : ""}" data-xt="${esc(m.id)}|boss" title="Struck the final blow on a boss">Boss</button>
+            <span class="chip gilt mono">+${xpFor(m, S)} XP</span>
+          </div></div>`; }).join("")}
+      <p class="quiet" style="margin:10px 0 0">${aw.xp.participate} for taking part${S.outcome === "won" ? ", +" + aw.xp.win + " more for the win" : ""};
+        ${aw.xp.takeEnemyDown} for each enemy taken Down (up to ${aw.xp.takeEnemyDownMax}); ${aw.xp.objectiveAction} for an objective action.
+        Anyone who did not go gets nothing.</p>
     </div>
 
     <div class="slab">
@@ -7896,8 +8130,9 @@ function drawAfter(){
         <div class="grow-sub">${b.cash || 0} now</div></div>
         <div class="grow-r"><span class="mono">+${cashFor(S)}</span></div></div>
       <div class="grow"><div class="grow-main"><div class="grow-name">Reputation</div>
-        <div class="grow-sub">${b.reputation || 0}${lvl ? " · " + lvl.name : ""}</div></div>
-        <div class="grow-r"><span class="mono">${signed(S.won ? aw.reputation.win : aw.reputation.withdrawOrBreak)}</span></div></div>
+        <div class="grow-sub">${b.reputation || 0}${lvl ? " \u00b7 " + lvl.name : ""}${
+          S.outcome === "won" && (S.difficulty === "hard" || S.difficulty === "extreme") ? " \u00b7 one extra for a " + S.difficulty + " win" : ""}</div></div>
+        <div class="grow-r"><span class="mono">${signed(rep)}</span></div></div>
     </div>
 
     <div class="sheet-actions">
@@ -7907,52 +8142,189 @@ function drawAfter(){
 
   $("#afX").onclick = closeAfter;
   $("#afCancel").onclick = closeAfter;
-  $("#afWon").onclick = () => { S.won = true; drawAfter(); };
-  $("#afLost").onclick = () => { S.won = false; drawAfter(); };
+  $("#sheet2In").querySelectorAll("[data-out]").forEach(bn => bn.onclick = () => { S.outcome = bn.dataset.out; drawAfter(); });
   $("#afSize").oninput = e => { S.size = Math.max(0, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0); };
-  $("#sheet2In").querySelectorAll("[data-xp]").forEach(btn => btn.onclick = () => {
-    const [id, d] = btn.dataset.xp.split("|");
-    S.xp = S.xp || {};
-    const cur = S.xp[id] !== undefined ? S.xp[id] : defaultXP(b.members.find(x => x.id === id), S);
-    S.xp[id] = Math.max(0, cur + +d);
+  $("#sheet2In").querySelectorAll("[data-xt]").forEach(bn => bn.onclick = () => {
+    const [id, what] = bn.dataset.xt.split("|"); S.x[id][what] = !S.x[id][what]; drawAfter();
+  });
+  $("#sheet2In").querySelectorAll("[data-xk]").forEach(bn => bn.onclick = () => {
+    const [id, d] = bn.dataset.xk.split("|"); const x = S.x[id];
+    x.kills = Math.max(0, Math.min(aw.xp.takeEnemyDownMax, x.kills + +d));
+    if(x.kills) x.took = true;
     drawAfter();
   });
   $("#afDone").onclick = () => {
+    const xpLines = [];
     b.members.forEach(m => {
-      const n = (S.xp && S.xp[m.id] !== undefined) ? S.xp[m.id] : defaultXP(m, S);
+      /* Anyone laid up before this battle has now missed it. */
+      const lu = laidUpRec(m);
+      if(lu && !lu.fresh){ m.scars = m.scars.filter(x => x !== lu); m.fielded = true; }
+      else if(lu) lu.fresh = false;
+      const n = xpFor(m, S);
+      if(S.x[m.id].took) m.battles = (m.battles || 0) + 1;
+      if(S.x[m.id].boss && ruleOn("narrative", b)){
+        const who = (S.bosses || []).length === 1 ? S.bosses[0] : "a boss";
+        const nb = ((S.namings && S.namings.boss) || []);
+        const entry = nb.find(e => (S.bosses || []).some(n => n.toLowerCase() === e.who.toLowerCase())) || nb[0];
+        addMoment(b, m.id, "Struck the final blow on " + who, ["-slayer", "-bane", "-ender", "giant-killer"], "", entry ? entry.options : []);
+      }
       m.xp = (m.xp || 0) + n;
+      if(n) xpLines.push(m.name + " +" + n);
     });
-    const got = awardBattle(b, {won: S.won, size: S.size, difficultyMult: S.mult || 1});
-    save(); closeAfter(); render();
-    toast("+" + got.cash + " Cash, " + signed(got.rep) + " Reputation");
+    const got = awardBattle(b, {outcome: S.outcome, size: S.size, difficultyMult: S.mult || 1, difficulty: S.difficulty});
+    S.result = {cash: got.cash, rep: got.rep, xpLines};
+    b.pendingAfter = null;
+    save(); render();
+    S.step = "done"; drawAfter();
   };
 }
-function defaultXP(m, S){
-  const aw = RS.campaign.awards.xp;
-  return aw.participate + (S.won ? aw.win : 0);
+
+function drawAfterDone(){
+  const b = band(), S = afterState, R = S.result || {cash: 0, rep: 0, xpLines: []};
+  const OUTL = {won: "Won", draw: "Drawn", lost: "Lost or withdrew"};
+  const fates = S.done.map(d => { const m = b.members.find(x => x.id === d.id); return (m ? m.name : "Someone") + ": " + d.rec.name; });
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${stepLine(S, "done")}</div></div>
+    <div class="slab" style="margin-top:6px;border-color:var(--gilt-deep)">
+      <div class="head"><span class="eyebrow">${esc(S.title)} \u00b7 ${OUTL[S.outcome]}</span><span class="rule"></span></div>
+      <div class="grow"><div class="grow-main"><div class="grow-name">Cash</div><div class="grow-sub">${b.cash || 0} now</div></div>
+        <div class="grow-r"><span class="mono">+${R.cash}</span></div></div>
+      <div class="grow"><div class="grow-main"><div class="grow-name">Reputation</div><div class="grow-sub">${b.reputation || 0}${repLevel(b) ? " \u00b7 " + repLevel(b).name : ""}</div></div>
+        <div class="grow-r"><span class="mono">${signed(R.rep)}</span></div></div>
+      ${R.xpLines.length ? `<div class="grow"><div class="grow-main"><div class="grow-name">XP</div>
+        <div class="grow-sub">${esc(R.xpLines.join(" \u00b7 "))}</div></div></div>` : ""}
+    </div>
+    ${S.done.length ? `<div class="slab"><div class="head"><span class="eyebrow">What the fallen carry away</span><span class="rule"></span></div>
+      ${S.done.map(d => { const m = b.members.find(x => x.id === d.id), r = d.rec;
+        return `<div class="says ${r.scar || r.dead ? "bad" : ""}">
+          <div class="says-n">${esc(m ? fullName(m) : "Someone")} \u2014 ${esc(r.name)}
+            <span class="chip mono">d20 ${r.roll}</span>${r.scar ? `<span class="chip bad">scar</span>` : ""}${r.dead ? `<span class="chip bad">dead</span>` : ""}</div>
+          <div class="says-d">${esc(r.effect)}</div>
+          ${r.flavourText ? `<div class="says-d serif" style="opacity:.85">${esc(r.flavourText)}</div>` : ""}
+          ${r.mend ? `<div class="says-d quiet">Can be mended in camp for ${r.mend.cost}: ${esc(r.mend.effect)}</div>` : ""}
+          ${(r.replace || []).length ? `<div class="says-d quiet">Or replaced outright, if the band can afford it.</div>` : ""}
+          ${r.id === "mortalWound" && m ? `<div class="says-d quiet">Surgery in camp costs ${surgeryCost(m)} Cash. Without it they die when camp is broken.</div>` : ""}
+        </div>`; }).join("")}</div>` : ""}
+    <div id="adMoments">${momentsHTML(b)}</div>
+    <p class="quiet" style="margin:0">Spend what was earned in camp: train with XP, buy gear, have scars seen to.</p>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="adClose" style="margin-left:0">Close</button>
+      <button class="btn primary" id="adCamp">To camp</button>
+    </div>`;
+  bindMoments($("#sheet2In"), () => { afterState.step = "done"; drawAfter(); });
+  $("#adClose").onclick = closeAfter;
+  $("#adCamp").onclick = () => { afterState = null; if(typeof openCamp === "function") openCamp(); else closeAfter(); };
+}
+
+/* "Fate 1 of 2 \u00b7 Spoils \u00b7 Done", the step you are on lit */
+function stepLine(S, at){
+  const steps = [];
+  if(S.total) steps.push(["fate", at === "fate" ? "Fate " + Math.min(S.total, S.total - S.owed.length + (S.step === "result" ? 0 : 1)) + " of " + S.total : "Fate"]);
+  steps.push(["spoils", "Spoils"], ["done", "Done"]);
+  return steps.map(([id, label]) => id === at ? label : `<span style="opacity:.45">${label}</span>`).join(" \u00b7 ");
+}
+function xpFor(m, S){
+  const aw = RS.campaign.awards.xp, x = S.x[m.id];
+  if(!x) return 0;
+  return (x.took ? aw.participate : 0) + Math.min(x.kills, aw.takeEnemyDownMax) * aw.takeEnemyDown
+       + (x.obj ? aw.objectiveAction : 0) + (S.outcome === "won" && x.took ? aw.win : 0);
 }
 function cashFor(S){
   const aw = RS.campaign.awards.cash;
-  return Math.round((S.size || 0) * aw.winPayoutPctOfGameSize *
-                    (S.won ? 1 : aw.lossFactor) * (S.mult || 1));
+  return Math.round((S.size || 0) * aw.winPayoutPctOfGameSize * outcomeFactor(S.outcome) * (S.mult || 1));
 }
 function closeAfter(){ afterState = null; closePicker(); render(); }
 
 /* ---- an epithet for what it cost them ---- */
-async function openEpithet(m, rec){
+/* A name changes when something happens to someone: a scar, a boss brought down, a
+   brush with death, an oath finally paid. The old name is kept (it is on their stone
+   later) and the new one replaces it. */
+function setEpithet(m, v){
+  v = String(v || "").trim().slice(0, 50);
+  if(!v || v === m.epithet) return;
+  if(m.epithet) m.epithetHistory = (m.epithetHistory || []).concat([m.epithet]);
+  m.epithet = v;
+}
+function addMoment(b, mid, name, hooks, effect, options){
+  b.moments = b.moments || [];
+  const x = {id: uid(), mid, name, effect: effect || "", hooks: hooks || [], options: (options || []).slice(0, 3), at: Date.now()};
+  b.moments.push(x); save();
+  return x;
+}
+function resolveMoment(id){ const b = band(); b.moments = (b.moments || []).filter(x => x.id !== id); save(); }
+/* things that have happened which may earn a new name, waiting to be settled */
+function momentsHTML(b){
+  if(!ruleOn("narrative", b)) return "";
+  const list = (b.moments || []).filter(x => b.members.some(m => m.id === x.mid));
+  if(!list.length) return "";
+  return `<div class="slab" style="border-color:var(--gilt-deep)">
+    <div class="head"><span class="eyebrow">A new name?</span><span class="rule"></span><span class="quiet">something happened to them</span></div>
+    ${list.map(x => { const m = b.members.find(z => z.id === x.mid);
+      return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(fullName(m)) || "Unnamed"}</div>
+        <div class="grow-sub">${esc(x.name)}</div></div>
+        <div class="grow-r"><button class="btn sm" data-mom="${esc(x.id)}">Give a name</button>
+          <button class="tiny" data-momx="${esc(x.id)}" aria-label="They keep their name">\u00d7</button></div></div>`; }).join("")}
+  </div>`;
+}
+function bindMoments(root, redraw){
+  root.querySelectorAll("[data-mom]").forEach(btn => btn.onclick = () => {
+    const b = band(), x = (b.moments || []).find(y => y.id === btn.dataset.mom); if(!x) return;
+    const m = b.members.find(z => z.id === x.mid); if(!m) return;
+    openEpithet(m, {name: x.name, effect: x.effect, hooks: x.hooks, options: x.options},
+      {back: redraw, moment: x.id, lead: m.name + " \u2014 " + x.name.charAt(0).toLowerCase() + x.name.slice(1) + ". People will call them something for it; it replaces the name they had."});
+  });
+  root.querySelectorAll("[data-momx]").forEach(btn => btn.onclick = () => { resolveMoment(btn.dataset.momx); redraw(); });
+}
+
+/* What the stone says when someone is gone: three lines the scenario wrote about
+   how they died, or their own words. */
+function openEpitaph(m, opts){
+  const options = (opts.options || []).filter(Boolean).slice(0, 3);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="etX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Their epitaph</div></div>
+    <p class="lead">${esc(fullName(m) || m.name)} is gone${opts.reason ? ": " + esc(opts.reason) : ""}. What does the stone say?</p>
+    ${options.length ? `<div class="picks" style="margin-top:12px">${options.map((o, i) => `<button type="button" class="pick" data-et="${i}">
+      <div class="pick-main"><div class="pick-name" style="font-family:Spectral,Georgia,serif;font-style:italic;font-size:15px;font-weight:500;line-height:1.45">${esc(o)}</div></div></button>`).join("")}</div>
+      <p class="quiet" style="margin:8px 0 0">Choose one, or write your own.</p>` : ""}
+    <div class="field" style="margin:14px 0">
+      <label>${options.length ? "Or write your own" : "The stone says"}</label>
+      <textarea class="input serif" id="etV" rows="2" maxlength="140" placeholder="what the stone says">${esc(m.epitaph || "")}</textarea></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="etKeep" style="margin-left:0">Keep what was written</button>
+      <button class="btn primary" id="etGo">Cut it in stone</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#sheet2In").querySelectorAll("[data-et]").forEach(btn => btn.onclick = () => {
+    $("#etV").value = options[+btn.dataset.et];
+    $("#sheet2In").querySelectorAll("[data-et]").forEach(x => x.classList.toggle("on", x === btn));
+  });
+  $("#etX").onclick = opts.back || closePicker;
+  $("#etKeep").onclick = () => opts.done(m.epitaph || "");
+  $("#etGo").onclick = () => opts.done($("#etV").value.trim().slice(0, 140));
+}
+
+async function openEpithet(m, rec, opts){
+  opts = opts || {};
+  const back = opts.back || drawAfter;
   const ai = await getAI();
   const hooks = (rec.hooks || []).join(", ");
+  /* three words from the scenario when it wrote them; otherwise the ruleset's own hooks */
+  const options = ((opts.options && opts.options.length ? opts.options : rec.options && rec.options.length ? rec.options : (rec.hooks || []))
+    .filter(Boolean)).slice(0, 3);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="epX" aria-label="Back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
       </button><div class="eyebrow">An epithet</div></div>
-    <p class="lead">${esc(m.name)} came out of that with ${esc(rec.name.toLowerCase())}.
-      People will call them something for it — it joins their name, same as the one they
-      started with.</p>
-    ${hooks ? `<p class="quiet" style="margin-top:8px">Words that fit: ${esc(hooks)}</p>` : ""}
+    <p class="lead">${esc(opts.lead || m.name + " came out of that with " + rec.name.toLowerCase() + ". People will call them something for it \u2014 it joins their name, same as the one they started with.")}</p>
+    ${options.length ? `<div class="picks" style="margin-top:12px">${options.map((o, i) => `<button type="button" class="pick" data-eo="${i}">
+      <div class="pick-main"><div class="pick-name" style="font-family:Spectral,Georgia,serif;font-style:italic;font-size:16px;font-weight:500">${esc(o)}</div></div></button>`).join("")}</div>
+      <p class="quiet" style="margin:8px 0 0">Choose one, or write your own.</p>` : ""}
     <div class="field" style="margin:14px 0">
-      <label>Epithet</label>
+      <label>${options.length ? "Or write your own" : "Epithet"}</label>
       <input class="input serif" id="epV" maxlength="50" value="${esc(m.epithet || "")}"
         placeholder="the Quiet, Ashmouth, One-Eye"></div>
     ${ai ? `<div class="sheet-actions" style="margin-bottom:12px">
@@ -7962,12 +8334,17 @@ async function openEpithet(m, rec){
       <button class="btn ghost" id="epNone" style="margin-left:0">They keep their name</button>
       <button class="btn primary" id="epGo">That is what they are called</button>
     </div>`;
-  $("#epX").onclick = drawAfter;
-  $("#epNone").onclick = drawAfter;
+  $("#sheet2In").querySelectorAll("[data-eo]").forEach(btn => btn.onclick = () => {
+    $("#epV").value = options[+btn.dataset.eo];
+    $("#sheet2In").querySelectorAll("[data-eo]").forEach(x => x.classList.toggle("on", x === btn));
+  });
+  $("#epX").onclick = back;
+  $("#epNone").onclick = () => { if(opts.moment) resolveMoment(opts.moment); back(); };
   $("#epGo").onclick = () => {
-    m.epithet = $("#epV").value.trim().slice(0, 50);
+    setEpithet(m, $("#epV").value);
+    if(opts.moment) resolveMoment(opts.moment);
     save(); toast(m.name + (m.epithet ? " — “" + m.epithet + "”" : ""));
-    drawAfter(); render();
+    back(); render();
   };
   const ask = $("#epAsk");
   if(ask) ask.onclick = async () => {
@@ -8018,7 +8395,17 @@ function xpBuy(m, apply, price){
   return true;
 }
 
-function openAdvance(mid){
+/* Spending XP opens on four categories, not on everything at once. Coming back
+   after buying something keeps you in the category you were in. */
+let advCat = null;
+const ADV_CATS = [
+  {id: "stat",      label: "Stats",     blurb: "Dice, Health and Actions"},
+  {id: "traits",    label: "Traits",    blurb: "What they are"},
+  {id: "abilities", label: "Abilities", blurb: "What they can do"},
+  {id: "powers",    label: "Powers",    blurb: "Murmurs and Reckonings"}
+];
+function openAdvance(mid, keepCat){
+  if(!keepCat) advCat = null;
   const m = band().members.find(x => x.id === mid); if(!m) return;
   const have = m.xp || 0;
 
@@ -8056,7 +8443,9 @@ function openAdvance(mid){
   offers.sort((a, b) => a.price - b.price);
   const shown = offers.filter(o => !o.blocked);
 
-  $("#sheet2In").innerHTML = `
+  const cat = ADV_CATS.find(c => c.id === advCat) || null;
+  const inCat = c => shown.filter(o => o.kind === c);
+  const head = `
     <div class="sheet-head">
       <button class="iconbtn" id="axX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -8066,13 +8455,32 @@ function openAdvance(mid){
     <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
       <div class="cardname" style="font-size:21px">${esc(fullName(m)) || "Unnamed"}</div>
       ${m.epitaph ? `<div class="cardepi">\u201c${esc(m.epitaph)}\u201d</div>` : ""}
-    </div>
+    </div>`;
 
+  if(!cat){
+    $("#sheet2In").innerHTML = head + `
     <p class="lead">XP buys anything at its points price, surcharge and all \u2014 so the
-      fourth thing a model learns costs more than the first.</p>
-
-    <div class="slab" style="margin-top:14px">
-      ${shown.length ? shown.map((o, i) => `
+      fourth thing a model learns costs more than the first. Pick what to look at.</p>
+    <div class="opts" style="margin-top:14px">
+      ${ADV_CATS.map(c => {
+        const list = inCat(c.id), can = list.filter(o => o.price <= have), cheapest = list.length ? Math.min(...list.map(o => o.price)) : null;
+        return `<button class="opt" data-cat="${c.id}" ${list.length ? "" : "disabled"} style="${list.length ? "" : "opacity:.5;cursor:default"}">
+          <b>${esc(c.label)}</b>
+          <span>${esc(c.blurb)}</span>
+          <span style="margin-top:7px;color:${can.length ? "var(--gilt)" : "var(--ash-mute)"}">${
+            list.length ? (can.length ? can.length + " you can afford" : "none affordable yet") + " \u00b7 from " + cheapest + " XP" : "nothing left"}</span>
+        </button>`; }).join("")}
+    </div>`;
+    $("#sheet2In").querySelectorAll("[data-cat]").forEach(btn => btn.onclick = () => { advCat = btn.dataset.cat; openAdvance(mid, true); });
+  } else {
+    const list = inCat(cat.id);
+    $("#sheet2In").innerHTML = head + `
+    <div class="sheet-actions" style="margin:0 0 12px;align-items:center">
+      <button class="btn sm ghost" id="axAll" style="margin-left:0">\u2039 All categories</button>
+      <span class="eyebrow" style="margin-left:auto">${esc(cat.label)}</span>
+    </div>
+    <div class="slab">
+      ${list.length ? list.map(o => `
         <div class="grow">
           <div class="grow-main">
             <div class="grow-name">${esc(o.label)}</div>
@@ -8080,19 +8488,21 @@ function openAdvance(mid){
           </div>
           <div class="grow-r">
             <span class="mono ${have >= o.price ? "" : "quiet"}">${o.price} XP</span>
-            <button class="btn sm ${have >= o.price ? "primary" : ""}" data-buy="${i}"
+            <button class="btn sm ${have >= o.price ? "primary" : ""}" data-buy="${shown.indexOf(o)}"
               ${have >= o.price ? "" : "disabled"}>Learn</button>
           </div>
-        </div>`).join("") : `<p class="quiet" style="margin:0">Nothing left to learn.</p>`}
+        </div>`).join("") : `<p class="quiet" style="margin:0">Nothing left to learn here.</p>`}
     </div>`;
+    $("#axAll").onclick = () => { advCat = null; openAdvance(mid, true); };
+  }
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#axX").onclick = () => { closePicker(); render(); if(cardId) drawCard(); };
+  $("#axX").onclick = () => { advCat = null; closePicker(); render(); if(cardId) drawCard(); };
   $("#sheet2In").querySelectorAll("[data-buy]").forEach(btn => btn.onclick = () => {
     const o = shown[+btn.dataset.buy];
     if(xpBuy(m, o.apply, o.price)){
       toast(m.name + " learns " + o.label + " \u2014 " + o.price + " XP");
-      openAdvance(mid); render(); if(cardId) drawCard();
+      openAdvance(mid, true); render(); if(cardId) drawCard();
     }
   });
 }
@@ -8117,18 +8527,131 @@ function leaderOf(b){
 function tetherKind(id){
   return (RS.tethers && RS.tethers.kinds || []).find(k => k.id === id) || null;
 }
-/* Rolled on the die the ruleset names, not hard-coded to 10 sides. */
+/* The tether belongs to the Oathbearer as a person: it is what they did in
+   life, and it is settled where they are raised (the Reliquary) and travels with
+   them. Camp only reads it. It is stored on the member as `tetherKind`. */
+function tetherKinds(){ return (RS.tethers && RS.tethers.kinds) || []; }
+/* Reckoning needs someone in the band who can call one (a Reckoning is a major
+   power), so it is only rolled for a band that has such a caster. */
+function bandHasCaster(members){
+  return (members || []).some(m => (m.powers || []).some(id => (RSX.power[id] || {}).tier === "signature"));
+}
+function needsCaster(k){ return !!k && /caster/i.test(k.requires || ""); }
+function tetherAllowed(k, members){ return !needsCaster(k) || bandHasCaster(members); }
+function rollTetherKind(notId, members){
+  members = members || (typeof band === "function" ? band().members : []);
+  const kinds = tetherKinds().filter(k => k.id !== notId && tetherAllowed(k, members));
+  return kinds.length ? kinds[Math.floor(Math.random() * kinds.length)].id : null;
+}
+/* Quarry is sworn against a kind of enemy chosen when it is set. */
+function tetherObservance(kindId, sworn){
+  const k = tetherKind(kindId); if(!k) return "";
+  return kindId === "quarry" && sworn ? "hunt " + sworn : k.observance;
+}
+/* A battle where the observance could not be kept is not checked: Reckoning with
+   no caster in the field. (Quarry with none of the sworn kind is the player's call.) */
+function tetherUnchecked(b){
+  const k = tetherKind(b.tether && b.tether.kindId);
+  if(!needsCaster(k)) return false;
+  const going = (typeof Q !== "undefined" && Q)
+    ? Q.units.filter(u => u.side === "us").map(u => b.members.find(m => m.id === u.uid)).filter(Boolean)
+    : b.members.filter(fielded);
+  return !bandHasCaster(going);
+}
+/* One line for the scenario writer: the Oathbearer's quarry belongs in the fight. */
+function tetherPromptLine(){
+  const b = band(), leader = leaderOf(b);
+  if(!leader || leader.tetherKind !== "quarry" || !leader.tetherSworn) return "";
+  return "THE OATHBEARER HUNTS " + leader.tetherSworn.toUpperCase() + ". Their tether is sworn against that kind of enemy. Include at least one such enemy if it fits the place; if it truly does not, leave it out.\n";
+}
+function tetherDebtFor(kindId){
+  const k = tetherKind(kindId) || {};
+  return ((RS.tethers.debt || {}).byKind || {})[kindId] || k.debt || 10;
+}
+/* Puts the band's tether on the Oathbearer's own kind. */
 function bindTether(b){
-  const kinds = (RS.tethers && RS.tethers.kinds) || [];
   const leader = leaderOf(b);
-  if(!leader || !kinds.length) return null;
-  const roll = kinds[Math.floor(Math.random() * kinds.length)];
-  const debt = ((RS.tethers.debt || {}).byKind || {})[roll.id];
-  b.tether = {leaderId: leader.id, kindId: roll.id, debt: debt || roll.debt || 10,
-              kept: 0, frayed: false, obols: 0, sworn: null, severed: null};
-  qlogBand(b, (leaderOf(b) || {}).name + " is bound: the " + roll.name + " tether");
+  if(!leader || !tetherKinds().length) return null;
+  if(!tetherKind(leader.tetherKind)){ leader.tetherKind = rollTetherKind(); }   // one raised before tethers were chosen
+  const kind = tetherKind(leader.tetherKind);
+  b.tether = {leaderId: leader.id, kindId: kind.id, debt: tetherDebtFor(kind.id),
+              kept: 0, frayed: false, obols: 0, sworn: leader.tetherSworn || null, severed: null};
+  qlogBand(b, leader.name + " is bound: the " + kind.name + " tether");
   return b.tether;
 }
+
+/* Camp: the band's tether follows its Oathbearer's. Nothing is rolled here. */
+function syncTether(b){
+  if(!ruleOn("narrative", b)) return false;
+  const leader = leaderOf(b);
+  if(!leader){ if(!b.sealed && b.tether && !b.tether.severed) b.tether = null; return false; }
+  if(b.tether && b.tether.leaderId === leader.id) return false;
+  if(b.tether && b.sealed && !b.tether.severed) return false;
+  const t = bindTether(b);
+  save();
+  return !!t;
+}
+
+/* ---- the Reliquary: settling the Oathbearer's tether when they are raised ---- */
+function rollOathbearerTether(m){
+  if(m.tetherKind){
+    if(m.tetherRerolled) return false;
+    m.tetherKind = rollTetherKind(m.tetherKind); m.tetherRerolled = true;
+  } else m.tetherKind = rollTetherKind();
+  if(m.tetherKind !== "quarry") m.tetherSworn = undefined;
+  save();
+  return true;
+}
+function tetherEditorHTML(m){
+  const k = tetherKind(m.tetherKind);
+  return `<div class="slab" style="border-color:var(--gilt-deep)">
+    <div class="head"><span class="eyebrow">Tether</span><span class="rule"></span>
+      ${k ? `<span class="chip gilt">${esc(k.name)} · ${tetherDebtFor(k.id)} oaths</span>` : ""}</div>
+    ${k ? `<p class="quiet" style="margin:0"><b style="color:var(--ash)">${esc(k.name)}.</b> They must <span data-tobs>${esc(tetherObservance(k.id, m.tetherSworn))}</span>.</p>
+      <p class="serif" style="margin:8px 0 0;color:var(--ash-dim);font-size:13.5px;line-height:1.55">${esc(k.why)}</p>`
+      : `<p class="quiet" style="margin:0">Whoever calls the Unburied back is tied to the grave by something they did in life.
+        Settle what, and that is where their story starts.</p>`}
+    ${k && k.id === "quarry" ? `<div class="field" style="margin-top:10px"><label>What do they hunt?</label>
+      <input class="input" data-tsworn maxlength="30" value="${esc(m.tetherSworn || "")}" placeholder="wolves, cultists, machines, the drowned">
+      <p class="quiet" style="margin:6px 0 0">The kind of enemy the tether is sworn against. The scenario writer works one into the fight.</p></div>` : ""}
+    ${k && needsCaster(k) && !bandHasCaster(band().members) ? `<p class="quiet" style="margin:10px 0 0;color:var(--rust)">No one in the band can call a Reckoning yet. Give someone a Reckoning, or the tether is not checked in any battle.</p>` : ""}
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px;margin-top:10px">
+      <button class="btn sm ${k ? "" : "primary"}" data-tether="roll" style="margin-left:0" ${k && m.tetherRerolled ? "disabled" : ""}>${k ? (m.tetherRerolled ? "Rolled again already" : "Roll again — once") : "Roll the tether"}</button>
+      <button class="btn sm ghost" data-tether="choose">Choose one</button>
+    </div>
+  </div>`;
+}
+function bindTetherEditor(root, m, after){
+  root.querySelectorAll("[data-tether]").forEach(btn => btn.onclick = () => {
+    if(btn.dataset.tether === "roll"){ if(rollOathbearerTether(m)) after(); }
+    else openTetherChoose(kind => { m.tetherKind = kind; if(kind !== "quarry") m.tetherSworn = undefined; save(); after(); });
+  });
+  /* the sentence above the field follows what is typed */
+  root.querySelectorAll("[data-tsworn]").forEach(inp => inp.oninput = () => {
+    m.tetherSworn = inp.value.trim().slice(0, 30); save();
+    const line = root.querySelector("[data-tobs]");
+    if(line) line.textContent = tetherObservance(m.tetherKind, m.tetherSworn);
+  });
+}
+/* A free choice of the ten, each with its reason. */
+function openTetherChoose(pick){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="tcX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Choose the tether</div></div>
+    <div class="picks" style="margin-top:6px">
+      ${tetherKinds().map(k => { const no = !tetherAllowed(k, band().members); return `<button class="pick ${no ? "no" : ""}" data-tk="${esc(k.id)}" ${no ? "disabled" : ""}><div class="pick-main">
+        <div class="pick-name">${esc(k.name)} <span class="chip">${tetherDebtFor(k.id)} oaths</span></div>
+        <div class="pick-desc">They must ${esc(k.observance)}.</div>
+        <div class="pick-eg">${esc(k.why)}</div>
+        ${no ? `<div class="pick-no">Needs someone in the band who can call a Reckoning.</div>` : ""}</div></button>`; }).join("")}
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#tcX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-tk]").forEach(btn => btn.onclick = () => { closePicker(); pick(btn.dataset.tk); });
+}
+
 /* Quests don't all keep a Q.log the way a battle does — this just keeps a
    short breadcrumb on the band itself so binding/severing is visible even
    outside a battle. */
@@ -8177,7 +8700,7 @@ function severTether(b){
 function snapTether(b){
   const t = b.tether;
   const leader = (b.members || []).find(m => m.id === t.leaderId);
-  if(leader) leader.traits = (leader.traits || []).filter(id => id !== "leader");
+  if(leader) layToGrave(b, leader, "Their tether snapped", false);
   b.reputation = (b.reputation || 0) - 2;
   qlogBand(b, (leader ? leader.name : "The " + leaderTerm()) + "'s tether snaps — they return to the grave");
   b.tether = null;
@@ -8186,14 +8709,17 @@ function snapTether(b){
 function tetherStayUnbound(b){
   const t = b.tether; if(!t) return;
   const leader = (b.members || []).find(m => m.id === t.leaderId);
-  if(leader && !leader.epithet) leader.epithet = "the Unbound";
+  /* every oath kept is worth a new name, but the player chooses it */
+  if(leader && ruleOn("narrative", b))
+    addMoment(b, leader.id, "Every oath is kept", ["the Unbound", "the Freed", "Kept-Promise"],
+              "The tether is severed; they stay, free.");
   b.tether = null;
   save();
 }
 function tetherLayToRest(b){
   const t = b.tether; if(!t) return;
   const leader = (b.members || []).find(m => m.id === t.leaderId);
-  if(leader) leader.fielded = false;
+  if(leader) layToGrave(b, leader, "Laid to rest, with honour", true);
   b.reputation = (b.reputation || 0) + 2;
   qlogBand(b, (leader ? leader.name : "The " + leaderTerm()) + " is laid to rest, with honour");
   b.tether = null;
@@ -8237,8 +8763,10 @@ function tetherHTML(b){
   return `<div class="slab" style="border-color:${t.frayed ? "var(--rust)" : "var(--gilt-deep)"}">
     <div class="head"><span class="eyebrow">Tether — ${esc(kind.name)}</span><span class="rule"></span>
       <span class="chip ${t.frayed ? "bad" : "gilt"}">${t.kept} of ${t.debt} oaths</span></div>
-    <p class="quiet" style="margin:0">${esc(leader ? leader.name : "The " + leaderTerm())} must ${esc(kind.observance)}.
+    <p class="quiet" style="margin:0">${esc(leader ? leader.name : "The " + leaderTerm())} must ${esc(tetherObservance(kind.id, t.sworn))}.
       ${t.frayed ? "Forsaken once already — it will snap if that happens again." : ""}</p>
+    ${kind.why ? `<p class="serif" style="margin:8px 0 0;color:var(--ash-dim);font-size:13.5px;line-height:1.55">${esc(kind.why)}</p>` : ""}
+
     ${t.frayed ? `<div class="sheet-actions" style="flex-wrap:wrap;gap:7px">
       <button class="btn sm" data-tmend="rite">Mend — 10 Cash</button>
       <button class="btn sm" data-tmend="sacrifice">Mend — 3 XP</button>
@@ -8252,6 +8780,434 @@ function bindTetherHTML(el){
     toast(ok ? "Mended" : "Can't afford that");
     if(ok) renderUnburied(band());
   });
+}
+
+/* ---- camp.js ---- */
+/* =====================================================================
+   CAMP, THE WALL, AND WHICH RULES ARE ON
+   What happens between battles. Each of the Unburied takes one camp
+   action per camp is NOT limited: it comes after the scenario, so the
+   Unburied heal, train with XP, buy gear and have scars operated on with
+   Cash, as much as they can afford. Everyone who is gone gets a stone in
+   the Cenotaph (the ruleset calls it the Epitaph wall).
+
+   Prices, limits and wording come from the ruleset. The few places the
+   ruleset describes an effect only in words (what a mend leaves behind)
+   are marked where the app has to read them.
+   ===================================================================== */
+
+/* ---- which rule categories this band plays with ----
+   meta.ruleCategories names them: core is always on, campaign and
+   narrative can be switched off for a table that only wants battles. */
+function ruleCats(){ return (RS.meta && RS.meta.ruleCategories) || {}; }
+function ruleOn(cat, b){
+  if(cat === "core") return true;
+  b = b || band();
+  return !b.rules || b.rules[cat] !== false;
+}
+function openRules(){
+  const b = band();
+  const cats = ruleCats();
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="ruX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Which rules this band plays</div></div>
+    <p class="lead">Switch off what your table does not want. Nothing here changes a
+      point cost, and anything already recorded is kept if you switch it back on.</p>
+    <div class="slab" style="margin-top:14px">
+      ${Object.keys(cats).map(id => `
+        <div class="grow">
+          <div class="grow-main">
+            <div class="grow-name">${esc(id.charAt(0).toUpperCase() + id.slice(1))}</div>
+            <div class="grow-sub">${esc(cats[id])}</div>
+          </div>
+          <div class="grow-r">
+            ${id === "core" ? `<span class="chip">always on</span>`
+              : `<button class="chip ${ruleOn(id, b) ? "gilt" : ""}" data-rule="${esc(id)}">${ruleOn(id, b) ? "on" : "off"}</button>`}
+          </div>
+        </div>`).join("")}
+    </div>
+    ${ruleOn("narrative", b) ? "" : `<p class="quiet">Narrative off: no tether is bound or asked about, and the Cenotaph is hidden.</p>`}
+    ${ruleOn("campaign", b) ? "" : `<p class="quiet">Campaign off: no After the battle sheet or Camp; the band is only a roster.</p>`}`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#ruX").onclick = () => { closePicker(); render(); };
+  $("#sheet2In").querySelectorAll("[data-rule]").forEach(btn => btn.onclick = () => {
+    b.rules = b.rules || {};
+    b.rules[btn.dataset.rule] = !ruleOn(btn.dataset.rule, b);
+    save(); openRules();
+  });
+}
+
+/* ---- the Cenotaph ---- */
+function addStone(b, m, how, gilded, epitaph, options){
+  b.wall = b.wall || [];
+  b.wall.unshift({sid: uid(), at: Date.now(), name: m.name || "Unnamed",
+    epithet: m.epithet || "", epithets: (m.epithetHistory || []).concat(m.epithet ? [m.epithet] : []),
+    titles: (m.titles || []).slice(),
+    role: m.role || "", battles: m.battles || 0,
+    how: how || "", gilded: !!gilded, epitaph: epitaph !== undefined ? epitaph : (m.epitaph || ""),
+    options: (options || []).slice(0, 3)});
+  b.wall = b.wall.slice(0, 200);
+  qlogBand(b, (m.name || "Someone") + " — " + (how || "gone"));
+}
+/* A member leaves the band for good. Their gear has nowhere to go in this
+   app yet, so it goes with them. */
+function layToGrave(b, m, how, gilded, epitaph, options){
+  addStone(b, m, how, gilded, epitaph, options);
+  b.members = b.members.filter(x => x.id !== m.id);
+  save();
+}
+
+function openWall(){
+  const b = band(), list = b.wall || [];
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="wlX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">The Cenotaph</div>
+      <span class="chip">${list.length}</span></div>
+    <p class="lead">${"A resting place for every one of the Unburied who is gone."}
+      ${(RS.epitaphWall || {}).gilded ? " Gilded stones: laid to rest with honour." : ""}</p>
+    ${list.length ? list.map(s => `
+      <div class="slab" style="margin-top:12px;border-color:${s.gilded ? "var(--gilt)" : "var(--line)"}">
+        <div class="head"><span class="eyebrow" style="${s.gilded ? "color:var(--gilt)" : ""}">${s.gilded ? "✦ " : ""}${esc(s.name)}</span><span class="rule"></span>
+          <button class="tiny" data-wdel="${esc(s.sid)}" aria-label="Remove the stone">×</button></div>
+        ${(s.epithets && s.epithets.length ? s.epithets : s.epithet ? [s.epithet] : []).length ? `<div class="cardepi" style="margin:0 0 4px">${esc((s.epithets && s.epithets.length ? s.epithets : [s.epithet]).join(" \u2192 "))}</div>` : ""}
+        <div class="quiet" style="margin-bottom:8px">
+          ${esc([s.role, s.how, s.battles ? s.battles + " battle" + (s.battles === 1 ? "" : "s") : "", (s.titles || []).join(", ")].filter(Boolean).join(" · "))}
+          · ${esc(new Date(s.at).toLocaleDateString())}</div>
+        <input class="input serif" data-wep="${esc(s.sid)}" maxlength="140" value="${esc(s.epitaph)}"
+          placeholder="what the stone says">
+        ${(s.options || []).length ? `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${(s.options || []).map((o, i) =>
+          `<button class="pick" type="button" data-wo="${esc(s.sid)}|${i}" style="padding:8px 10px"><div class="pick-main"><div class="pick-name" style="font-family:Spectral,Georgia,serif;font-style:italic;font-size:13.5px;font-weight:500">${esc(o)}</div></div></button>`).join("")}</div>` : ""}
+        <div class="sheet-actions" style="margin-top:8px">
+          <button class="btn sm ghost" data-wai="${esc(s.sid)}" style="margin-left:0" hidden>Write one from their deeds</button>
+        </div>
+      </div>`).join("") : `<div class="empty"><div class="big">The Cenotaph is empty</div>
+        <div class="quiet">Nobody has been lost yet.</div></div>`}`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#wlX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-wep]").forEach(inp => inp.oninput = () => {
+    const s = list.find(x => x.sid === inp.dataset.wep); if(s){ s.epitaph = inp.value; save(); }
+  });
+  $("#sheet2In").querySelectorAll("[data-wo]").forEach(btn => btn.onclick = () => {
+    const [sid, i] = btn.dataset.wo.split("|");
+    const s = list.find(x => x.sid === sid); if(!s) return;
+    s.epitaph = (s.options || [])[+i] || s.epitaph; save(); openWall();
+  });
+  $("#sheet2In").querySelectorAll("[data-wdel]").forEach(btn => btn.onclick = () => {
+    b.wall = list.filter(x => x.sid !== btn.dataset.wdel); save(); openWall();
+  });
+  /* The line is written from what the stone records, and stays editable. */
+  getAI().then(ai => {
+    if(!ai) return;
+    $("#sheet2In").querySelectorAll("[data-wai]").forEach(btn => {
+      btn.hidden = false;
+      btn.onclick = async () => {
+        const s = list.find(x => x.sid === btn.dataset.wai); if(!s) return;
+        btn.disabled = true; btn.textContent = "Cutting…";
+        try{
+          const r = await ai.json(
+`One line for a gravestone in ${RS.meta.name}, a grim tabletop skirmish game. Past tense, plain, the
+way a stone would say it. Not a summary of a character sheet: a line an old friend would nod at.
+Under 20 words.
+
+Name: ${s.name}${s.epithet ? " " + s.epithet : ""}. ${s.role ? "Role: " + s.role + "." : ""}
+How they left: ${s.how}. Battles fought: ${s.battles}.
+${s.epitaph ? "An earlier line, to be bettered or kept in spirit: " + s.epitaph : ""}
+
+Reply with ONLY a JSON string.`, {modelTier: "quick", cache: false});
+          const line = String(Array.isArray(r) ? r[0] : r).trim().slice(0, 140);
+          if(line){ s.epitaph = line; save(); }
+        }catch(e){ toast(aiTrouble(e && e.code) || "That did not work"); }
+        openWall();
+      };
+    });
+  });
+}
+
+/* ---- camp ---- */
+function campState(b){
+  if(!b.camp) b.camp = {n: 1};
+  return b.camp;
+}
+function cashChip(b){ return `<span class="chip gilt">${b.cash || 0} Cash</span>`; }
+function lvlChip(b){ const l = repLevel(b); return `<span class="chip ${(b.reputation || 0) < 0 ? "bad" : ""}">${esc(l ? l.name : "Unknown")} ${signed(b.reputation || 0)}</span>`; }
+
+function laidUpRec(m){ return (m.scars || []).find(s => s.id === "laidUp"); }
+function mortalRec(m){ return (m.scars || []).find(s => s.id === "mortalWound" && !s.surgery); }
+function surgeryCost(m){
+  const inj = INJ().find(i => i.id === "mortalWound");
+  const rule = ((inj || {}).surgery || {}).costRule || "";
+  const floor = +(/min (\d+)/.exec(rule) || [])[1] || 10;
+  return Math.max(floor, Math.ceil(unitCost(m) / 2));
+}
+function treatable(m){
+  return (m.scars || []).some(s => s.scar && ((s.mend && !s.mended) || ((s.replace || []).length && !s.fitted)));
+}
+
+/* Camp is not a turn order. It comes after the scenario, so everyone may do
+   everything they can afford, in any order, for as long as the table likes:
+   heal, train with XP, buy gear with Cash, have a scar mended or replaced. */
+function openCamp(){
+  const b = band(), C = campState(b);
+  const rows = b.members.map(m => {
+    const laid = laidUpRec(m), mortal = mortalRec(m);
+    const nScars = (m.scars || []).filter(s => s.scar).length;
+    return `
+    <div class="grow" style="flex-wrap:wrap">
+      <div class="grow-main" style="min-width:150px">
+        <div class="grow-name">${isLeaderM(m) ? crownHTML(12) : ""}${esc(fullName(m)) || "Unnamed"}
+          ${laid ? `<span class="chip bad">Laid up</span>` : ""}
+          ${m.xp ? `<span class="chip gilt">${m.xp} XP</span>` : ""}</div>
+        <div class="grow-sub">${nScars} scar${nScars === 1 ? "" : "s"}</div>
+        ${mortal ? `<div class="grow-sub" style="color:var(--rust)">Mortal wound — dies unless surgery is paid before camp breaks.</div>` : ""}
+      </div>
+      <div class="grow-r" style="flex-wrap:wrap;justify-content:flex-end;gap:6px">
+        ${mortal ? `<button class="btn sm primary" data-surg="${esc(m.id)}" ${(b.cash || 0) < surgeryCost(m) ? "disabled" : ""}>Life-saving surgery — ${surgeryCost(m)}</button>
+          <button class="btn sm danger ghost" data-letgo="${esc(m.id)}">Let go</button>` : ""}
+        ${laid ? `<button class="btn sm" data-rest="${esc(m.id)}">Rest — end Laid up</button>` : ""}
+        <button class="btn sm" data-train="${esc(m.id)}" ${m.xp ? "" : "disabled"}>Train</button>
+        <button class="btn sm" data-gear="${esc(m.id)}">Gear</button>
+        <button class="btn sm ${treatable(m) ? "" : "ghost"}" data-treat="${esc(m.id)}" ${treatable(m) ? "" : "disabled"}>Surgery</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="cpX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Camp ${C.n}</div>${cashChip(b)}${lvlChip(b)}</div>
+    <p class="lead">The fighting is done, so take your time. Health comes back on its own, but scars do not: lost limbs, eyes, ribs and
+      shaken nerves stay until surgery. Spend XP to train, Cash on gear, and Cash on surgery for scars — as much as you can afford,
+      in any order.</p>
+    ${momentsHTML(b)}
+    <div class="slab" style="margin-top:12px">
+      <div class="head"><span class="eyebrow">The Unburied</span><span class="rule"></span></div>
+      ${rows || `<p class="quiet" style="margin:0">Nobody to camp.</p>`}
+    </div>
+    <div class="sheet-actions">
+      <button class="btn danger ghost" id="cpBreak" style="margin-left:0">Break camp</button>
+      ${b.tether && b.tether.frayed ? `<span class="quiet">The tether is frayed — mend it from the band header.</span>` : ""}
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#cpX").onclick = () => { closePicker(); render(); };
+  bindMoments($("#sheet2In"), openCamp);
+  const each = (sel, fn) => $("#sheet2In").querySelectorAll(sel).forEach(btn => btn.onclick = () => fn(btn));
+  each("[data-train]", btn => openAdvance(btn.dataset.train));
+  each("[data-gear]", btn => openBuy(btn.dataset.gear));
+  each("[data-treat]", btn => openTreat(btn.dataset.treat));
+  each("[data-rest]", btn => {
+    const m = b.members.find(x => x.id === btn.dataset.rest); if(!m) return;
+    const rec = laidUpRec(m); if(rec) m.scars = m.scars.filter(s => s !== rec);
+    m.fielded = true; save(); toast(m.name + " is back on their feet"); openCamp(); render();
+  });
+  each("[data-surg]", btn => {
+    const m = b.members.find(x => x.id === btn.dataset.surg); if(!m) return;
+    const rec = mortalRec(m), cost = surgeryCost(m);
+    if(!rec || (b.cash || 0) < cost) return;
+    b.cash -= cost; rec.surgery = true;
+    rec.name = "Mortal wound, treated"; rec.effect = "Surgery was paid. They live.";
+    save(); render();
+    if(ruleOn("narrative", b)){
+      const mom = addMoment(b, m.id, "Came back from the edge of death", ["twice-born", "cheat-death", "the Stitched"], "Surgery was paid; they live.",
+        (b.lastNamings && b.lastNamings.survived) || []);
+      toast(m.name + " lives");
+      openEpithet(m, mom, {back: () => { openCamp(); render(); }, moment: mom.id,
+        lead: m.name + " was dying, and lived. People will call them something for it; it replaces the name they had."});
+    } else { toast(m.name + " lives"); openCamp(); }
+  });
+  each("[data-letgo]", btn => {
+    const m = b.members.find(x => x.id === btn.dataset.letgo); if(!m) return;
+    const rec = mortalRec(m) || {};
+    const how = rec.flavourCause ? "Mortal wound from " + rec.flavourCause + ", no surgery" : "Mortal wound, no surgery";
+    openEpitaph(m, {reason: rec.flavourCause ? "a mortal wound from " + rec.flavourCause : "a mortal wound they could not pay to mend",
+      options: rec.epitaphOptions, back: openCamp,
+      done: ep => { layToGrave(b, m, how, false, ep, rec.epitaphOptions); toast(m.name + " is gone"); openCamp(); render(); }});
+  });
+  $("#cpBreak").onclick = () => breakCamp();
+}
+
+/* ---- buying and selling gear with Cash: 1 Cash buys 1 point, sell for half ---- */
+let buyKind = "weapons";
+function openBuy(mid){
+  const b = band(), m = b.members.find(x => x.id === mid); if(!m) return;
+  const kinds = [["weapons", "Weapons"], ["armour", "Armour"], ["items", "Carried"]];
+  const cat = catOf(buyKind), k = GEAR_KIND[buyKind];
+  const owned = (m[buyKind] || []).map(e => k.qty ? e : {id: e.id || e});
+  const mine = owned.map(e => {
+    const o = cat[e.id]; if(!o) return "";
+    return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(skinOf(m, e.id, o.name))}${k.qty && (e.qty || 1) > 1 ? " ×" + e.qty : ""}</div></div>
+      <div class="grow-r"><button class="btn sm ghost" data-sell="${esc(e.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div></div>`;
+  }).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="byX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Gear</div>${cashChip(b)}</div>
+    <div class="cardhead" style="padding-bottom:10px;margin-bottom:10px">
+      <div class="cardname" style="font-size:21px">${esc(fullName(m)) || "Unnamed"}</div></div>
+    <div class="sheet-actions" style="margin:0 0 12px;flex-wrap:wrap;gap:7px">
+      ${kinds.map(([id, label]) => `<button class="chip ${buyKind === id ? "gilt" : ""}" data-bk="${id}" style="cursor:pointer;font-size:13px;padding:6px 12px">${label}</button>`).join("")}
+    </div>
+    ${mine ? `<div class="slab"><div class="head"><span class="eyebrow">Carried now</span><span class="rule"></span></div>${mine}</div>` : ""}
+    <div class="picks">
+      ${Object.values(cat).map(o => `
+        <button class="pick" data-buy="${esc(o.id)}" ${(b.cash || 0) < o.cost ? "disabled" : ""}>
+          <div class="pick-main"><div class="pick-name">${esc(o.name)}</div>
+            <div class="pick-desc">${esc(o.desc)}</div></div>
+          <div class="pick-cost mono">${o.cost} Cash</div></button>`).join("")}
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#byX").onclick = () => { openCamp(); render(); };
+  $("#sheet2In").querySelectorAll("[data-bk]").forEach(btn => btn.onclick = () => { buyKind = btn.dataset.bk; openBuy(mid); });
+  $("#sheet2In").querySelectorAll("[data-buy]").forEach(btn => btn.onclick = () => {
+    const o = cat[btn.dataset.buy]; if(!o || (b.cash || 0) < o.cost) return;
+    const arr = m[buyKind] = m[buyKind] || [];
+    if(k.single){
+      const old = arr[0] ? cat[arr[0].id || arr[0]] : null;
+      if(old) b.cash += Math.floor(old.cost / 2);       // the old suit is sold on
+      arr.length = 0; arr.push(o.id);
+    } else {
+      const e = arr.find(x => x.id === o.id);
+      if(e) e.qty = (e.qty || 1) + 1; else arr.push({id: o.id, qty: 1, mods: []});
+    }
+    b.cash -= o.cost; save(); toast(o.name + " bought"); openBuy(mid); render();
+  });
+  $("#sheet2In").querySelectorAll("[data-sell]").forEach(btn => btn.onclick = () => {
+    const id = btn.dataset.sell, o = cat[id]; if(!o) return;
+    if(k.qty){
+      const e = m[buyKind].find(x => x.id === id);
+      if(e && (e.qty || 1) > 1) e.qty--; else m[buyKind] = m[buyKind].filter(x => x.id !== id);
+    } else m[buyKind] = m[buyKind].filter(x => (x.id || x) !== id);
+    if(!(m[buyKind] || []).some(x => (x.id || x) === id) && m.skins) delete m.skins[id];
+    b.cash = (b.cash || 0) + Math.floor(o.cost / 2); save(); toast(o.name + " sold"); openBuy(mid); render();
+  });
+}
+
+/* What a mend leaves behind. The ruleset gives each in words; this reads
+   them: the penalty it names is what stays, the rest is lifted. */
+const MEND_KEEP = {
+  lostLeg:     {move: -2},
+  lostArm:     {fight: -1, noTwoHanded: true},
+  lostEye:     "keep",        // an eyepatch: no effect within 20 cm, the penalty stays beyond it
+  shaken:      {},
+  crushedRibs: {},
+  badKnee:     {}
+};
+function openTreat(mid){
+  const b = band(), m = b.members.find(x => x.id === mid); if(!m) return;
+  const lvl = b.reputation || 0;
+  const rows = (m.scars || []).filter(s => s.scar).map(s => {
+    const opts = [];
+    if(s.mend && !s.mended)
+      opts.push({k: "mend", label: "Mend — " + s.mend.cost + " Cash", cost: s.mend.cost, note: s.mend.effect, ok: (b.cash || 0) >= s.mend.cost});
+    if(!s.fitted) (s.replace || []).forEach(rid => {
+      const r = (RS.replacements || []).find(x => x.id === rid); if(!r) return;
+      const need = r.reputation || 0;
+      opts.push({k: "rep:" + rid, label: "Fit " + r.id.replace(/([A-Z])/g, " $1").toLowerCase() + " — " + r.cost + " Cash",
+        cost: r.cost, note: r.effect + " Catch: " + r.catch, ok: (b.cash || 0) >= r.cost && lvl >= need,
+        why: lvl < need ? "needs Reputation " + need : (b.cash || 0) < r.cost ? "not enough Cash" : ""});
+    });
+    return `<div class="says ${s.scar ? "bad" : ""}">
+      <div class="says-n">${esc(s.name)} ${s.mended ? `<span class="chip good">mended</span>` : ""}${s.fitted ? `<span class="chip good">fitted</span>` : ""}</div>
+      <div class="says-d">${esc(s.effect)}</div>
+      ${opts.map(o => `<div style="margin-top:7px">
+        <button class="btn sm" data-tr="${esc(s.iid)}|${esc(o.k)}" ${o.ok ? "" : "disabled"} style="margin-left:0">${esc(o.label)}</button>
+        <span class="quiet">${esc(o.note)}${o.why ? " — " + esc(o.why) : ""}</span></div>`).join("")}
+    </div>`;
+  }).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="trX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Surgery</div>${cashChip(b)}${lvlChip(b)}</div>
+    <div class="cardhead" style="padding-bottom:10px;margin-bottom:10px">
+      <div class="cardname" style="font-size:21px">${esc(fullName(m)) || "Unnamed"}</div></div>
+    <p class="lead">Mend a scar for less, or replace the lost limb or eye outright with something mechanical or arcane. As many as you can pay for.</p>
+    <div class="slab" style="margin-top:12px">${rows || `<p class="quiet" style="margin:0">No scars to treat.</p>`}</div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#trX").onclick = () => { openCamp(); render(); };
+  $("#sheet2In").querySelectorAll("[data-tr]").forEach(btn => btn.onclick = () => {
+    const [iid, k] = btn.dataset.tr.split("|");
+    const s = m.scars.find(x => x.iid === iid); if(!s) return;
+    if(k === "mend"){
+      if((b.cash || 0) < s.mend.cost) return;
+      b.cash -= s.mend.cost; s.mended = true;
+      const keep = MEND_KEEP[s.id];
+      if(keep !== "keep" && keep !== undefined) s.mods = Object.keys(keep).length ? keep : null;
+      s.effect = "Mended. " + s.mend.effect;
+    } else {
+      const rid = k.slice(4), r = (RS.replacements || []).find(x => x.id === rid);
+      if(!r || (b.cash || 0) < r.cost || (b.reputation || 0) < (r.reputation || 0)) return;
+      b.cash -= r.cost; s.fitted = rid; s.mods = null;
+      s.effect = "Replaced. " + r.effect + " Catch: " + r.catch;
+    }
+    save(); toast("Done"); openTreat(mid); render();
+  });
+}
+
+function breakCamp(){
+  const b = band(), C = campState(b), lines = [];
+  /* A mortal wound with no surgery this camp is a death. */
+  b.members.filter(m => mortalRec(m)).forEach(m => {
+    const rec = mortalRec(m);
+    layToGrave(b, m, rec.flavourCause ? "Mortal wound from " + rec.flavourCause + ", no surgery" : "Mortal wound, no surgery", false,
+               (rec.epitaphOptions || [])[0], rec.epitaphOptions);
+    lines.push(m.name + " died of their wound.");
+  });
+  /* Too many scars, and every camp is a chance to walk away. */
+  const lb = (RS.campaign || {}).liability || {};
+  if(lb.rawScars){
+    b.members.slice().forEach(m => {
+      if((m.scars || []).filter(s => s.scar).length >= lb.rawScars){
+        const r = 1 + Math.floor(Math.random() * 6);
+        if(r <= (lb.quitsOn || 1)){
+          layToGrave(b, m, "Worn out — walked away", false);
+          lines.push(m.name + " (d6 " + r + ") has had enough and leaves.");
+        }
+      }
+    });
+  }
+  C.n++;
+  save();
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">Camp is broken</div></div>
+    <div class="slab">
+      ${(lines.length ? lines : ["Nobody was lost in the night."]).map(l => `<div class="says"><div class="says-d">${esc(l)}</div></div>`).join("")}
+    </div>
+    <div class="sheet-actions"><button class="btn primary" id="cbOK" style="margin-left:auto">On</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#cbOK").onclick = () => { closePicker(); render(); };
+}
+
+/* The camp's own menu. Camp, the after-battle sheet, the Cenotaph and the rules
+   only exist where the game is played; the Reliquary just raises the Unburied
+   and writes scenarios, so it never shows any of this. */
+function openCampMenu(){
+  const b = band();
+  const items = [];
+  if(ruleOn("campaign", b)){
+    items.push(["After the battle", "Fate rolls, XP, Cash and Reputation", "openAfter"]);
+    items.push(["Camp", "Train, buy gear, have scars operated on", "openCamp"]);
+  }
+  if(ruleOn("narrative", b))
+    items.push(["The Cenotaph", (b.wall || []).length + " remembered", "openWall"]);
+  items.push(["Rules", "Which rule categories this band plays", "openRules"]);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="cmX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">${esc(b.name)}</div></div>
+    <div class="picks" style="margin-top:6px">
+      ${items.map((it, i) => `<button class="pick" data-cm="${i}"><div class="pick-main">
+        <div class="pick-name">${esc(it[0])}</div><div class="pick-desc">${esc(it[1])}</div></div></button>`).join("")}
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#cmX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-cm]").forEach(btn => btn.onclick = () => window[items[+btn.dataset.cm][2]]());
 }
 
 /* ---- scnmap.js ---- */
@@ -8577,7 +9533,7 @@ Mission: ${type.id} \u2014 ${type.desc}${S.type ? "" : "  (you chose this)"}
 Where: ${theme.id} \u2014 ${theme.desc}${S.theme ? "" : "  (you chose this)"}
 ${S.players} player${S.players === 1 ? "" : "s"}, ${S.perBand} points each, ${size} in total.
 Difficulty ${diff.id}. ${len.rounds ? len.rounds + " rounds" : "no fixed length"}.
-${S.table.trim() ? "ON THE TABLE ALREADY: " + S.table.trim() + ". Build the scenario around these pieces and name them." : ""}
+${tetherPromptLine()}${S.table.trim() ? "ON THE TABLE ALREADY: " + S.table.trim() + ". Build the scenario around these pieces and name them." : ""}
 
 WHAT TO WRITE
 
@@ -8589,6 +9545,9 @@ WHAT TO WRITE
              examples above read, not the way a field description reads.
   scenery    one or two sentences on what to put on the table.
   deployment where each side starts, by table edge or feature.
+  plane      what kind of place this is, one of: land, water, fire, under (the underworld or a
+             cavern), void (elsewhere: space, a dream, beyond a door). Pick the one that fits the
+             place; a battle in the open, in ruins or in a town is land.
 
   terrain    four to eight pieces to build or stand in. Each: name, note (how many, what it
              looks like), role (one of ${roles}), ground (one of ${grounds}), size (one of
@@ -8622,8 +9581,14 @@ ${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o =>
                 scenario) and "text" (one sentence, present tense, what it looks or feels like
                 to be marked by that specific thing here). These do not invent new injuries or
                 change any rule \u2014 they give a scar earned in this scenario its own scene
-                instead of a generic one. Example shape only, invent your own: {"cause":"the
-                Drowned","text":"the cold gets into the wound and does not leave with it"}.
+                instead of a generic one. Each one also carries: "scar" (a two-to-three word name for
+                what this place leaves on a body, e.g. "brine-eaten"), "epithets" (exactly three short
+                new nicknames, one to three words, that someone might earn from being marked or nearly
+                killed by exactly this), and "epitaphs" (exactly three one-line gravestone sentences,
+                past tense, plain, saying who they were AND that this is what killed them here).
+                Example shape only, invent your own: {"cause":"the Drowned","text":"the cold gets
+                into the wound and does not leave with it","scar":"brine-eaten","epithets":["the
+                Salted","Cold-Hand","who came up wet"],"epitaphs":["...","...","..."]}.
 ${sealed ? `
   THIS IS A SEALED SCENARIO. Nobody knows what is going on yet \u2014 write it the way an
   unnerving discovery feels: a thing is found, and nothing about it is understood at first.
@@ -8653,6 +9618,12 @@ ${sealed ? `
     finale     one or two sentences: what becomes clear once every envelope has opened, and
                what it changes about how the last part of the fight should feel
 ` : ""}
+  namings    the names this place can give. "boss": for the ONE enemy you marked "boss" (use []
+             if you marked none), exactly three nicknames for whoever strikes its final blow, one
+             to three words each: [{"who":"that enemy's name","options":["...","...","..."]}].
+             "survived": exactly three nicknames for someone who was dying here and lived, tied to
+             this place. Nothing here changes a rule.
+
   markers    ${markers} numbered suspicion markers. For each give "where" \u2014 where it sits,
              naming a map feature if it suits. Do NOT say what is under them.
 
@@ -8670,6 +9641,9 @@ ${sealed ? `
              \u2014 not in an envelope's title or trigger, not in specialRules, not in the twist
              \u2014 until the moment that reveals it. An envelope that brings a hidden unit on
              should describe what happens, not name what did it.
+
+             Mark at most one unit "boss": true \u2014 the named creature or leader the fight is about,
+             the one worth a name for whoever brings it down. Leave it false on everything else.
 
              Every unit that is NOT hidden needs a "deploy": where it actually is when the game
              starts \u2014 a table edge, a zone, a named feature ("holding the bridge", "spread
@@ -8693,7 +9667,7 @@ GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" \u2014 a name tha
 creature. A drowned thing does not carry a "Melee weapon", it swings a "Rusted clapper".
 
 Reply with ONLY this JSON and nothing else:
-{"title":"...","premise":"...","briefing":"...","scenery":"...","deployment":"...",
+{"title":"...","premise":"...","briefing":"...","scenery":"...","deployment":"...","plane":"land",
 ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes":[{"trigger":"...","title":"...","text":"...","revealsObjectives":false}]},' : ""}
  "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
  "terrain":[{"name":"...","note":"...","role":"cover","ground":"even","size":"medium"}],
@@ -8702,9 +9676,10 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
         "features":[{"label":"...","role":"cover","ground":"rough","x":50,"y":50,"r":8}]},
  "objectives":[{"type":"allowed id","what":"what it is, in the fiction","vp":1}],
  "specialRules":["..."],"twist":"...",
- "woundFlavour":[{"cause":"...","text":"..."}],
+ "woundFlavour":[{"cause":"...","text":"...","scar":"...","epithets":["...","...","..."],"epitaphs":["...","...","..."]}],
+ "namings":{"boss":[{"who":"...","options":["...","...","..."]}],"survived":["...","...","..."]},
  "markers":[{"n":1,"where":"..."}],
- "enemy":[{"name":"...","count":3,"hidden":false,"hint":"only if hidden \u2014 what to prepare, no name",
+ "enemy":[{"name":"...","count":3,"boss":false,"hidden":false,"hint":"only if hidden \u2014 what to prepare, no name",
    "deploy":"only if not hidden \u2014 where it starts",
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
    "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
@@ -8748,6 +9723,7 @@ function legaliseScenario(raw, ctx){
     briefing: str(raw.briefing, 1200),
     scenery: str(raw.scenery, 400),
     deployment: str(raw.deployment, 300),
+    plane: ["land", "water", "fire", "under", "void"].includes(raw.plane) ? raw.plane : "",
     twist: str(raw.twist, 300),
     environment: (RS.scenario.environment || []).some(e => e.id === raw.environment) ? raw.environment : null,
     size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
@@ -8756,7 +9732,7 @@ function legaliseScenario(raw, ctx){
     sealed: !!ctx.type.sealed, mystery: null,
     terrain: [], events: [], map: {note: "", zones: [], features: []},
     objectives: [], specialRules: [], markers: [], enemy: [], notes: [],
-    woundFlavour: []
+    woundFlavour: [], namings: {boss: [], survived: []}
   };
 
   /* The mystery block: everything is optional prose, so it is trimmed rather
@@ -8833,8 +9809,17 @@ function legaliseScenario(raw, ctx){
      out of context. */
   (Array.isArray(raw.woundFlavour) ? raw.woundFlavour : []).slice(0, 5).forEach(w => {
     const cause = str(w && w.cause, 60), text = str(w && w.text, 200);
-    if(cause && text) out.woundFlavour.push({cause, text});
+    const three = (v, n) => (Array.isArray(v) ? v : []).map(x => str(x, n).trim()).filter(Boolean).slice(0, 3);
+    if(cause && text) out.woundFlavour.push({cause, text, scar: str(w.scar, 40).trim(),
+      epithets: three(w.epithets, 40), epitaphs: three(w.epitaphs, 140)});
   });
+  /* names for the great moments: three each, or none */
+  const nm = raw.namings || {};
+  const three2 = (v, n) => (Array.isArray(v) ? v : []).map(x => str(x, n).trim()).filter(Boolean).slice(0, 3);
+  out.namings = {
+    boss: (Array.isArray(nm.boss) ? nm.boss : []).slice(0, 4).map(x => ({who: str(x && x.who, 60), options: three2(x && x.options, 40)})).filter(x => x.who && x.options.length),
+    survived: three2(nm.survived, 40)
+  };
 
   for(let i = 1; i <= ctx.markers; i++){
     const mk = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
@@ -8895,7 +9880,7 @@ function legaliseScenario(raw, ctx){
   kept.forEach(r => {
     if(r.count < r.want) out.notes.push(r.name + " scaled from " + r.want + " to " + r.count + " to fit the points");
     out.enemy.push({name: r.name, count: r.count, per: r.per, cost: r.per * r.count, built: r.built,
-      hidden: !!r.u.hidden, hint: str(r.u.hint, 90), deploy: r.u.hidden ? "" : str(r.u.deploy, 100),
+      boss: !!r.u.boss, hidden: !!r.u.hidden, hint: str(r.u.hint, 90), deploy: r.u.hidden ? "" : str(r.u.deploy, 100),
       protocol: (Array.isArray(r.u.protocol) ? r.u.protocol : []).map(x => str(x, 90)).slice(0, 4)});
   });
   out.enemySpent = spent;
@@ -9029,8 +10014,27 @@ function scenarioHTML(s){
     </div></div>`).join("")}
   </div>
 
+  ${namingsHTML(s)}
+
   ${s.notes.length ? `<div class="slab"><div class="head"><span class="eyebrow">What was trimmed</span><span class="rule"></span></div>
     ${s.notes.map(n => `<p class="quiet" style="margin:0 0 5px">${esc(n)}</p>`).join("")}</div>` : ""}`;
+}
+
+/* The names this place can give (scars, nicknames, epitaphs) are written when the
+   scenario is, but kept sealed: nobody reads them ahead of time. The camp brings
+   each one out only at the moment it is needed. This just says they exist. */
+function namingsHTML(s){
+  const wf = (s.woundFlavour || []).filter(f => f && f.cause);
+  const nm = s.namings || {boss: [], survived: []};
+  const any = wf.some(f => f.scar || (f.epithets || []).length || (f.epitaphs || []).length)
+    || (nm.boss || []).length || (nm.survived || []).length;
+  if(!any) return "";
+  return `<div class="slab">
+    <div class="head"><span class="eyebrow">Names, scars and epitaphs</span><span class="rule"></span>
+      <span class="chip gilt">sealed</span></div>
+    <p class="quiet" style="margin:0">This place has already written what it will call the Unburied it marks, and what it will
+      carve over the ones it kills. It stays sealed. Each name is read out only when it is earned.</p>
+  </div>`;
 }
 
 function enemyLine(m){
@@ -9127,6 +10131,9 @@ function saveLibrary(list){ try{ localStorage.setItem(LIBRARY_KEY, JSON.stringif
 function addToLibrary(s){
   const list = loadLibrary();
   const id = uid();
+  /* when it was found, kept with the scenario for good: it decides where the
+     place sits on the Realm map, and must not change when it is played */
+  if(s && !s.foundAt) s.foundAt = Date.now();
   list.unshift({id, at: Date.now(), out: s});
   saveLibrary(list.slice(0, 40));
   return id;
@@ -9245,7 +10252,7 @@ function bringScenario(text){
     if(t.startsWith("{")) obj = JSON.parse(t);
     else obj = await unpackCode(t);
     if(obj.t !== SCENARIO_CARRY_TAG) throw new Error("That is not a scenario code.");
-    addToLibrary(obj.out);
+    obj.libId = addToLibrary(obj.out);
     return obj;
   })();
 }
@@ -9254,16 +10261,16 @@ function openScenarioBring(){
     <div class="sheet-head">
       <button class="iconbtn" id="sbX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">Bring a scenario in</div></div>
-    <p class="lead">Paste a code written in the Reliquary, or open the file, and it
-      joins what is ready to play here.</p>
+      </button><div class="eyebrow">Follow a rumour</div></div>
+    <p class="lead">Paste the code from the Reliquary, or open its file, and word
+      of the place reaches the camp.</p>
     <div class="slab" style="margin-top:14px">
       <textarea class="input mono" id="sbIn" rows="3" placeholder="EPITAPHSCN1Z:\u2026"
         style="font-size:11px;line-height:1.4"></textarea>
       <div class="sheet-actions" style="margin-top:10px">
         <label class="btn sm ghost" style="cursor:pointer">Open a file
           <input type="file" id="sbFile" accept=".json,.txt,application/json" hidden></label>
-        <button class="btn sm primary" id="sbGo" style="margin-left:auto">Bring it in</button>
+        <button class="btn sm primary" id="sbGo" style="margin-left:auto">Follow it</button>
       </div>
       <p class="quiet" id="sbMsg" style="margin:9px 0 0"></p>
     </div>`;
@@ -9274,7 +10281,8 @@ function openScenarioBring(){
     try{
       const obj = await bringScenario(text);
       closePicker(); render();
-      toast((obj.out.title || "Scenario") + " is ready to play");
+      if(typeof showDiscovery === "function") showDiscovery(obj);
+      else toast((obj.out.title || "Scenario") + " is ready to play");
       if(obj.rs && obj.rs !== RS.meta.version)
         setTimeout(() => toast("Written against ruleset " + obj.rs + "; may need a look"), 2400);
     }catch(e){
@@ -9311,7 +10319,7 @@ function startFromScenario(s){
                 sealed: !!s.sealed, objectivesKnown: !s.sealed,
                 mystery: s.mystery ? Object.assign({}, s.mystery,
                   {envelopes: s.mystery.envelopes.map(e => Object.assign({}, e))}) : null,
-                woundFlavour: s.woundFlavour || []};
+                woundFlavour: s.woundFlavour || [], namings: s.namings || null};
   /* kept whole and untouched by play, so the scenario can be shown again
      or started fresh later — Q.scenario above gets mutated as the quest
      runs (envelopes opened, events sprung), this does not. */
@@ -9326,6 +10334,7 @@ function startFromScenario(s){
     f.points = u.cost;
     f.hint = u.hint;
     f.deploy = u.deploy;
+    f.boss = !!u.boss;
     Q.units.push(f);
   });
   questSave();
@@ -9539,13 +10548,18 @@ function leaveRealm(){
    here; playing your own models happens on their cards. */
 function tableHTML(){
   const q = questOn();
-  return `
+  /* In camp the map is the whole tab: there is nothing to write here, and a
+     rumour is followed from the map itself. The block only exists to run a quest. */
+  const camp = typeof realmKnownHTML === "function" && realmAvailable();
+  const top = `
   <div class="slab">
-    <div class="head"><span class="eyebrow">Something to fight over</span><span class="rule"></span>
+    <div class="head"><span class="eyebrow">${camp ? "The quest in progress" : "Something to fight over"}</span><span class="rule"></span>
       ${q && Q.scenario ? `<span class="chip gilt">${esc(Q.scenario.name)}</span>` : ""}</div>
     <p class="lead">${q
       ? "A quest is running. The round, the markers and your models are on the Unburied side."
-      : "Have one written for you — a place, a reason, an enemy that fits the points, and where the markers go."}</p>
+      : realmAvailable()
+        ? "Scenarios are written in the Reliquary's Pathfinding, then brought here to be played."
+        : "Have one written for you — a place, a reason, an enemy that fits the points, and where the markers go."}</p>
     <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       ${q ? `
         <button class="btn" id="tbBrief" style="margin-left:0" ${Q.scenario ? "" : "disabled"}>The brief</button>
@@ -9555,9 +10569,8 @@ function tableHTML(){
       : `
         <button class="btn primary" id="tbScn" style="margin-left:0">Write a scenario</button>`}
     </div>
-  </div>
-  ${q ? "" : libraryHTML()}
-  ${q ? "" : historyHTML()}`;
+  </div>`;
+  return (camp && !q ? "" : top) + (camp ? realmKnownHTML() : q ? "" : libraryHTML() + historyHTML());
 }
 /* Writing a scenario never starts one on its own — it lands here, so it
    can be read over (or several can be written ahead) before deciding which
@@ -9569,7 +10582,7 @@ function libraryHTML(){
   return `<div class="slab">
     <div class="head"><span class="eyebrow">Ready to play</span><span class="rule"></span>
       <span class="quiet">${list.length}</span>
-      ${bringIn ? `<button class="chip gilt" id="libBring">Bring one in</button>` : ""}</div>
+    </div>
     ${list.length ? list.map(r => `<div class="grow">
       <div class="grow-main">
         <div class="grow-name">${esc(r.out.title)}</div>
@@ -9577,7 +10590,7 @@ function libraryHTML(){
           · ${r.out.enemyBudget} enemy points</div>
       </div>
       <div class="grow-r"><button class="btn sm" data-libopen="${esc(r.id)}">Open</button></div>
-    </div>`).join("") : `<p class="quiet" style="margin:0">Nothing yet — bring one in from the Reliquary.</p>`}
+    </div>`).join("") : `<p class="quiet" style="margin:0">Nothing yet — follow a rumour from the Reliquary.</p>`}
   </div>`;
 }
 /* What the table has already been through. A scenario used to vanish the
@@ -9619,6 +10632,7 @@ function bindTable(el){
     deleteHistory(b.dataset.histdel); renderRealm(); toast("Removed");
   });
   el.querySelectorAll("[data-histopen]").forEach(b => b.onclick = () => openHistoryScenario(b.dataset.histopen));
+  if(typeof bindRealmKnown === "function" && realmAvailable()) bindRealmKnown(el);
 }
 
 function renderRealm(){
@@ -9698,6 +10712,447 @@ function renderRealm(){
   const leave = $("#rmLeave");
   if(leave) leave.onclick = () => { leaveRealm(); renderRealm(); render(); toast("Left the table"); };
 }
+
+/* ---- realmmap.js ---- */
+/* =====================================================================
+   THE REALM, AS IT IS KNOWN
+   Camp only. Every scenario brought in from the Reliquary is a place
+   found: a point on a dark board, joined to the Barrow by a string.
+   Nothing here decides what a place is like — a scenario can be anywhere,
+   so the map draws points and a small symbol, never a landscape.
+
+   Where a place sits comes from the order it was found in, so a place
+   never moves when another turns up.
+   ===================================================================== */
+
+const RM_GOLD = "#c9a227", RM_GREEN = "#6fae9a", RM_RUST = "#c25a44";
+const RM_COL = {claimed: RM_GOLD, entered: RM_GOLD, waiting: RM_GREEN, lost: RM_RUST};
+const RM_PLANES = {
+  land:  {label: "Land"},
+  water: {label: "Water"},
+  fire:  {label: "Fire"},
+  under: {label: "Underworld"},
+  void:  {label: "Elsewhere"}
+};
+/* A scenario may say which plane it is on. If it does not, its theme decides;
+   this is presentation only and changes no rule. */
+const RM_THEME_PLANE = {ruin: "land", wilds: "land", frontier: "land", under: "under", machine: "fire", sacred: "void"};
+function planeOf(s){
+  if(s && RM_PLANES[s.plane]) return s.plane;
+  return RM_THEME_PLANE[s && s.theme] || "land";
+}
+
+let rmView = "map";
+try{ rmView = localStorage.getItem("ep_realm_view") || "map"; }catch(e){}
+
+function rmIcon(plane, x, y, c){
+  const s = 5.2;
+  if(plane === "water")
+    return `<path d="M${x - s} ${y} q${s / 2} ${-s} ${s} 0 t${s} 0" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`;
+  if(plane === "fire")
+    return `<path d="M${x} ${y - s} C${x + s * 1.2} ${y - s * .1} ${x + s * .8} ${y + s} ${x} ${y + s} C${x - s * .8} ${y + s} ${x - s * 1.1} ${y} ${x} ${y - s}Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  if(plane === "under")
+    return `<path d="M${x} ${y - s} L${x + s * .8} ${y} L${x} ${y + s} L${x - s * .8} ${y}Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  if(plane === "void")
+    return `<path d="M${x - s * .7} ${y + s} V${y - s * .3} a${s * .7} ${s * .7} 0 0 1 ${s * 1.4} 0 V${y + s}Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  return `<path d="M${x - s} ${y + s * .7} L${x} ${y - s} L${x + s} ${y + s * .7}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+
+/* ---- what the table knows ---- */
+function rmState(result){
+  if(result === "Won on points" || result === "Routed the enemy") return "claimed";
+  if(result === "Broken" || result === "Lost on points") return "lost";
+  return "waiting";                       // a draw leaves it to be tried again
+}
+/* Each place gets a permanent slot the first time it is seen, so deleting one
+   never moves the others. Older scenarios are given theirs in the order found. */
+function rmEnsureSlots(){
+  const lib = loadLibrary(), hist = loadHistory();
+  const all = [];
+  lib.forEach(r => all.push({s: r.out, at: (r.out && r.out.foundAt) || r.at}));
+  hist.forEach(r => { if(r.scenario) all.push({s: r.scenario, at: r.scenario.foundAt || r.at}); });
+  const used = new Set(all.filter(x => Number.isInteger(x.s.slot)).map(x => x.s.slot));
+  let dirty = false, next = 0;
+  all.filter(x => !Number.isInteger(x.s.slot)).sort((a, b) => a.at - b.at).forEach(x => {
+    while(used.has(next)) next++;
+    x.s.slot = next; used.add(next); dirty = true;
+  });
+  if(dirty){ saveLibrary(lib); saveHistory(hist); }
+}
+function rmPlaces(){
+  rmEnsureSlots();
+  const out = [];
+  loadHistory().forEach(r => {
+    const s = r.scenario;
+    const st = rmState(r.result);
+    out.push({key: "h" + r.id, kind: "history", id: r.id, name: r.title || "A place", plane: planeOf(s), state: st,
+      sub: st === "claimed" ? "CLAIMED · ROUND " + r.round : st === "lost" ? "LOST · TRY AGAIN" : "UNSETTLED",
+      found: (s && s.foundAt) || r.at, slot: s ? s.slot : null, openable: !!s, scn: s || null, r});
+  });
+  loadLibrary().forEach(r => {
+    out.push({key: "l" + r.id, kind: "library", id: r.id, name: r.out.title || "A place", plane: planeOf(r.out),
+      state: "waiting", sub: "DISCOVERED", found: r.out.foundAt || r.at, slot: r.out.slot, openable: true, scn: r.out, r});
+  });
+  if(questOn() && Q.scenario){
+    const src = Q.scenarioSource || {};
+    out.push({key: "q", kind: "quest", name: Q.scenario.name, plane: planeOf(src), state: "entered",
+      sub: "IN PROGRESS · ROUND " + Q.round, found: src.foundAt || Q.startedAt || 0, slot: src.slot, openable: true, scn: Object.keys(src).length ? src : null});
+  }
+  /* a record with nothing kept has no slot: it takes the first one left over */
+  const taken = new Set(out.filter(p => Number.isInteger(p.slot)).map(p => p.slot));
+  let free = 0;
+  out.filter(p => !Number.isInteger(p.slot)).sort((a, b) => (a.found || 0) - (b.found || 0)).forEach(p => {
+    while(taken.has(free)) free++;
+    p.slot = free; taken.add(free);
+  });
+  out.sort((a, b) => a.slot - b.slot);
+  return out;
+}
+
+/* ---- where each point sits: a widening spiral, so nothing ever overlaps ---- */
+function rmLayout(slots){
+  const pos = [];
+  for(const k of slots){
+    const a = k * 2.399963 + 0.55;                       // the golden angle
+    const rx = 165 + 62 * Math.sqrt(k + .4);
+    pos.push({dx: Math.cos(a) * rx, dy: Math.sin(a) * rx * .74});
+  }
+  return pos;
+}
+
+function rmSVG(places, cw){
+  const lay = rmLayout(places.map(p => p.slot));
+  const halfW = Math.max(280, ...lay.map(p => Math.abs(p.dx) + 120));
+  const halfH = Math.max(190, ...lay.map(p => Math.abs(p.dy) + 96));
+  const W = Math.max(cw, halfW * 2), H = Math.max(380, halfH * 2);
+  const BX = W / 2, BY = H / 2;
+  const rnd = (() => { let s = 5; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+  const p = [];
+  p.push(`<defs>
+  <filter id="rmF" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".004 .008" numOctaves="4" seed="21"/><feColorMatrix type="matrix" values="0 0 0 0 .5  0 0 0 0 .56  0 0 0 0 .66  0 0 0 1.5 -.7"/></filter>
+  <filter id="rmG" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0"/></filter>
+  <filter id="rmB6"><feGaussianBlur stdDeviation="8"/></filter><filter id="rmB2"><feGaussianBlur stdDeviation="2"/></filter>
+  <radialGradient id="rmBg" cx="50%" cy="50%" r="75%"><stop offset="0" stop-color="#151a22"/><stop offset=".7" stop-color="#0d1016"/><stop offset="1" stop-color="#080a0e"/></radialGradient>
+  <radialGradient id="rmVig" cx="50%" cy="50%" r="78%"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".7"/></radialGradient>
+  <radialGradient id="rmLit" cx="50%" cy="52%" r="52%"><stop offset="0" stop-color="${RM_GOLD}" stop-opacity=".16"/><stop offset="1" stop-color="${RM_GOLD}" stop-opacity="0"/></radialGradient>
+  <style>@keyframes rmPulse{0%,100%{opacity:.35}50%{opacity:1}} .rmPulse{animation:rmPulse 2.4s ease-in-out infinite}</style>
+</defs>`);
+  p.push(`<rect width="${W}" height="${H}" fill="url(#rmBg)"/><rect width="${W}" height="${H}" filter="url(#rmG)"/>`);
+  p.push(`<ellipse cx="${BX}" cy="${BY + 8}" rx="${halfW}" ry="${halfH}" fill="url(#rmLit)"/>`);
+  for(let gx = BX % 60; gx < W; gx += 60) p.push(`<line x1="${gx}" y1="40" x2="${gx}" y2="${H - 40}" stroke="#8d97a8" stroke-width=".5" opacity=".07"/>`);
+  for(let gy = BY % 60; gy < H; gy += 60) p.push(`<line x1="40" y1="${gy}" x2="${W - 40}" y2="${gy}" stroke="#8d97a8" stroke-width=".5" opacity=".07"/>`);
+
+  places.forEach((pl, i) => {
+    const x = BX + lay[i].dx, y = BY + lay[i].dy, c = RM_COL[pl.state];
+    pl.x = x; pl.y = y;
+    const a = Math.atan2(y - BY, x - BX);
+    const x0 = BX + Math.cos(a) * 30, y0 = BY + Math.sin(a) * 30;
+    const x1 = x - Math.cos(a) * 18, y1 = y - Math.sin(a) * 18;
+    const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const o1 = (rnd() - .5) * .28 * L, o2 = (rnd() - .5) * .28 * L;
+    const c1 = [x0 + dx * .33 + nx * o1, y0 + dy * .33 + ny * o1], c2 = [x0 + dx * .66 + nx * o2, y0 + dy * .66 + ny * o2];
+    const d = `M${x0.toFixed(1)} ${y0.toFixed(1)} C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+    p.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="4" opacity=".10" filter="url(#rmB2)"/>`);
+    p.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="1" opacity=".75"${pl.state === "claimed" || pl.state === "entered" ? "" : ' stroke-dasharray="2 5"'}/>`);
+    [.25, .5, .75].forEach(t => {
+      const u = 1 - t;
+      const bx = u ** 3 * x0 + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * x1;
+      const by = u ** 3 * y0 + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * y1;
+      p.push(`<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="1.5" fill="${c}" opacity=".85"/>`);
+    });
+  });
+
+  // where the strings run on into the dark
+  [[60, 90], [W - 60, 110], [70, H - 70], [W - 70, H - 90]].forEach(([x, y]) => {
+    p.push(`<g class="rmRumour" data-rumour style="cursor:pointer" tabindex="0" role="button" aria-label="Follow a rumour"><title>Follow a rumour</title>
+      <circle cx="${x}" cy="${y}" r="15" fill="none" stroke="#8d97a8" stroke-width=".9" stroke-dasharray="1.5 4" opacity=".45"/>
+      <text x="${x}" y="${y + 5}" text-anchor="middle" font-family="Cinzel,serif" font-size="14" fill="#8d97a8" opacity=".6">?</text>
+      <circle cx="${x}" cy="${y}" r="22" fill="transparent"/></g>`);
+  });
+
+  places.forEach(pl => {
+    const x = pl.x, y = pl.y, c = RM_COL[pl.state];
+    p.push(`<g class="rmPlace" data-rp="${esc(pl.key)}" style="cursor:pointer" tabindex="0" role="button" aria-label="${esc(pl.name)}">`);
+    p.push(`<circle cx="${x}" cy="${y}" r="26" fill="${c}" opacity=".10" filter="url(#rmB6)"/>`);
+    if(pl.state === "waiting")
+      p.push(`<circle cx="${x}" cy="${y}" r="15" fill="#0d1016" stroke="${c}" stroke-width="1.3" stroke-dasharray="2.5 3.5"/>`);
+    else if(pl.state === "lost")
+      p.push(`<circle cx="${x}" cy="${y}" r="15" fill="#160f10" stroke="${c}" stroke-width="1.5"/>`);
+    else
+      p.push(`<circle cx="${x}" cy="${y}" r="15" fill="#0d1016" stroke="${c}" stroke-width="1.6"/><circle cx="${x}" cy="${y}" r="19.5" fill="none" stroke="${c}" stroke-width=".7" opacity=".55" ${pl.state === "entered" ? 'class="rmPulse"' : ""}/>`);
+    p.push(rmIcon(pl.plane, x, y, pl.state === "lost" ? "#8a6a66" : c));
+    if(pl.state === "lost")
+      p.push(`<path d="M${x - 9} ${y - 9} L${x + 9} ${y + 9} M${x + 9} ${y - 9} L${x - 9} ${y + 9}" stroke="${c}" stroke-width="1.2" opacity=".85" stroke-linecap="round"/>`);
+    p.push(`<text x="${x}" y="${y + 34}" text-anchor="middle" font-family="Cinzel,serif" font-size="11.5" letter-spacing="2" fill="#e8e4dc" font-weight="600" paint-order="stroke" stroke="#0d1016" stroke-width="3">${esc(String(pl.name).toUpperCase().slice(0, 30))}</text>`);
+    p.push(`<text x="${x}" y="${y + 48}" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" letter-spacing="1.6" fill="${c}" paint-order="stroke" stroke="#0d1016" stroke-width="3">${esc(pl.sub)}</text>`);
+    p.push(`<circle class="rmSel" cx="${x}" cy="${y}" r="24" fill="none" stroke="#e8e4dc" stroke-width="1" stroke-dasharray="2 3" opacity="0"/>`);
+    p.push(`<circle cx="${x}" cy="${y}" r="30" fill="transparent"/></g>`);
+  });
+
+  p.push(`<g transform="translate(${BX} ${BY})">
+  <circle r="64" fill="${RM_GOLD}" opacity=".08" filter="url(#rmB6)"/>
+  <circle r="38" fill="none" stroke="${RM_GOLD}" stroke-width=".8" opacity=".5"/>
+  <circle r="31" fill="#0d1016" stroke="${RM_GOLD}" stroke-width="1.6"/>
+  <path d="M-18 11 A18 18 0 0 1 18 11Z" fill="#2a2618" stroke="${RM_GOLD}" stroke-width="1.3"/>
+  <path d="M-4.3 11 V4 a4.3 4.3 0 0 1 8.6 0 V11Z" fill="#0d1016" stroke="${RM_GOLD}" stroke-width="1"/>
+  <circle cy="-21" r="2.8" fill="${RM_GOLD}"/><circle cy="-21" r="8" fill="${RM_GOLD}" opacity=".2"/>
+  <text y="58" text-anchor="middle" font-family="Cinzel,serif" font-size="13" letter-spacing="4" fill="${RM_GOLD}" font-weight="600">THE BARROW</text></g>`);
+  p.push(`<rect width="${W}" height="${H}" filter="url(#rmF)" opacity=".42" pointer-events="none"/><rect width="${W}" height="${H}" fill="url(#rmVig)" pointer-events="none"/>`);
+  [[18, 18, 1, 1], [W - 18, 18, -1, 1], [18, H - 18, 1, -1], [W - 18, H - 18, -1, -1]].forEach(([x, y, sx, sy]) =>
+    p.push(`<path d="M${x} ${y + sy * 24} V${y} H${x + sx * 24}" fill="none" stroke="${RM_GOLD}" stroke-width="1.1" opacity=".55"/>`));
+  const n = places.length;
+  p.push(`<text x="${W / 2}" y="${H - 22}" text-anchor="middle" font-family="Spectral,serif" font-style="italic" font-size="13" fill="#8d97a8">${
+    n ? (n === 1 ? "One place is known." : n + " places are known.") + " The strings run on into the dark."
+      : "Nothing is known past the barrow. Bring word of a place from the Reliquary."}</text>`);
+  return {svg: `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;max-width:none${W <= cw * 1.4 ? ";width:100%;height:auto" : ""}" role="img" aria-label="The places found, joined to the Barrow">${p.join("")}</svg>`, W, cw};
+}
+
+function rmCounts(places){
+  const n = s => places.filter(p => p.state === s).length;
+  return `<span class="chip">${places.length} known</span>
+    <span class="chip gilt">${n("claimed")} claimed</span>
+    <span class="chip good">${n("waiting")} waiting</span>
+    ${n("entered") ? `<span class="chip gilt">${n("entered")} in progress</span>` : ""}
+    ${n("lost") ? `<span class="chip bad">${n("lost")} lost</span>` : ""}`;
+}
+
+/* ---- the block on the Realm tab ---- */
+function realmKnownHTML(){
+  const places = rmPlaces();
+  const tabs = `<button class="chip gilt" data-rumour style="border-style:dashed">Follow a rumour</button>
+    <button class="chip ${rmView === "map" ? "gilt" : ""}" data-rmview="map">Map</button>
+    <button class="chip ${rmView === "list" ? "gilt" : ""}" data-rmview="list">List</button>`;
+  if(rmView === "list")
+    return `<div class="slab"><div class="head"><span class="eyebrow">What is known</span><span class="rule"></span>${tabs}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${rmCounts(places)}</div></div>
+      ${questOn() ? "" : libraryHTML() + historyHTML()}`;
+  const main = document.querySelector("main");
+  const cw = Math.max(300, ((main && main.clientWidth) || 820) - 62);
+  const m = rmSVG(places, cw);
+  const legend = [[RM_GOLD, "Claimed"], [RM_GREEN, "Discovered, not entered"], [RM_RUST, "Lost"]]
+    .map(([c, t]) => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ash-dim)"><i style="display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid ${c}"></i>${t}</span>`).join("");
+  return `<div class="slab">
+    <div class="head"><span class="eyebrow">What is known</span><span class="rule"></span>${tabs}</div>
+    <div class="rmScroll" style="overflow-x:auto;border-radius:10px;-webkit-overflow-scrolling:touch">${m.svg}</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;align-items:center">${legend}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${rmCounts(places)}</div>
+    <div id="rmCard" style="margin-top:12px">${rmHintHTML()}</div>
+  </div>`;
+}
+const RM_MODE = {coop: "Co-op", pvp: "Player vs player", solo: "Solo"};
+function rmHintHTML(){
+  return `<p class="quiet" style="margin:0">Tap a place to read about it. Tap a <b>?</b> at the edge, or Follow a rumour, to hear of a new one. The symbol shows what kind of place it is:
+    ${Object.keys(RM_PLANES).map(k => RM_PLANES[k].label.toLowerCase()).join(", ")}.</p>`;
+}
+/* Who it is for and what it is, before anyone commits to opening it. */
+function rmCardHTML(pl){
+  const s = pl.scn || {};
+  const c = RM_COL[pl.state];
+  const players = s.players ? s.players + (s.players === 1 ? " player" : " players") : "";
+  const mode = RM_MODE[s.mode] || "";
+  const perBand = s.perBand ? s.perBand + " points each" : "";
+  const openLabel = pl.kind === "quest" ? "Read the brief" : pl.kind === "library" ? "Look closer" : "Open the record";
+  return `<div class="card-rm" style="border-left:2px solid ${c};padding:2px 0 2px 13px">
+    <div class="cardname" style="font-size:19px">${esc(pl.name)}</div>
+    <div style="font:600 9.5px Inter,sans-serif;letter-spacing:.16em;color:${c};margin:3px 0 8px">${esc(pl.sub)}</div>
+    ${s.premise ? `<p class="serif" style="margin:0 0 10px;color:var(--ash-dim);line-height:1.55">${esc(s.premise)}</p>` : ""}
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${mode ? `<span class="chip gilt">${esc(mode)}</span>` : ""}
+      ${players ? `<span class="chip">${esc(players)}${perBand ? " · " + esc(perBand) : ""}</span>` : ""}
+      <span class="chip">${esc(RM_PLANES[pl.plane].label)}</span>
+      ${s.type ? `<span class="chip">${esc(s.type)}</span>` : ""}
+      ${s.theme ? `<span class="chip">${esc(s.theme)}</span>` : ""}
+      ${s.rounds ? `<span class="chip">${s.rounds} rounds</span>` : ""}
+      ${s.enemyBudget ? `<span class="chip">${s.enemyBudget} enemy points</span>` : ""}
+    </div>
+    <div class="sheet-actions" style="margin-top:12px;flex-wrap:wrap">
+      ${pl.openable ? `<button class="btn primary" data-rmopen="${esc(pl.key)}" style="margin-left:0">${openLabel}</button>` : `<span class="quiet">Only the record of this one is kept.</span>`}
+      ${pl.kind === "quest" ? "" : `<button class="btn danger ghost" data-rmdel="${esc(pl.key)}" style="margin-left:auto">Forget this place</button>`}
+    </div>
+    ${pl.kind === "quest" ? `<p class="quiet" style="margin:8px 0 0">It is being played. End the quest first to forget it.</p>` : ""}
+  </div>`;
+}
+function bindRealmKnown(el){
+  el.querySelectorAll("[data-rmview]").forEach(b => b.onclick = () => {
+    rmView = b.dataset.rmview;
+    try{ localStorage.setItem("ep_realm_view", rmView); }catch(e){}
+    renderRealm();
+  });
+  el.querySelectorAll("[data-rumour]").forEach(g => {
+    g.onclick = () => openScenarioBring();
+    g.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openScenarioBring(); } };
+  });
+  const sc = el.querySelector(".rmScroll");
+  if(sc) sc.scrollLeft = Math.max(0, (sc.scrollWidth - sc.clientWidth) / 2);
+  const open = pl => {
+    if(pl.kind === "library") openLibraryScenario(pl.id);
+    else if(pl.kind === "quest") openBrief();
+    else if(pl.openable) openHistoryScenario(pl.id);
+  };
+  /* Tapping selects and reads; opening is a second, deliberate step. */
+  const select = key => {
+    const pl = rmPlaces().find(p => p.key === key); if(!pl) return;
+    el.querySelectorAll(".rmPlace").forEach(g => {
+      const on = g.dataset.rp === key;
+      const ring = g.querySelector(".rmSel"); if(ring) ring.setAttribute("opacity", on ? ".9" : "0");
+    });
+    const card = el.querySelector("#rmCard");
+    card.innerHTML = rmCardHTML(pl);
+    const ob = card.querySelector("[data-rmopen]"); if(ob) ob.onclick = () => open(pl);
+    const db = card.querySelector("[data-rmdel]");
+    if(db) db.onclick = () => askDelete("Forget " + pl.name + "?",
+      "The place fades from the map and its scenario is gone" + (pl.kind === "history" ? ", along with the record of how it went" : "")
+        + ". Other places stay where they are. This cannot be undone.",
+      () => {
+        if(pl.kind === "library") deleteFromLibrary(pl.id); else deleteHistory(pl.id);
+        closePicker(); renderRealm(); toast("Forgotten");
+      }, closePicker, "Forget it");
+    card.scrollIntoView({block: "nearest", behavior: "smooth"});
+  };
+  el.querySelectorAll(".rmPlace").forEach(g => {
+    g.onclick = () => select(g.dataset.rp);
+    g.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); select(g.dataset.rp); } };
+  });
+}
+
+/* ---- a new place is found ---- */
+function showDiscovery(obj){
+  const s = obj.out || {}, plane = planeOf(s);
+  const glyph = `<svg viewBox="-30 -30 60 60" width="64" height="64" aria-hidden="true">
+    <circle r="27" fill="${RM_GREEN}" opacity=".10"/><circle r="22" fill="#0d1016" stroke="${RM_GREEN}" stroke-width="1.6" stroke-dasharray="3 4"/>
+    <g transform="scale(2.3)">${rmIcon(plane, 0, 0, RM_GREEN)}</g></svg>`;
+  $("#sheet2In").innerHTML = `
+    <div style="text-align:center;padding:10px 0 4px">
+      <div class="eyebrow" style="margin-bottom:12px">A new place is found</div>
+      ${glyph}
+      <div class="cardname" style="font-size:24px;margin-top:12px">${esc(s.title || "An unnamed place")}</div>
+      ${s.premise ? `<p class="serif briefing" style="text-align:left;margin:14px 0 0">${esc(s.premise)}</p>` : ""}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:14px">
+        ${RM_MODE[s.mode] ? `<span class="chip gilt">${esc(RM_MODE[s.mode])}</span>` : ""}
+        ${s.players ? `<span class="chip">${s.players} ${s.players === 1 ? "player" : "players"}</span>` : ""}
+        <span class="chip">${esc(RM_PLANES[plane].label)}</span>
+        ${s.type ? `<span class="chip">${esc(s.type)}</span>` : ""}
+        ${s.theme ? `<span class="chip">${esc(s.theme)}</span>` : ""}
+        ${s.enemyBudget ? `<span class="chip gilt">${s.enemyBudget} enemy points</span>` : ""}
+      </div>
+    </div>
+    <div class="sheet-actions" style="margin-top:18px">
+      <button class="btn ghost" id="dcLater" style="margin-left:0">Later</button>
+      <button class="btn primary" id="dcOpen" style="margin-left:auto">Look closer</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#dcLater").onclick = () => { closePicker(); render(); };
+  $("#dcOpen").onclick = () => obj.libId ? openLibraryScenario(obj.libId) : (closePicker(), render());
+}
+
+/* ---- reset.js ---- */
+/* =====================================================================
+   TABULA RASA, AND THE NAME PROMPT
+   In camp the wipe asks you to type the words first, because there it
+   destroys a band that has actually been played.
+   The Reliquary only raises the Unburied and writes scenarios, so it can
+   be wiped clean and started over. Built into the Reliquary alone (see
+   assemble.py): camp keeps what has been played and has no such button.
+
+   It wraps the two draw functions instead of editing them, so the camp
+   build's code stays exactly as it was.
+   ===================================================================== */
+
+function clearRunningQuest(){
+  if(Q && Q.realm && typeof leaveRealm === "function"){ try{ leaveRealm(); }catch(e){} }
+  Q = null;
+  try{ localStorage.removeItem(QUEST_KEY); }catch(e){}
+}
+
+/* One confirmation for deleting a single thing. Nothing is deleted until the
+   red button is pressed; "Keep it" goes back to wherever it was asked from. */
+function askDelete(head, text, onYes, onNo, verb){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${esc(head)}</div></div>
+    <p class="lead">${esc(text)}</p>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="adNo" style="margin-left:0">Keep it</button>
+      <button class="btn danger" id="adYes" style="margin-left:auto">${esc(verb || "Delete")}</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#adNo").onclick = () => onNo ? onNo() : closePicker();
+  $("#adYes").onclick = () => onYes();
+}
+
+function askTabulaRasa(which){
+  const bands = store.bands.length, members = store.bands.reduce((n, b) => n + b.members.length, 0);
+  const lib = loadLibrary().length, hist = loadHistory().length;
+  const band_ = which === "band";
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="trX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Tabula rasa</div></div>
+    <p class="lead">${band_
+      ? `Every band and every one of the Unburied ${realmAvailable() ? "at this camp" : "raised here"} is wiped — ${bands} band${bands === 1 ? "" : "s"}, ${members} in all. You start again from an empty roster.`
+      : `Every scenario ${realmAvailable() ? "brought here" : "written here"} is wiped — ${lib} ready to play, ${hist} in the past scenarios — and the map of found places with them, along with any quest in progress.`}
+      This cannot be undone. ${realmAvailable()
+        ? (band_ ? "Save a file of your band first (the download icon) if you may want them back." : "Scenarios can be brought in again from the Reliquary, if you still have them there.")
+        : "Anything you already sent to camp is safe there."}</p>
+    ${realmAvailable() ? `<div class="field" style="margin-top:12px"><label>Type tabula rasa to wipe it</label>
+      <input class="input" id="trWord" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="tabula rasa"></div>` : ""}
+    <div class="sheet-actions">
+      <button class="btn ghost" id="trNo" style="margin-left:0">Keep it all</button>
+      <button class="btn danger" id="trYes" style="margin-left:auto" ${realmAvailable() ? "disabled" : ""}>Wipe it clean</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#trX").onclick = closePicker; $("#trNo").onclick = closePicker;
+  const word = $("#trWord");
+  if(word) word.oninput = () => { $("#trYes").disabled = word.value.trim().toLowerCase() !== "tabula rasa"; };
+  $("#trYes").onclick = () => {
+    clearRunningQuest();
+    if(band_){
+      const fresh = newBand("The Unburied");
+      store.bands = [fresh]; store.activeId = fresh.id;
+    } else {
+      saveLibrary([]); saveHistory([]); genState = null;
+    }
+    save(); closePicker(); render();
+    toast(band_ ? "A clean slate — raise the first" : "The maps are blank");
+  };
+}
+
+function tabulaRasaButton(which){
+  const btn = document.createElement("button");
+  btn.className = "btn sm ghost danger";
+  btn.textContent = "Tabula rasa";
+  btn.title = which === "band" ? "Wipe every band and start again" : "Wipe every scenario and start again";
+  btn.onclick = () => askTabulaRasa(which);
+  return btn;
+}
+
+const _renderUnburiedBase = renderUnburied;
+renderUnburied = function(b){
+  _renderUnburiedBase(b);
+  /* Nobody knows "The Unburied" is a name they can change, so while it is
+     still the default the box shows a prompt instead. The band keeps the
+     default underneath, so nothing else ever shows a blank name. */
+  const nameBox = $("#bandName");
+  if(nameBox){
+    nameBox.placeholder = "Rename your Unburied";
+    if(b.name === "The Unburied") nameBox.value = "";
+    nameBox.oninput = e => { b.name = e.target.value.trim() ? e.target.value : "The Unburied"; save(); };
+  }
+  const list = $("#roster"); if(!list) return;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "grid-column:1/-1;text-align:right;margin-top:6px";
+  wrap.appendChild(tabulaRasaButton("band"));
+  list.appendChild(wrap);
+};
+const _renderRealmBase = renderRealm;
+renderRealm = function(){
+  _renderRealmBase();
+  const el = $("#viewRealm"); if(!el) return;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "text-align:right;margin-top:14px";
+  wrap.appendChild(tabulaRasaButton("scenarios"));
+  el.appendChild(wrap);
+};
 
 
 /* light / dark is the viewer's choice and is remembered on this device */
