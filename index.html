@@ -32,8 +32,15 @@
   --verdigris:#5e9e8a;      /* aged copper: good news */
   --rust:#b5503c;           /* iron rot: bad news */
 
-  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --r-sm:3px; --r-md:4px; --r-lg:4px;
   --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35);
+  --frame:#2a241a;          /* the outer keyline of a framed panel */
+  --edge:#3a3225;           /* the panel's own border */
+  --candle:rgba(224,168,60,.05);
+  --panel-a:#191816; --panel-b:#12110f;
+  --vig:rgba(0,0,0,.55);
+  --grain:.05;
+  --halo:rgba(224,168,60,.07);
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]){
@@ -43,6 +50,9 @@
     --gilt:#8a6d12; --gilt-deep:#6d5510; --gilt-glow:rgba(138,109,18,.10);
     --verdigris:#3f7a66; --rust:#9c402d;
     --shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 18px rgba(0,0,0,.08);
+    --frame:#d9d2c2; --edge:#c9bfa8; --candle:rgba(138,109,18,.05);
+    --panel-a:#f6f3ec; --panel-b:#efeadf;
+    --vig:rgba(90,70,30,.16); --grain:.06; --halo:rgba(138,109,18,.08);
   }
 }
 [data-theme="light"]{
@@ -52,18 +62,31 @@
   --gilt:#8a6d12; --gilt-deep:#6d5510; --gilt-glow:rgba(138,109,18,.10);
   --verdigris:#3f7a66; --rust:#9c402d;
   --shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 6px 18px rgba(0,0,0,.08);
+  --frame:#d9d2c2; --edge:#c9bfa8; --candle:rgba(138,109,18,.05);
+  --panel-a:#f6f3ec; --panel-b:#efeadf;
+  --vig:rgba(90,70,30,.16); --grain:.06; --halo:rgba(138,109,18,.08);
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
-  background:var(--stone-0);
+  background:
+    radial-gradient(90% 55% at 50% 0,var(--halo),transparent 70%),
+    radial-gradient(130% 110% at 50% 40%,transparent 55%,var(--vig)),
+    var(--stone-0);
+  background-attachment:fixed;
   color:var(--ash);
   font:15px/1.55 "Inter",system-ui,-apple-system,sans-serif;
   padding-bottom:env(safe-area-inset-bottom);
   overflow-wrap:anywhere;
 }
 body.locked{overflow:hidden}
+/* a fine stone grain over everything, too faint to read as a pattern */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:var(--grain);mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.4 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+/* thin, even line-work for every icon */
+svg[stroke="currentColor"]{stroke-width:1.5}
+.iconbtn svg,.way svg{stroke-width:1.4}
 
 /* ---- inscriptional headings ---- */
 h1,h2,h3,.inscribed{
@@ -72,13 +95,13 @@ h1,h2,h3,.inscribed{
   letter-spacing:.06em;
   margin:0;
 }
-h1{font-size:23px;letter-spacing:.11em}
-h2{font-size:17px}
+h1{font-size:23px;letter-spacing:.16em;font-weight:500}
+h2{font-size:17px;letter-spacing:.1em;font-weight:500}
 h3{font-size:16px;letter-spacing:.08em}
 .eyebrow{
   font-family:"Cinzel",Georgia,serif;
-  font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--ash-mute);
+  font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--gilt-deep);
 }
 .lead{color:var(--ash-dim);font-size:13.5px;margin:6px 0 0;line-height:1.55}
 .quiet{color:var(--ash-mute);font-size:12.5px}
@@ -93,9 +116,10 @@ header{
 }
 .masthead{max-width:860px;margin:0 auto;padding:13px 16px 0;display:flex;align-items:center;gap:12px}
 .sigil{
-  width:34px;height:34px;flex:none;border-radius:7px;
+  width:34px;height:34px;flex:none;border-radius:2px;
   border:1px solid var(--gilt-deep);background:var(--stone-2);
   display:grid;place-items:center;color:var(--gilt);
+  box-shadow:0 0 0 2px var(--stone-0),0 0 0 3px var(--frame),0 0 16px var(--gilt-glow);
 }
 .brand{min-width:0;flex:1}
 .brand h1{line-height:1.1}
@@ -104,19 +128,19 @@ header{
   text-transform:uppercase;color:var(--ash-mute);margin-top:3px;
 }
 .iconbtn{
-  width:34px;height:34px;flex:none;border-radius:8px;border:1px solid var(--line);
-  background:var(--stone-2);color:var(--ash-dim);display:grid;place-items:center;cursor:pointer;
+  width:34px;height:34px;flex:none;border-radius:2px;border:1px solid var(--edge);
+  background:transparent;color:var(--gilt-deep);display:grid;place-items:center;cursor:pointer;
 }
-.iconbtn:hover{color:var(--ash);border-color:var(--gilt-deep)}
+.iconbtn:hover{color:var(--gilt);border-color:var(--gilt-deep);box-shadow:0 0 12px var(--gilt-glow)}
 
 /* ---- the two halves of the app ---- */
 nav.ways{max-width:860px;margin:12px auto 0;padding:0 16px;display:flex;gap:8px}
 .way{
   flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:10px 12px;border-radius:var(--r-md) var(--r-md) 0 0;
+  padding:10px 12px;border-radius:3px 3px 0 0;
   border:1px solid var(--line);border-bottom:none;
   background:var(--stone-1);color:var(--ash-mute);cursor:pointer;
-  font-family:"Cinzel",Georgia,serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  font-family:"Cinzel",Georgia,serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
 }
 .way.on{background:var(--stone-2);color:var(--gilt);border-color:var(--gilt-deep)}
 .way svg{width:15px;height:15px}
@@ -124,39 +148,51 @@ nav.ways{max-width:860px;margin:12px auto 0;padding:0 16px;display:flex;gap:8px}
 main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 
 /* ---- surfaces ---- */
+/* A framed panel: a keyline outside a keyline, gilt corner marks on two corners, a faint candle-glow within. */
 .slab{
-  background:var(--stone-1);border:1px solid var(--line);border-radius:var(--r-lg);
-  padding:15px;box-shadow:var(--shadow);
+  position:relative;
+  background:linear-gradient(180deg,var(--panel-a),var(--panel-b));
+  border:1px solid var(--edge);border-radius:4px;
+  padding:16px;
+  box-shadow:0 0 0 3px var(--stone-0),0 0 0 4px var(--frame),0 8px 24px rgba(0,0,0,.28),inset 0 0 40px var(--candle);
+  margin:5px 5px;
 }
-.slab + .slab{margin-top:13px}
-.rule{flex:1;height:1px;background:var(--line);opacity:.8}
+.slab::before,.slab::after{content:"";position:absolute;width:9px;height:9px;border:1px solid var(--gilt);pointer-events:none;opacity:.9}
+.slab::before{top:5px;left:5px;border-right:0;border-bottom:0}
+.slab::after{bottom:5px;right:5px;border-left:0;border-top:0}
+.slab + .slab{margin-top:18px}
+.rule{flex:1;height:1px;background:linear-gradient(90deg,var(--gilt-deep),transparent);opacity:.7}
 .head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
 
 .chip{
   display:inline-flex;align-items:center;gap:5px;
-  padding:3px 9px;border-radius:999px;border:1px solid var(--line);
-  background:var(--stone-2);color:var(--ash-dim);font-size:11.5px;white-space:nowrap;
+  padding:3px 10px;border-radius:2px;border:1px solid var(--edge);
+  background:transparent;color:var(--ash-dim);font-size:11.5px;white-space:nowrap;
 }
 .chip.gilt{color:var(--gilt);border-color:var(--gilt-deep);background:var(--gilt-glow)}
 .chip.good{color:var(--verdigris);border-color:var(--verdigris)}
 .chip.bad{color:var(--rust);border-color:var(--rust)}
 
 .btn{
-  font:inherit;font-size:13px;padding:9px 16px;border-radius:var(--r-sm);
-  border:1px solid var(--line);background:var(--stone-2);color:var(--ash);
+  font-family:"Cinzel",Georgia,serif;font-weight:500;font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;
+  padding:9px 18px;border-radius:2px;
+  border:1px solid var(--gilt-deep);background:transparent;color:var(--gilt);
   cursor:pointer;display:inline-flex;align-items:center;gap:7px;
 }
 .btn:hover{border-color:var(--gilt-deep)}
-.btn.primary{background:var(--gilt);border-color:var(--gilt);color:#17130a;font-weight:600}
-.btn.primary:hover{background:var(--gilt-deep);border-color:var(--gilt-deep)}
-.btn.ghost{background:transparent}
-.btn.sm{font-size:12px;padding:6px 12px}
-.btn.danger{color:var(--rust);border-color:var(--rust)}
+.btn:hover{box-shadow:0 0 14px var(--gilt-glow)}
+.btn.primary{background:var(--gilt);border-color:var(--gilt);color:#17130a;font-weight:600;
+  box-shadow:inset 0 0 0 2px var(--gilt),inset 0 0 0 3px rgba(23,19,10,.35)}
+.btn.primary:hover{background:var(--gilt-deep);border-color:var(--gilt-deep);box-shadow:inset 0 0 0 2px var(--gilt-deep),inset 0 0 0 3px rgba(23,19,10,.35),0 0 14px var(--gilt-glow)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ash-dim)}
+.btn.ghost:hover{color:var(--gilt)}
+.btn.sm{font-size:10.5px;padding:6px 12px;letter-spacing:.13em}
+.btn.danger,.btn.danger.ghost{color:var(--rust);border-color:var(--rust)}
 .btn:disabled{opacity:.4;cursor:default}
 
 .input{
-  width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:var(--r-sm);
-  border:1px solid var(--line);background:var(--stone-3);color:var(--ash);
+  width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:3px;
+  border:1px solid var(--edge);background:var(--stone-3);color:var(--ash);
 }
 .input:focus{outline:none;border-color:var(--gilt-deep)}
 .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
@@ -166,25 +202,35 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .markers{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
 .marker{
   position:relative;text-align:left;width:100%;
-  background:var(--stone-1);border:1px solid var(--line);
-  border-radius:var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
-  padding:14px 14px 12px;cursor:pointer;color:inherit;font:inherit;
-  box-shadow:var(--shadow);
+  background:linear-gradient(180deg,var(--panel-a),var(--panel-b));border:1px solid var(--edge);
+  border-radius:4px;margin:5px;width:calc(100% - 10px);
+  padding:15px 15px 13px;cursor:pointer;color:inherit;font:inherit;
+  box-shadow:0 0 0 3px var(--stone-0),0 0 0 4px var(--frame),0 8px 24px rgba(0,0,0,.28),inset 0 0 40px var(--candle);
 }
-.marker:hover{border-color:var(--gilt-deep)}
+.marker{transition:transform .22s cubic-bezier(.3,.8,.3,1),box-shadow .22s,border-color .2s;
+  box-shadow:0 0 0 3px var(--stone-0),0 0 0 4px var(--frame),0 14px 22px -6px rgba(0,0,0,.5),0 3px 6px rgba(0,0,0,.3),inset 0 0 40px var(--candle)}
+.marker:hover{transform:translateY(-5px);border-color:var(--gilt-deep);
+  box-shadow:0 0 0 3px var(--stone-0),0 0 0 4px var(--gilt-deep),0 24px 30px -8px rgba(0,0,0,.6),0 0 22px var(--gilt-glow),inset 0 0 40px var(--gilt-glow)}
+.marker:active{transform:translateY(-2px)}
+.marker.benched{transform:none;box-shadow:0 0 0 3px var(--stone-0),0 0 0 4px var(--frame),0 4px 8px rgba(0,0,0,.3)}
+.marker.benched:hover{transform:translateY(-2px)}
+@media (prefers-reduced-motion:reduce){.marker,.marker:hover{transition:none;transform:none}}
 .marker.benched{opacity:.55}
 .marker::before{
   content:"";position:absolute;left:14px;right:14px;top:6px;height:1px;
   background:linear-gradient(90deg,transparent,var(--gilt-deep),transparent);opacity:.5;
 }
+.marker::after{content:"";position:absolute;bottom:5px;right:5px;width:9px;height:9px;border:1px solid var(--gilt);border-left:0;border-top:0;opacity:.9;pointer-events:none}
 .m-crown{display:inline-flex;flex:none;vertical-align:-2px;color:var(--gilt);margin-right:4px}
-.m-name{font-family:"Cinzel",Georgia,serif;font-size:15px;letter-spacing:.05em;
+.m-name{font-family:"Cinzel",Georgia,serif;font-size:15px;letter-spacing:.09em;font-weight:500;
   margin-bottom:2px;display:block;padding-right:56px}
 .m-epithet{font-family:"Spectral",Georgia,serif;font-style:italic;color:var(--gilt);
   font-size:12.5px;margin-bottom:8px;display:block;padding-right:56px}
+.m-style{display:inline-flex;align-items:center;gap:5px;color:var(--gilt);font-family:"Cinzel",Georgia,serif;font-size:9.5px;
+  letter-spacing:.16em;text-transform:uppercase;margin-right:9px;vertical-align:1px}
 .m-role{color:var(--ash-mute);font-size:12px;margin-bottom:9px;display:block}
 .m-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:10px 0}
-.m-stat{text-align:center;padding:6px 2px;border-radius:var(--r-sm);
+.m-stat{text-align:center;padding:6px 2px;border-radius:3px;
   background:var(--stone-2);border:1px solid var(--line-soft)}
 .m-stat b{display:block;font-size:14px;font-family:"Space Mono",monospace}
 .m-stat span{display:block;font-size:8px;letter-spacing:.05em;white-space:nowrap;text-transform:uppercase;
@@ -193,17 +239,20 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .m-gear{font-size:11.5px;color:var(--ash-dim);margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .m-gear b{color:var(--ash-mute);font-weight:500;margin-right:4px;letter-spacing:.08em;font-size:9.5px;text-transform:uppercase;font-family:"Cinzel",serif}
 .m-row2{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--line-soft)}
-.m-ic{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;border:1px solid var(--line);
+.m-ic{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;border:1px solid var(--line);
   color:var(--ash-dim);font-family:"Space Mono",monospace;font-size:11px;line-height:1.4}
 .m-ic svg{flex:none}
 .m-ic.bad{color:var(--rust);border-color:var(--rust)}
 .m-ic.gilt{color:var(--gilt);border-color:var(--gilt-deep)}
 .m-ic.good{color:var(--verdigris);border-color:var(--verdigris)}
-.m-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;cursor:pointer;
+.m-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:3px;cursor:pointer;
   border:1px solid var(--line);color:var(--ash-mute);font-size:11.5px;background:var(--stone-2)}
 .m-toggle i{width:7px;height:7px;border-radius:50%;background:var(--ash-mute)}
 .m-toggle.on{color:var(--gilt);border-color:var(--gilt-deep);background:var(--gilt-glow)}
 .m-toggle.on i{background:var(--gilt)}
+.m-send{margin-top:9px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border-radius:var(--r-sm);
+  border:1px dashed var(--gilt-deep);color:var(--gilt);font-size:12.5px;cursor:pointer}
+.m-send:hover{background:var(--gilt-glow);border-style:solid}
 .ctabs{display:flex;gap:2px;margin:0 0 14px;border-bottom:1px solid var(--line)}
 .ctab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--ash-mute);padding:9px 14px;cursor:pointer;
   font-family:"Cinzel",Georgia,serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase}
@@ -246,12 +295,12 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .scrim.show{opacity:1;pointer-events:auto}
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:60;max-height:92vh;overflow:auto;
-  background:var(--stone-1);border-top:1px solid var(--gilt-deep);
-  border-radius:var(--r-lg) var(--r-lg) 0 0;transform:translateY(102%);
+  background:radial-gradient(120% 60% at 50% 0,var(--panel-a),var(--stone-1));border-top:1px solid var(--gilt-deep);
+  border-radius:10px 10px 0 0;transform:translateY(102%);
   transition:transform .26s cubic-bezier(.3,.8,.3,1);
   padding-bottom:env(safe-area-inset-bottom);
 }
-.sheet.show{transform:none}
+.sheet.show{transform:none;box-shadow:0 -1px 0 var(--frame),0 -10px 40px rgba(0,0,0,.45)}
 .sheet-in{max-width:860px;margin:0 auto;padding:16px 16px 22px}
 .sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
 .sheet-head .eyebrow{flex:1}
@@ -259,7 +308,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .toast{
   position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);z-index:90;
   background:var(--stone-2);border:1px solid var(--gilt-deep);color:var(--ash);
-  padding:9px 15px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;
+  padding:9px 15px;border-radius:3px;font-size:13px;opacity:0;pointer-events:none;
   transition:opacity .2s,transform .2s;box-shadow:var(--shadow);
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -287,7 +336,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .srow-l span{display:block;font-size:11.5px;color:var(--ash-mute);margin-top:1px}
 .srow-r{display:flex;align-items:center;gap:10px}
 .srow-hint{font-size:11.5px;color:var(--ash-mute);min-width:52px;text-align:right}
-.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--stone-2)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:3px;background:var(--stone-2)}
 .stepper button{width:30px;height:30px;border:0;background:none;color:var(--ash-dim);cursor:pointer;font-size:16px;line-height:1}
 .stepper button:hover:not(:disabled){color:var(--gilt)}
 .stepper button:disabled{opacity:.3;cursor:default}
@@ -298,7 +347,7 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .grow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line-soft)}
 .grow:last-of-type{border-bottom:none}
 .grow-main{flex:1;min-width:0}
-.grow-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.grow-name{font-family:"Cinzel",Georgia,serif;font-size:13px;letter-spacing:.06em;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .grow-sub{font-size:12px;color:var(--ash-mute);margin-top:2px;line-height:1.45;white-space:pre-line}
 .grow-r{display:flex;align-items:center;gap:8px;flex:none}
 .grow-r .mono{font-size:12.5px;color:var(--gilt)}
@@ -306,11 +355,11 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .tiny{background:none;border:0;color:var(--ash-mute);cursor:pointer;font-size:14px;line-height:1;padding:2px}
 .tiny:hover{color:var(--gilt)}
 .mods{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px}
-.mod{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 7px;border-radius:999px;
+.mod{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 7px;border-radius:3px;
   border:1px solid var(--line);background:var(--stone-2);color:var(--ash-dim)}
 .mod b{color:var(--gilt)}
 .mod button{background:none;border:0;color:var(--ash-mute);cursor:pointer;font-size:12px;line-height:1;padding:0}
-.mod-add{font:inherit;font-size:11px;padding:2px 7px;border-radius:999px;border:1px dashed var(--line);
+.mod-add{font:inherit;font-size:11px;padding:2px 7px;border-radius:3px;border:1px dashed var(--line);
   background:transparent;color:var(--ash-mute);max-width:180px}
 .cost-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px;
   border-bottom:1px solid var(--line-soft)}
@@ -320,13 +369,13 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 
 .picks{display:flex;flex-direction:column;gap:7px}
 .pick{display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;padding:11px 12px;
-  border-radius:var(--r-md);border:1px solid var(--line);background:var(--stone-2);color:inherit;
+  border-radius:3px;border:1px solid var(--edge);background:transparent;color:inherit;
   font:inherit;cursor:pointer}
 .pick:hover:not(:disabled){border-color:var(--gilt-deep)}
 .pick.on{border-color:var(--gilt);background:var(--gilt-glow)}
 .pick.no{opacity:.55;cursor:default}
 .pick-main{flex:1;min-width:0}
-.pick-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pick-name{font-family:"Cinzel",Georgia,serif;font-size:13px;letter-spacing:.06em;font-weight:500;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .pick-desc{font-size:12px;color:var(--ash-mute);margin-top:3px;line-height:1.45;white-space:pre-line}
 .pick-eg{font-family:"Spectral",Georgia,serif;font-style:italic;font-size:11.5px;color:var(--ash-mute);margin-top:4px;opacity:.85}
 .pick-no{font-size:11.5px;color:var(--rust);margin-top:5px}
@@ -408,11 +457,11 @@ body.has-qbar #toast{bottom:82px}
 .qs-eff{margin-top:10px;display:flex;flex-direction:column;gap:5px}
 .qs-eff div{font-size:12px;color:var(--ash-dim);line-height:1.45}
 .qs-eff b{color:var(--ash);margin-right:4px}
-.qp-btn{font:inherit;font-size:11.5px;padding:5px 11px;border-radius:999px;
+.qp-btn{font:inherit;font-size:11.5px;padding:5px 11px;border-radius:3px;
   border:1px solid var(--line);background:var(--stone-2);color:var(--ash-dim);cursor:pointer}
 .qp-btn.ghost{background:transparent;opacity:.8}
 .qp-btn:disabled{opacity:.35;cursor:default}
-.qp-cond{font:inherit;font-size:11px;padding:3px 9px;border-radius:999px;
+.qp-cond{font:inherit;font-size:11px;padding:3px 9px;border-radius:3px;
   border:1px dashed var(--line);background:transparent;color:var(--ash-mute);cursor:pointer}
 .qp-cond.on{border-style:solid;border-color:var(--gilt);color:var(--gilt);background:var(--gilt-glow)}
 .pip{display:inline-flex;align-items:center;gap:4px;padding:2px 5px;border-radius:var(--r-sm);
@@ -4587,6 +4636,72 @@ function sizeHealth(size){
 function startHealth(size){ return sizeHealth(size).start; }
 function maxHealth(size){ return sizeHealth(size).max; }
 
+/* A trait that can be taken more than once (Extra arms, up to a second pair) can
+   price its later copies differently; the file says so as `secondPairCost`. */
+function traitPriceAt(id, nth){
+  const o = RSX.trait[id]; if(!o) return 0;
+  return nth > 1 && o.secondPairCost !== undefined ? o.secondPairCost : o.cost;
+}
+function traitMax(id){ const o = RSX.trait[id]; return (o && o.max) || 1; }
+function traitCount(m, id){ return (m.traits || []).filter(x => x === id).length; }
+/* hands: two, and two more for each pair of Extra arms */
+function handsOf(m){
+  const base = (RS.hands && RS.hands.default) || 2;
+  return base + 2 * traitCount(m, "extraArms");
+}
+
+/* ---- the symbols for the kinds of place beyond the first five (space, sky, dream, ice,
+   mystery), drawn around 0,0 in a box about 12 across. `c` is the colour. ---- */
+function planeGlyph(plane, c){
+  const g = {
+    space:   `<path d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
+    sky:     `<path d="M-6 3.5 a3 3 0 0 1 1.2 -5.6 a4 4 0 0 1 7.4 -.6 a3 3 0 0 1 3.4 6.2Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
+    dream:   `<path d="M3 -6 a6.2 6.2 0 1 0 3 10.6 a5 5 0 0 1 -3 -10.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
+    ice:     `<path d="M0 -6.2 V6.2 M-5.4 -3.1 L5.4 3.1 M-5.4 3.1 L5.4 -3.1" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/><path d="M-1.4 -4.6 L0 -3.4 L1.4 -4.6 M-1.4 4.6 L0 3.4 L1.4 4.6" fill="none" stroke="${c}" stroke-width="1" stroke-linecap="round"/>`,
+    mystery: `<path d="M-3 -3.2 a3 3 0 1 1 4.6 2.5 c-1.2 .8 -1.6 1.4 -1.6 2.6" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/><circle cx="0" cy="5.6" r=".95" fill="${c}"/>`
+  };
+  return g[plane] || "";
+}
+const PLANE_IDS = ["land", "water", "fire", "under", "void", "space", "sky", "dream", "ice", "mystery"];
+
+/* ---- hands ----
+   "Weapons and a Shield need hands to be carried: one each, two for Two-handed."
+   Fists are not gear and need none. A model may carry what its hands allow. */
+function weaponHands(id){
+  const w = RSX.weapon[id]; if(!w || id === "bareHands") return 0;
+  return (w.keywords || []).includes("twoHanded") ? 2 : 1;
+}
+function armourUsesHand(id){ const a = RSX.armour[id]; return !!(a && /uses a hand/i.test(a.desc || "")); }
+/* A model may wear one suit of armour and carry one shield. The suit gives the save; the
+   shield needs a hand and steps melee attacks against it down. */
+function armourIds(m){ return (m.armour || []).map(a => a.id || a).filter(id => RSX.armour[id]); }
+function bodyArmourId(m){ return armourIds(m).find(id => !armourUsesHand(id)) || null; }
+function shieldId(m){ return armourIds(m).find(id => armourUsesHand(id)) || null; }
+function handsUsed(m){
+  let n = 0;
+  (m.weapons || []).forEach(e => { n += weaponHands(e.id) * (e.qty || 1); });
+  (m.armour || []).forEach(a => { if(armourUsesHand(a.id || a)) n++; });
+  return n;
+}
+function handsFree(m){ return handsOf(m) - handsUsed(m); }
+/* why a piece of gear cannot be added, or null. `replacing` is the armour it would swap out. */
+function handsBlock(m, field, id){
+  if(field === "weapons"){
+    const w = RSX.weapon[id]; if(!w) return null;
+    if((m.size === "small") && ((w.keywords || []).includes("heavy") || (w.keywords || []).includes("twoHanded")))
+      return "Too small for a Heavy or Two-handed weapon.";
+    const need = weaponHands(id);
+    if(need > handsFree(m))
+      return need > 1 && handsFree(m) >= 1 ? "Needs two hands; only one is free."
+        : "No free hand (" + handsUsed(m) + " of " + handsOf(m) + " in use). Drop something, or take a second pair of arms.";
+  } else if(field === "armour"){
+    const replaces = armourUsesHand(id) ? shieldId(m) : bodyArmourId(m);      // a shield swaps a shield, a suit a suit
+    if(armourUsesHand(id) && !replaces && handsFree(m) < 1)
+      return "No free hand for a shield (" + handsUsed(m) + " of " + handsOf(m) + " in use).";
+  }
+  return null;
+}
+
 /* ---- the cost engine, straight from the file ----
    baseCost + stat steps + Wounds + actions + traits/abilities/powers, with the
    surcharge applied in purchase order (the first `freeUpgrades` are clean, then
@@ -4619,9 +4734,12 @@ function upgradeList(p){
      than a min-maxed fighter. The surcharge exists to stop stat stacking, so these are
      paid flat and never count toward the upgrade number. */
   const freeOfSurcharge = new Set([].concat((RS.traitTags||{}).resistances||[], (RS.traitTags||{}).vulnerabilities||[]));
+  const traitSeen = {};
   (p.traits || []).forEach(id => {
     const o = RSX.trait[id]; if(!o) return rsFail("unknown trait " + id);
-    if(freeOfSurcharge.has(id)) flat += o.cost; else ups.push({label:o.name, cost:o.cost});
+    const nth = traitSeen[id] = (traitSeen[id] || 0) + 1;
+    const cost = traitPriceAt(id, nth);
+    if(freeOfSurcharge.has(id)) flat += cost; else ups.push({label: o.name + (nth > 1 ? " (pair " + nth + ")" : ""), cost});
   });
   const sz = RSX.stat.size;
   if(sz && p.size && p.size !== sz.default) flat += (sz.costs||{})[p.size] || 0;
@@ -4656,6 +4774,7 @@ function gearCost(p){
   (p.weapons || []).forEach(id => { const o = RSX.weapon[id]; if(o) g += o.cost; });
   (p.weaponMods || []).forEach(id => { const o = RSX.wmod[id]; if(o) g += o.cost; });
   if(p.armour){ const o = RSX.armour[p.armour]; if(o) g += o.cost; }
+  if(p.shield){ const o = RSX.armour[p.shield]; if(o) g += o.cost; }
   (p.items || []).forEach(id => { const o = RSX.item[id]; if(o) g += o.cost; });
   return g;
 }
@@ -4725,6 +4844,34 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 function leaderTerm(){ return (RS.meta.terms && RS.meta.terms.leader) || "Leader"; }
 /* A small crown ahead of the name, not just a chip below it — so the
    band's Oathbearer reads as one at a glance, wherever their name appears. */
+/* How a model fights, read from what they carry: powers make a caster; otherwise the longest gun sets the
+   range (short / mid / long), a gun and a real blade make a hybrid, and blades alone are melee. */
+const STYLE_ICON = {
+  melee:  '<path d="M6 18L18 6M15 5.5h3.5V9M8.5 12.5l3 3M4 20l3-3"/>',
+  short:  '<path d="M6 12h9M12 8l4 4-4 4"/><path d="M19 8v8" stroke-dasharray="1 2.5"/>',
+  mid:    '<path d="M3 12h13M12 8l4 4-4 4"/><circle cx="20" cy="12" r="1.3"/>',
+  long:   '<path d="M2 12h15M13 8l4 4-4 4"/><circle cx="21" cy="12" r="2.2"/><circle cx="21" cy="12" r=".5"/>',
+  hybrid: '<path d="M5 19L14 10M12 8.5h3.5V12M5 5l4 4M15 15l4 4M19 5l-1.5 1.5"/>',
+  magic:  '<path d="M12 3c.5 5 4 8.5 9 9-5 .5-8.5 4-9 9-.5-5-4-8.5-9-9 5-.5 8.5-4 9-9z"/>'
+};
+function combatStyle(m){
+  if((m.powers || []).length) return {id: "magic", label: "Caster"};
+  const W = catOf("weapons");
+  const held = (m.weapons || []).map(e => W[e.id]).filter(Boolean);
+  const guns = held.filter(w => w.kind === "ranged");
+  const blades = held.filter(w => w.kind === "melee" && w.cost > 0);
+  if(guns.length && blades.length) return {id: "hybrid", label: "Mixed"};
+  if(guns.length){
+    const far = Math.max.apply(null, guns.map(w => w.range || 0));
+    return far >= 60 ? {id: "long", label: "Long range"} : far >= 35 ? {id: "mid", label: "Mid range"} : {id: "short", label: "Short range"};
+  }
+  if(blades.length) return {id: "melee", label: "Melee"};
+  return null;
+}
+function styleBadge(m, size){
+  const st = combatStyle(m); if(!st) return "";
+  return `<span class="m-style" title="${esc(st.label)}"><svg viewBox="0 0 24 24" width="${size || 17}" height="${size || 17}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${STYLE_ICON[st.id]}</svg>${esc(st.label)}</span>`;
+}
 function crownHTML(size){
   size = size || 13;
   return `<span class="m-crown" title="${esc(leaderTerm())}" style="width:${size}px;height:${size}px">
@@ -4782,6 +4929,12 @@ function lockNoteHTML(b){
     <p class="quiet" style="margin:0">This band has been on a quest, so its builds are fixed. They change only through XP (Train) and Cash
       (Gear and Surgery).${open ? " Newcomers and anyone benched stay editable until they go out on a quest." : ""}</p></div>`;
 }
+/* a mound with a door: the Barrow */
+function barrowIcon(size){
+  size = size || 14;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px" aria-hidden="true"><path d="M3 19a9 9 0 0 1 18 0z"/><path d="M10 19v-4a2 2 0 0 1 4 0v4"/><path d="M12 3v2"/></svg>`;
+}
+
 /* The lock and the tether, on one slim line. Tap either to open the full text. */
 let statusOpen = false;
 function statusStripHTML(b){
@@ -4839,7 +4992,9 @@ function mendBand(b){
       out[k] = (out[k] || []).filter(id => catOf(k)[id]));
     out.weapons = (out.weapons || []).filter(e => RSX.weapon[e.id])
       .map(e => ({id: e.id, qty: Math.max(1, e.qty || 1), mods: (e.mods || []).filter(x => RSX.wmod[x])}));
-    out.armour = (out.armour || []).filter(id => RSX.armour[id.id || id]).map(id => id.id || id).slice(0, 1);
+    /* one suit and one shield at most (older saves held just one of either) */
+    const ids = (out.armour || []).map(id => id.id || id).filter(id => RSX.armour[id]);
+    out.armour = [ids.find(id => !armourUsesHand(id)), ids.find(id => armourUsesHand(id))].filter(Boolean);
     out.items = (out.items || []).filter(e => RSX.item[e.id]).map(e => ({id: e.id, qty: Math.max(1, e.qty || 1)}));
     out.found = (out.found || []).filter(f => f && f.name).map(f => Object.assign({fid: f.fid || uid()}, f));
     out.scars = (out.scars || []).filter(x => x && x.name).map(x => Object.assign({iid: x.iid || uid()}, x));
@@ -4902,7 +5057,7 @@ function profileOf(m){
     move: m.move, wounds: m.wounds, actions: m.actions, size: m.size,
     traits: m.traits || [], abilities: m.abilities || [],
     powers: m.powers || [], flaws: m.flaws || [],
-    weapons: [], weaponMods: [], items: [], armour: (m.armour || [])[0] || null
+    weapons: [], weaponMods: [], items: [], armour: bodyArmourId(m), shield: shieldId(m)
   };
   DIE_STATS.forEach(k => p[k] = m[k]);
   (m.weapons || []).forEach(e => {
@@ -4974,7 +5129,7 @@ function dropFound(m, fid){
 }
 function effectiveMove(m){
   let v = m.move === undefined ? statDefault("move") : m.move;
-  const a = (m.armour || [])[0];
+  const a = bodyArmourId(m);
   const o = a ? RSX.armour[a] : null;
   if(o && o.moveMod) v += o.moveMod;
   if(typeof scarMods === "function"){ const sm = scarMods(m); if(sm.move) v += sm.move; }
@@ -5021,11 +5176,11 @@ function renderUnburied(b){
   $("#bandHead").innerHTML = `
     <div class="band">
       <input class="band-name" id="bandName" value="${esc(b.name)}" maxlength="42" spellcheck="false">
-      <button class="iconbtn" id="bandCarry"
-        aria-label="${realmAvailable() ? "Carry this band out or call one to the barrow" : "Send this band to camp"}"
-        title="${realmAvailable() ? "Carry out / call in" : "Send to camp"}">
+      ${realmAvailable() ? `<button class="iconbtn" id="bandCarry" aria-label="Carry this band out or call one to the barrow" title="Carry out / call in">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
-          <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>
+          <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>`
+      : `<button class="btn sm primary" id="bandCarry" title="Send this whole band to the Barrow, where it is played">${barrowIcon(15)} Send to the Barrow</button>
+         <button class="btn sm ghost" id="bandSome" title="Send only some of them, together, in one code">Send some</button>`}
       ${realmAvailable() ? `<button class="iconbtn" id="bandCampMenu" aria-label="Camp menu" title="Camp menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>` : ""}
       <button class="btn sm ghost" id="bandMenu">Bands</button>
@@ -5059,6 +5214,7 @@ function renderUnburied(b){
   };
   $("#bandMenu").onclick = openBands;
   $("#bandCarry").onclick = openCarry;
+  const bSome = $("#bandSome"); if(bSome) bSome.onclick = () => { groupPick = new Set(); openGroupSend(); };
   const bCM = $("#bandCampMenu"); if(bCM) bCM.onclick = openCampMenu;
   $$("[data-status]").forEach(x => x.onclick = () => { statusOpen = !statusOpen; renderUnburied(b); });
 
@@ -5091,6 +5247,7 @@ function renderUnburied(b){
       m.xp ? ic(I('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), m.xp, "gilt", m.xp + " XP to spend") : "",
       (m.found || []).length ? ic(I('<path d="M12 3l8 5v8l-8 5-8-5V8z"/>'), m.found.length, "good", m.found.length + " found in the field") : "",
       (m.flaws || []).length ? ic(I('<path d="M12 4l9 16H3z"/>'), m.flaws.length, "bad", m.flaws.length + " flaw" + (m.flaws.length > 1 ? "s" : "")) : "",
+      handsFree(m) < 0 ? ic("\u270b", handsUsed(m) + "/" + handsOf(m), "bad", "More gear than hands") : "",
       realmAvailable() && b.sealed ? (memberLocked(m) ? ic(lockIcon(true, 12), "", "", "Locked: changes only through XP and Cash")
                                                         : ic(lockIcon(false, 12), "", "good", "Editable until they go out on a quest")) : ""
     ].filter(Boolean).join("");
@@ -5098,7 +5255,7 @@ function renderUnburied(b){
       <div class="m-cost">${cost}<small>points</small></div>
       <span class="m-name">${isLeaderM(m) ? crownHTML(13) : ""}${esc(fullName(m)) || "<span style='color:var(--ash-mute)'>Unnamed</span>"}</span>
       ${m.epitaph ? `<span class="m-epithet">“${esc(m.epitaph)}”</span>` : ""}
-      ${m.role ? `<span class="m-role">${esc(m.role)}</span>` : ""}
+      ${m.role || combatStyle(m) ? `<span class="m-role">${styleBadge(m)}${m.role ? esc(m.role) : ""}</span>` : ""}
       <div class="m-stats">
         ${DIE_STATS.map(k => `<div class="m-stat"><b>${esc(effDie(m, k))}</b><span>${esc(RSX.stat[k].name)}</span></div>`).join("")}
         <div class="m-stat"><b>${effWounds(m)}</b><span>${esc(RSX.stat.wounds.name)}</span></div>
@@ -5113,8 +5270,10 @@ function renderUnburied(b){
       <div class="m-row2">
         ${icons}
         <span class="m-toggle ${fielded(m) ? "on" : ""}" data-field role="switch" aria-checked="${fielded(m)}" tabindex="0"><i></i>${fielded(m) ? "Fielded" : "Benched"}</span>
-      </div>`;
+      </div>
+      ${realmAvailable() ? "" : `<div class="m-send" data-send role="button" tabindex="0" title="Send just ${esc(m.name || "this one")} to the Barrow, to join a band already there">${barrowIcon(14)} Send to the Barrow</div>`}`;
     el.onclick = ev => {
+      if(ev.target.closest("[data-send]")){ openMemberSend(m); return; }
       if(ev.target.closest("[data-field]")){ m.fielded = !fielded(m); renderUnburied(b); return; }
       openCard(m.id);
     };
@@ -5244,7 +5403,7 @@ function drawMember(){
   const mv = RSX.stat.move, ws = RSX.stat.wounds, as = RSX.stat.actions, sz = RSX.stat.size;
   const wStep = ws.upStep || 1, wCost = ws.upCostPerStep !== undefined ? ws.upCostPerStep : ws.upCostEach;
   const hStart = startHealth(m.size), hMax = maxHealth(m.size);
-  const armObj = (m.armour || [])[0] ? RSX.armour[m.armour[0]] : null;
+  const armObj = bodyArmourId(m) ? RSX.armour[bodyArmourId(m)] : null;
   const bodyRows =
     stepRow({key: "move", title: mv.name,
       sub: mv.step + "cm a step · " + mv.costPerStep + " pts" +
@@ -5387,7 +5546,7 @@ function drawMember(){
 /* ---- gear, traits, powers and flaws all render the same way ---- */
 const GEAR_KIND = {
   weapons:  {cat:"weapons",  qty:true,  single:false, reskin:true,  add:"Add a weapon"},
-  armour:   {cat:"armour",   qty:false, single:true,  reskin:true,  add:"Wear armour"},
+  armour:   {cat:"armour",   qty:false, single:false, reskin:true,  add:"Wear armour or carry a shield"},
   items:    {cat:"items",    qty:true,  single:false, reskin:true,  add:"Carry something"},
   traits:   {cat:"traits",   qty:false, single:false, reskin:false, add:"Add a trait"},
   abilities:{cat:"abilities",qty:false, single:false, reskin:false, add:"Add an ability"},
@@ -5396,17 +5555,19 @@ const GEAR_KIND = {
 };
 function gearSlab(m, label, field){
   const k = GEAR_KIND[field], cat = catOf(k.cat), arr = m[field] || [];
-  const rows = arr.map(entry => {
+  const rows = arr.map((entry, idx) => {
     const id = k.qty ? entry.id : (entry.id || entry);
     const o = cat[id]; if(!o) return "";
+    const nth = k.qty ? 1 : arr.slice(0, idx + 1).filter(e => (e.id || e) === id).length;    // 2 for a second pair
+    const unitCost = field === "traits" ? traitPriceAt(id, nth) : o.cost;
     const shown = k.reskin ? skinOf(m, id, o.name) : o.name;
     const mods = k.qty && field === "weapons" ? (entry.mods || []) : [];
     const modCost = mods.reduce((s, x) => s + ((CAT.mods[x] || {}).cost || 0), 0);
-    const price = k.qty ? (o.cost + modCost) * (entry.qty || 1) : o.cost;
+    const price = k.qty ? (o.cost + modCost) * (entry.qty || 1) : unitCost;
     return `
     <div class="grow">
       <div class="grow-main">
-        <div class="grow-name">${esc(shown)}
+        <div class="grow-name">${esc(shown)}${nth > 1 ? ` <span class="chip gilt">second pair</span>` : ""}
           ${k.reskin ? `<button class="tiny" data-skin="${field}|${esc(id)}" title="Call it something else">✎</button>` : ""}</div>
         ${shown !== o.name ? `<div class="grow-sub">${esc(o.name)}</div>` : ""}
         <div class="grow-sub">${esc(o.desc)}</div>
@@ -5422,24 +5583,27 @@ function gearSlab(m, label, field){
           </div>` : ""}
       </div>
       <div class="grow-r">
-        <span class="mono ${o.cost < 0 ? "neg" : ""}">${k.qty ? price + " pts" : signed(price)}</span>
+        <span class="mono ${unitCost < 0 ? "neg" : ""}">${k.qty ? price + " pts" : signed(price)}</span>
         ${k.qty ? `<div class="stepper sm">
             <button data-qty="${field}|${esc(id)}|-1" aria-label="fewer">−</button>
             <span>${entry.qty || 1}</span>
             <button data-qty="${field}|${esc(id)}|1" aria-label="more">+</button></div>` : ""}
-        <button class="tiny" data-drop="${field}|${esc(id)}" aria-label="Remove">×</button>
+        <button class="tiny" data-drop="${field}|${esc(id)}|${idx}" aria-label="Remove">×</button>
       </div>
     </div>`;
   }).join("");
-  const total = arr.reduce((s, e) => {
+  const total = arr.reduce((s, e, i) => {
     const id = k.qty ? e.id : (e.id || e), o = cat[id]; if(!o) return s;
     const mods = (e.mods || []).reduce((t, x) => t + ((CAT.mods[x] || {}).cost || 0), 0);
-    return s + (k.qty ? (o.cost + mods) * (e.qty || 1) : o.cost);
+    const nth = k.qty ? 1 : arr.slice(0, i + 1).filter(x => (x.id || x) === id).length;
+    return s + (k.qty ? (o.cost + mods) * (e.qty || 1) : (field === "traits" ? traitPriceAt(id, nth) : o.cost));
   }, 0);
   return `
   <div class="slab">
     <div class="head"><span class="eyebrow">${esc(label)}</span><span class="rule"></span>
+      ${field === "weapons" || field === "armour" ? `<span class="chip ${handsFree(m) < 0 ? "bad" : ""}" title="Weapons and a shield need a hand each; two for Two-handed">\u270b ${handsUsed(m)} of ${handsOf(m)} hands</span>` : ""}
       <span class="quiet mono">${arr.length ? (k.qty ? total + " pts" : signed(total)) : "—"}</span></div>
+    ${field === "weapons" && handsFree(m) < 0 ? `<p class="quiet" style="margin:0 0 8px;color:var(--rust)">More gear than hands: ${handsUsed(m)} carried, ${handsOf(m)} hands. Drop something or take a second pair of arms.</p>` : ""}
     ${rows || `<p class="quiet" style="margin:0">Nothing yet.</p>`}
     <button class="btn sm ghost" data-add="${field}" style="margin-top:10px">${esc(k.add)}</button>
   </div>`;
@@ -5448,15 +5612,20 @@ function gearSlab(m, label, field){
 function bindGear(root, m){
   root.querySelectorAll("[data-add]").forEach(b => b.onclick = () => openPicker(m, b.dataset.add));
   root.querySelectorAll("[data-drop]").forEach(b => b.onclick = () => {
-    const [field, id] = b.dataset.drop.split("|");
+    const [field, id, idx] = b.dataset.drop.split("|");
     const k = GEAR_KIND[field];
-    m[field] = k.qty ? m[field].filter(e => e.id !== id) : m[field].filter(e => (e.id || e) !== id);
-    if(m.skins) delete m.skins[id];
+    if(!k.qty && field === "traits" && traitCount(m, id) > 1){
+      m[field].splice(+idx, 1);                    // one pair of a pair-trait goes; the other stays
+    } else {
+      m[field] = k.qty ? m[field].filter(e => e.id !== id) : m[field].filter(e => (e.id || e) !== id);
+      if(m.skins) delete m.skins[id];
+    }
     redraw();
   });
   root.querySelectorAll("[data-qty]").forEach(b => b.onclick = () => {
     const [field, id, d] = b.dataset.qty.split("|");
     const e = m[field].find(x => x.id === id); if(!e) return;
+    if(+d > 0 && field === "weapons"){ const hb = handsBlock(m, field, id); if(hb){ toast(hb); return; } }
     e.qty = Math.max(1, (e.qty || 1) + +d);
     redraw();
   });
@@ -5503,6 +5672,7 @@ function closePicker(){
 
 /* What the ruleset forbids, said plainly rather than silently ignored. */
 function pickBlocked(m, field, o){
+  if(field === "weapons" || field === "armour"){ const hb = handsBlock(m, field, o.id); if(hb) return hb; }
   const raw = (RS[field === "flaws" ? "flaws" : field] || {});
   if(field === "flaws"){
     const cap = ((RS.flaws || {}).refundCap || {});
@@ -5551,17 +5721,19 @@ function drawPicker(){
     <input class="input" id="pkQ" placeholder="Search" value="${esc(q)}" style="margin-bottom:12px">
     <div class="picks">
       ${list.map(o => {
+        const cnt = field === "traits" ? traitCount(m, o.id) : 0, mx = field === "traits" ? traitMax(o.id) : 1;
         const on = chosen.has(o.id);
         const why = on ? null : pickBlocked(m, field, o);
+        const nextPrice = field === "traits" && cnt >= 1 && cnt < mx ? traitPriceAt(o.id, cnt + 1) : o.cost;
         return `
         <button class="pick ${on ? "on" : ""} ${why ? "no" : ""}" data-pick="${esc(o.id)}" ${why ? "disabled" : ""}>
           <div class="pick-main">
-            <div class="pick-name">${esc(o.name)}${on ? ` <span class="chip gilt">taken</span>` : ""}</div>
+            <div class="pick-name">${esc(o.name)}${on ? ` <span class="chip gilt">taken${cnt > 1 ? " \u00d7" + cnt : ""}</span>` : ""}${on && mx > 1 && cnt < mx ? ` <span class="chip">tap for a second pair</span>` : ""}${on && mx > 1 && cnt >= mx ? ` <span class="chip">tap to remove one</span>` : ""}</div>
             <div class="pick-desc">${esc(o.desc)}</div>
             ${o.examples ? `<div class="pick-eg">e.g. ${esc(o.examples.slice(0, 4).join(", "))}</div>` : ""}
             ${why ? `<div class="pick-no">${esc(why)}</div>` : ""}
           </div>
-          <div class="pick-cost mono ${o.cost < 0 ? "neg" : ""}">${k.qty ? o.cost + " pts" : signed(o.cost)}</div>
+          <div class="pick-cost mono ${o.cost < 0 ? "neg" : ""}">${k.qty ? o.cost + " pts" : signed(nextPrice)}</div>
         </button>`;
       }).join("") || `<p class="quiet">Nothing matches that.</p>`}
     </div>`;
@@ -5574,14 +5746,27 @@ function drawPicker(){
     const arr = m[field] = m[field] || [];
     if(k.qty){
       const e = arr.find(x => x.id === id);
+      if(field === "weapons"){ const hb = handsBlock(m, field, id); if(hb){ toast(hb); return; } }
       if(e) e.qty = (e.qty || 1) + 1;
       else arr.push({id, qty: 1, mods: []});
       toast(o.name + " taken");
+    } else if(field === "traits" && chosen.has(id) && traitMax(id) > 1){
+      /* a trait that comes in pairs: another copy until the limit, then take one back */
+      if(traitCount(m, id) < traitMax(id)){ arr.push(id); toast(o.name + " \u2014 a second pair"); }
+      else { arr.splice(arr.lastIndexOf(id), 1); toast(o.name + " \u2014 one pair dropped"); }
     } else if(chosen.has(id)){
       m[field] = arr.filter(x => (x.id || x) !== id);
       if(m.skins) delete m.skins[id];
       toast(o.name + " dropped");
     } else {
+      if(field === "armour"){
+        /* a suit swaps a suit and a shield swaps a shield; the other stays */
+        const uses = armourUsesHand(id);
+        arr.filter(x => armourUsesHand(x.id || x) === uses).forEach(x => { if(m.skins) delete m.skins[x.id || x]; });
+        m.armour = arr.filter(x => armourUsesHand(x.id || x) !== uses);
+        m.armour.push(id);
+        redraw(); drawPicker(); toast(o.name + " taken"); return;
+      }
       if(k.single){ arr.length = 0; if(m.skins) m.skins = {}; }
       arr.push(id);
       toast(o.name + " taken");
@@ -6026,7 +6211,7 @@ function rollMarkers(size, opts){
    and the text says to roll its saves by hand. */
 function saveDieOf(u){
   const m = u && u.side === "us" && !u.remote ? band().members.find(x => x.id === u.uid) : null;
-  const a = m && m.armour && m.armour[0] ? RS.armour.find(x => x.id === m.armour[0]) : null;
+  const a = m && bodyArmourId(m) ? RS.armour.find(x => x.id === bodyArmourId(m)) : null;
   return a && a.save ? dieNum(a.save) : 0;
 }
 function damageWithSaves(u, amount, why){
@@ -6161,15 +6346,19 @@ function saysHTML(m, title, field, tone){
   const arr = m[field] || []; if(!arr.length) return "";
   const cat = catOf(GEAR_KIND[field].cat);
   const qty = GEAR_KIND[field].qty;
+  const seen = new Set();
   return `
   <div class="slab">
     <div class="head"><span class="eyebrow">${esc(title)}</span><span class="rule"></span></div>
     ${arr.map(entry => {
       const id = qty ? entry.id : (entry.id || entry);
       const o = cat[id]; if(!o) return "";
+      /* a trait taken twice (a second pair of arms) is one row, times two */
+      const times = qty ? 1 : arr.filter(e => (e.id || e) === id).length;
+      if(!qty){ if(seen.has(id)) return ""; seen.add(id); }
       const shown = GEAR_KIND[field].reskin ? skinOf(m, id, o.name) : o.name;
       return `<div class="says ${tone || ""}">
-        <div class="says-n">${esc(shown)}${qty && (entry.qty || 1) > 1 ? ` ×${entry.qty}` : ""}
+        <div class="says-n">${esc(shown)}${qty && (entry.qty || 1) > 1 ? ` ×${entry.qty}` : ""}${times > 1 ? ` \u00d7${times}` : ""}
           ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""}</div>
         <div class="says-d">${esc(readableDesc(o.desc))}</div>
       </div>`;
@@ -6229,7 +6418,8 @@ function trainTabHTML(m){
 function drawCard(){
   const m = carded(); if(!m) return closeSheet();
   const n = squadOf(m), live = questUnit(m);
-  const armour = (m.armour || [])[0] ? catOf("armour")[m.armour[0]] : null;
+  const armour = bodyArmourId(m) ? catOf("armour")[bodyArmourId(m)] : null;
+  const shield = shieldId(m) ? catOf("armour")[shieldId(m)] : null;
 
   const statCell = (label, value, note) => `
     <div class="cstat"><b>${esc(value)}</b><span>${esc(label)}</span>${note ? `<small>${esc(note)}</small>` : ""}</div>`;
@@ -6241,14 +6431,17 @@ function drawCard(){
       </button>
       <div class="eyebrow">${n > 1 ? "A squad of the Unburied" : "One of the Unburied"}</div>
       ${m.xp ? `<button class="btn sm" id="cXP">${m.xp} XP</button>` : ""}
-      ${realmAvailable() ? "" : `<button class="btn sm ghost" id="cSend">Send to camp</button>`}
+      ${realmAvailable() ? "" : `<button class="btn sm ghost" id="cSend">${barrowIcon(13)} Send to the Barrow</button>`}
       <button class="btn sm ghost" id="cEdit">${memberLocked(m) ? "Locked" : "Edit"}</button>
     </div>
 
     <div class="cardhead">
       <div class="cardname">${isLeaderM(m) ? crownHTML(19) : ""}${esc(fullName(m)) || "Unnamed"}</div>
+      ${combatStyle(m) ? `<div style="margin:2px 0 4px">${styleBadge(m)}</div>` : ""}
       ${m.epitaph ? `<div class="cardepi">“${esc(m.epitaph)}”</div>` : ""}
       <div class="cardrole">${esc(m.role || "")}${n > 1 ? (m.role ? " · " : "") + n + " models" : ""}
+        ${handsOf(m) > 2 ? `<span class="chip gilt">${handsOf(m)} arms</span>` : ""}
+        ${handsFree(m) < 0 ? `<span class="chip bad" title="More gear than hands">\u270b ${handsUsed(m)} of ${handsOf(m)}</span>` : ""}
         <span class="cardpts">${unitCost(m)} points</span></div>
     </div>
 
@@ -6263,7 +6456,8 @@ function drawCard(){
       ${statCell(RSX.stat.move.name, effectiveMove(m) + "cm", armour && armour.moveMod ? "with armour" : "")}
       ${statCell(RSX.stat.actions.name, m.actions, "an activation")}
       ${statCell("Activations", activationsOf(m), "a round")}
-      ${armour ? statCell("Armour", (RS.armour.find(a => a.id === m.armour[0]) || {}).save || "—", skinOf(m, m.armour[0], armour.name)) : ""}
+      ${armour ? statCell("Armour", (RS.armour.find(a => a.id === bodyArmourId(m)) || {}).save || "—", skinOf(m, bodyArmourId(m), armour.name)) : ""}
+      ${shield ? statCell("Shield", "\u2713", "melee steps down") : ""}
       ${m.size !== statDefault("size") ? statCell(RSX.stat.size.name, m.size.charAt(0).toUpperCase() + m.size.slice(1), "") : ""}
     </div>
 
@@ -6524,9 +6718,21 @@ function aiLegalise(raw, budget){
     const as = (x && typeof x.as === "string") ? x.as.trim().slice(0, 40) : "";
     if(as && as.toLowerCase() !== catOf("weapons")[id].name.toLowerCase()) m.skins[id] = as;
   });
-  if(catOf("armour")[raw.armour]) m.armour = [raw.armour];
+  /* a suit and a shield can go together; either may be missing, and either may have
+     been put in the other's place */
+  const arm = [raw.armour, raw.shield].filter(id => typeof id === "string" && catOf("armour")[id]);
+  m.armour = [arm.find(id => !armourUsesHand(id)), arm.find(id => armourUsesHand(id))].filter(Boolean);
   m.items = keep(raw.items, "items", 2).map(id => ({id, qty: 1}));
 
+  /* It cannot carry more than its hands allow, whatever was written. */
+  let handGuard = 20;
+  while(handsFree(m) < 0 && handGuard-- > 0){
+    /* the shield goes first: it is the extra, the weapons are what the model is */
+    if(shieldId(m)){ m.armour = m.armour.filter(id => !armourUsesHand(id)); continue; }
+    const w = m.weapons[m.weapons.length - 1];
+    if(w){ if((w.qty || 1) > 1) w.qty--; else { delete m.skins[w.id]; m.weapons.pop(); } continue; }
+    break;
+  }
   /* Trim until it can be paid for: the trimmings go in the order a player
      would give things up, cheapest flavour first, their own dice last. */
   let guard = 80;
@@ -6700,6 +6906,11 @@ Also give a "build" that matches the story — a brawler fights, a marksman aims
 
 STATS: fight, aim, will, wits are dice on the ladder ${RS.dice.ladder.join(", ")}, default ${statDefault("fight")}; stepping up costs points, stepping down gives a few back. Also move in cm (default ${statDefault("move")}, steps of ${RSX.stat.move.step}), ${RSX.stat.wounds.name.toLowerCase()} (default ${statDefault("wounds")}, bought in ${RSX.stat.wounds.upStep}s), actions (default ${statDefault("actions")}), size (${RSX.stat.size.values.join(", ")}).
 
+A model has two hands (two more for each pair of Extra arms). Each weapon takes one hand, a Two-handed
+weapon two, and a shield one. Armour has two parts that go together: a SUIT ("armour": one of the suits) and
+a SHIELD ("shield": the shield id), and a model may have one of each. Give a shield only to someone who
+fights with one hand free; a shield plus a suit is a good fit for a guard, a duelist or a survivor.
+
 GEAR IS NAMED BY WHAT IT DOES, NOT WHAT IT LOOKS LIKE. "${catOf("weapons").rifle ? catOf("weapons").rifle.name : "Long-range weapon"}" is a stat line: it can be a rifle, a longbow, or an acid-spitting maw. So for EVERY weapon, also give "as" — a name that fits THIS model. A drowned bell-ringer does not carry a "Melee weapon", it swings a "Rusted clapper". Never leave "as" out.
 
 Flaws give points back and make a model more interesting. Use them.
@@ -6710,7 +6921,7 @@ ${aiCatalogue()}
 Keep each build under ${budget} points. Make the four genuinely different.
 
 Reply with ONLY a JSON array of 4 objects:
-[{"name":"...","epithet":"...","epitaph":"...","role":"...","story":"...","build":{"stats":{"fight":"d8","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},"size":"man","traits":["id"],"abilities":["id"],"powers":["id"],"flaws":["id"],"weapons":[{"id":"id","as":"its own name","mods":["id"]}],"armour":"id","items":["id"]}}]
+[{"name":"...","epithet":"...","epitaph":"...","role":"...","story":"...","build":{"stats":{"fight":"d8","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},"size":"man","traits":["id"],"abilities":["id"],"powers":["id"],"flaws":["id"],"weapons":[{"id":"id","as":"its own name","mods":["id"]}],"armour":"id or null","shield":"id or null","items":["id"]}}]
 No other text.`;
 
     try{
@@ -6792,7 +7003,8 @@ function aiSummary(m){
 const CARRY_TAG = "EPITAPH1";
 const SCENARIO_CARRY_TAG = "EPITAPHSCN1";
 const MEMBER_CARRY_TAG = "EPITAPHM1";
-const KNOWN_CARRY_TAGS = [CARRY_TAG, SCENARIO_CARRY_TAG, MEMBER_CARRY_TAG];
+const GROUP_CARRY_TAG = "EPITAPHG1";      // several chosen Unburied, sent together
+const KNOWN_CARRY_TAGS = [CARRY_TAG, SCENARIO_CARRY_TAG, MEMBER_CARRY_TAG, GROUP_CARRY_TAG];
 
 /* Only what differs from a fresh model is written down. A band of six comes
    out a few hundred characters rather than several thousand. */
@@ -6866,6 +7078,7 @@ function adoptBand(obj){
    not come back, joining a band already at camp rather than starting a
    new one. */
 function memberPayload(m){ return {t: MEMBER_CARRY_TAG, rs: RS.meta.version, member: thin(m)}; }
+function groupPayload(list){ return {t: GROUP_CARRY_TAG, rs: RS.meta.version, members: list.map(thin)}; }
 function adoptMember(obj){ return Object.assign(newMember(), obj.member, {id: uid()}); }
 
 /* A scenario carries whole — it is already trimmed to what the ruleset
@@ -6887,11 +7100,11 @@ async function openCarry(){
       <button class="iconbtn" id="cyX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
-      <div class="eyebrow">${sendOnly ? "Send to camp" : "Carry them out"}</div>
+      <div class="eyebrow">${sendOnly ? "Send to the Barrow" : "Carry them out"}</div>
     </div>
 
     <p class="lead">${sendOnly
-      ? "Your Unburied are raised here in the Reliquary and nowhere else. This is how they leave for camp \u2014 copy the code or save the file, then bring it in there to take them into a game."
+      ? "Your Unburied are raised here in the Reliquary and nowhere else. This is how they leave for the Barrow \u2014 copy the code or save the file, then use Call a band to the barrow there to take them into a game."
       : "Your Unburied live on this phone and nowhere else. This is how they leave it \u2014 to keep somewhere safe, to move to another phone, or to hand to whoever is running a game."}</p>
 
     <div class="slab" style="margin-top:14px">
@@ -6988,10 +7201,10 @@ async function openMemberSend(m){
     <div class="sheet-head">
       <button class="iconbtn" id="msX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">Send to camp</div></div>
+      </button><div class="eyebrow">Send to the Barrow</div></div>
     <p class="lead">${esc(fullName(m))} leaves the Reliquary alone \u2014 to join a band
-      already at camp, a ${esc(leaderTerm())} raised to replace one who did not come back, or
-      anyone else. Call them to the barrow from the roster there.</p>
+      already at the Barrow, ${/^[aeiou]/i.test(leaderTerm()) ? "an" : "a"} ${esc(leaderTerm())} raised to replace one who did not come back, or
+      anyone else. Use Call one to the barrow on the roster there, and paste this in.</p>
     <div class="slab" style="margin-top:14px">
       <div class="head"><span class="eyebrow">${esc(fullName(m))}</span><span class="rule"></span></div>
       <textarea class="input mono" id="msCode" rows="4" readonly
@@ -7029,6 +7242,81 @@ async function openMemberSend(m){
   };
 }
 
+/* ---- sending several chosen ones together, out of the Reliquary ---- */
+let groupPick = new Set();
+function openGroupSend(){
+  const b = band();
+  if(!groupPick.size) b.members.forEach(m => groupPick.add(m.id));            // start with everyone ticked
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="gsX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Send some to the Barrow</div>
+      <span class="chip gilt">${[...groupPick].filter(id => b.members.some(m => m.id === id)).length} chosen</span></div>
+    <p class="lead">Tick who goes. They travel together in one code and join whichever band is at the Barrow,
+      each one as they are now.</p>
+    <div class="slab" style="margin-top:12px">
+      ${b.members.length ? b.members.map(m => `
+        <div class="grow"><div class="grow-main">
+          <div class="grow-name">${isLeaderM(m) ? crownHTML(12) : ""}${esc(fullName(m)) || "Unnamed"}</div>
+          <div class="grow-sub">${esc(m.role || "")}${m.role ? " \u00b7 " : ""}${unitCost(m)} points</div></div>
+          <div class="grow-r"><button class="chip ${groupPick.has(m.id) ? "gilt" : ""}" data-gp="${esc(m.id)}">${groupPick.has(m.id) ? "\u2713 going" : "stays"}</button></div>
+        </div>`).join("") : `<p class="quiet" style="margin:0">Nobody is raised yet.</p>`}
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="gsAll" style="margin-left:0">${groupPick.size >= b.members.length ? "Untick all" : "Tick all"}</button>
+      <button class="btn primary" id="gsGo" ${[...groupPick].some(id => b.members.some(m => m.id === id)) ? "" : "disabled"}>Make the code</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#gsX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-gp]").forEach(btn => btn.onclick = () => {
+    const id = btn.dataset.gp; if(groupPick.has(id)) groupPick.delete(id); else groupPick.add(id); openGroupSend();
+  });
+  $("#gsAll").onclick = () => { if(groupPick.size >= b.members.length) groupPick = new Set(); else b.members.forEach(m => groupPick.add(m.id)); openGroupSend(); };
+  $("#gsGo").onclick = async () => {
+    const chosen = b.members.filter(m => groupPick.has(m.id));
+    const code = await packCode(groupPayload(chosen), GROUP_CARRY_TAG);
+    $("#sheet2In").innerHTML = `
+      <div class="sheet-head">
+        <button class="iconbtn" id="gcBack" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+        </button><div class="eyebrow">Send some to the Barrow</div></div>
+      <p class="lead">${chosen.length} of the Unburied leave together: ${esc(chosen.map(m => fullName(m) || "Unnamed").join(", "))}.
+        Copy the code or save the file, then use Call one to the barrow there and paste this in.</p>
+      <div class="slab" style="margin-top:14px">
+        <textarea class="input mono" id="gcCode" rows="4" readonly style="font-size:11px;line-height:1.4">${esc(code)}</textarea>
+        <div class="sheet-actions" style="margin-top:10px">
+          <button class="btn sm" id="gcSave">Save a file</button>
+          <button class="btn sm primary" id="gcCopy" style="margin-left:auto">Copy the code</button>
+        </div>
+        <p class="quiet" style="margin:9px 0 0">${code.length} characters \u00b7 written against ruleset ${esc(RS.meta.version)}</p>
+      </div>`;
+    $("#gcBack").onclick = openGroupSend;
+    $("#gcCopy").onclick = async () => {
+      try{ await navigator.clipboard.writeText(code); toast("Copied"); }
+      catch(e){ const t = $("#gcCode"); t.focus(); t.select(); toast("Select it and copy"); }
+    };
+    $("#gcSave").onclick = async () => {
+      const name = ((band().name || "unburied") + "-some").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() + ".json";
+      const data = JSON.stringify(groupPayload(chosen), null, 2);
+      let saver = null;
+      try{ saver = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; }catch(e){}
+      if(saver){
+        try{ await saver.save({filename: name, data}); toast("Saved"); }
+        catch(e){ toast("The save was declined"); }
+        return;
+      }
+      try{
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([data], {type: "application/json"}));
+        a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        toast("Saved");
+      }catch(e){ toast("Files cannot be saved here \u2014 copy the code instead"); }
+    };
+  };
+}
+
 /* ---- bringing one in at camp, to join whichever band is active ---- */
 function openMemberBring(){
   $("#sheet2In").innerHTML = `
@@ -7036,10 +7324,10 @@ function openMemberBring(){
       <button class="iconbtn" id="mbX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Call one to the barrow</div></div>
-    <p class="lead">Paste a code for one of the Unburied sent alone from the Reliquary
+    <p class="lead">Paste a code for one of the Unburied, or for several sent together, from the Reliquary
       \u2014 a new ${esc(leaderTerm())}, or anyone else \u2014 and they join ${esc(band().name)}.</p>
     <div class="slab" style="margin-top:14px">
-      <textarea class="input mono" id="mbIn" rows="3" placeholder="EPITAPHM1Z:\u2026"
+      <textarea class="input mono" id="mbIn" rows="3" placeholder="EPITAPHM1\u2026 or EPITAPHG1\u2026"
         style="font-size:11px;line-height:1.4"></textarea>
       <div class="sheet-actions" style="margin-top:10px">
         <label class="btn sm ghost" style="cursor:pointer">Open a file
@@ -7057,15 +7345,19 @@ function openMemberBring(){
       const t = String(text || "").trim();
       if(t.startsWith("{")) obj = JSON.parse(t);
       else obj = await unpackCode(t);
-      if(obj.t !== MEMBER_CARRY_TAG) throw new Error("That is not one of the Unburied.");
-      const m = adoptMember(obj);
+      if(obj.t !== MEMBER_CARRY_TAG && obj.t !== GROUP_CARRY_TAG) throw new Error("That is not one of the Unburied.");
+      const arriving = obj.t === GROUP_CARRY_TAG
+        ? (obj.members || []).map(x => Object.assign(newMember(), x, {id: uid()}))
+        : [adoptMember(obj)];
+      if(!arriving.length) throw new Error("There was nobody in that code.");
       const b = band();
       /* Only one Leader at a time — an arriving one takes the trait cleanly
          rather than sitting alongside whoever already holds it. */
-      if((m.traits || []).includes("leader") && leaderOf(b))
+      if(arriving.some(m => (m.traits || []).includes("leader")) && leaderOf(b))
         toast("Already has a " + leaderTerm() + " \u2014 give the trait to whoever should carry it, by hand");
-      b.members.push(m); save(); closePicker(); render();
-      toast(fullName(m) + " joins " + b.name);
+      arriving.forEach(m => b.members.push(m));
+      save(); closePicker(); render();
+      toast(arriving.length === 1 ? fullName(arriving[0]) + " joins " + b.name : arriving.length + " join " + b.name);
       if(obj.rs && obj.rs !== RS.meta.version)
         setTimeout(() => toast("Written against ruleset " + obj.rs + "; costs may differ"), 2400);
     }catch(e){
@@ -7737,7 +8029,7 @@ function openBrief(){
     ${s.map && s.map.features && s.map.features.length ? `<div class="slab">
       <div class="head"><span class="eyebrow">The table</span><span class="rule"></span>
         ${s.map.note ? `<span class="quiet">${esc(s.map.note)}</span>` : ""}</div>
-      <div class="mapwrap">${mapSVG(s.map)}</div>
+      <div class="mapwrap">${mapSVG(s.map, {theme: s.theme})}</div>
       ${mapKeyHTML(s.map)}
     </div>` : ""}
 
@@ -7952,7 +8244,9 @@ function afterSnapshot(){
   return {owed, went: Q.units.filter(u => u.side === "us" && !u.remote).map(u => u.uid), outcome,
           size: Q.size, mult: Q.reward || 1, difficulty: Q.difficulty || null,
           flavours: (Q.scenario && Q.scenario.woundFlavour) || [],
-          bosses: Q.units.filter(u => u.side === "them" && u.boss).map(u => u.name),
+          bosses: Q.units.filter(u => u.side === "them" && u.boss && !u.hidden).map(u => u.name),
+          /* enemies that never came onto the table stay unnamed, even here */
+          unseen: Q.units.filter(u => u.side === "them" && u.hidden).map(u => u.name),
           namings: (Q.scenario && Q.scenario.namings) || null,
           title: (Q.scenario && Q.scenario.name) || "The battle", vp: [Q.vp.us, Q.vp.them], step: null};
 }
@@ -7973,7 +8267,7 @@ function openAfter(snap){
   b.members.forEach(m => x[m.id] = {took: went.has(m.id), kills: 0, obj: false, boss: false});
   afterState = {owed: snap.owed, total: snap.owed.length, done: [], step: snap.owed.length ? "fate" : "spoils",
                 outcome: snap.outcome, size: snap.size, mult: snap.mult, difficulty: snap.difficulty,
-                flavours: snap.flavours || [], title: snap.title, vp: snap.vp, bosses: snap.bosses || [], namings: snap.namings || null, x};
+                flavours: snap.flavours || [], title: snap.title, vp: snap.vp, bosses: snap.bosses || [], unseen: snap.unseen || [], namings: snap.namings || null, x};
   b.lastNamings = snap.namings || b.lastNamings || null;      // camp may need "survived" names later
   drawAfter();
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
@@ -7993,6 +8287,7 @@ function drawAfter(){
         </button><div class="eyebrow">${stepLine(S, "fate")}</div></div>
       <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
         <div class="cardname" style="font-size:22px">${esc(fullName(m)) || "Unnamed"}</div>
+        ${combatStyle(m) ? `<div style="margin:2px 0 4px">${styleBadge(m)}</div>` : ""}
         ${m.epitaph ? `<div class="cardepi">“${esc(m.epitaph)}”</div>` : ""}
       </div>
       <p class="lead">Taken Down. ${mode === "advantage"
@@ -8041,7 +8336,7 @@ function drawAfter(){
       ${flavours.length && !rec.flavourText ? `<div class="slab">
         <div class="head"><span class="eyebrow">What did it</span><span class="rule"></span><span class="quiet">names the scar and offers words</span></div>
         <div class="sheet-actions" style="flex-wrap:wrap;gap:7px">
-          ${flavours.map((f, i) => `<button class="btn sm ghost" data-flavour="${i}" style="margin-left:0">${esc(f.cause)}</button>`).join("")}
+          ${flavours.map((f, i) => `<button class="btn sm ghost" data-flavour="${i}" style="margin-left:0">${esc(causeLabel(f.cause, S))}</button>`).join("")}
         </div>
       </div>` : ""}
       ${rec.dead ? `<p class="lead">Gone. Their gear returns to the stash.</p>` : ""}
@@ -8062,7 +8357,7 @@ function drawAfter(){
     if(epi) epi.onclick = () => openEpithet(m, rec, {options: rec.epithetOptions});
     const bury = $("#afBury");
     if(bury) bury.onclick = () => {
-      const cause = rec.flavourCause;
+      const cause = rec.flavourCause ? causeLabel(rec.flavourCause, S).replace("Something unseen", "something unseen") : "";
       const how = cause ? "Killed by " + cause : "Dead on the Fate table";
       openEpitaph(m, {reason: cause ? "killed by " + cause : "they did not get up", options: rec.epitaphOptions, back: drawAfter,
         done: ep => {
@@ -8260,7 +8555,7 @@ function momentsHTML(b){
   return `<div class="slab" style="border-color:var(--gilt-deep)">
     <div class="head"><span class="eyebrow">A new name?</span><span class="rule"></span><span class="quiet">something happened to them</span></div>
     ${list.map(x => { const m = b.members.find(z => z.id === x.mid);
-      return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(fullName(m)) || "Unnamed"}</div>
+      return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(fullName(m)) || "Unnamed"}${m && combatStyle(m) ? " " + styleBadge(m, 14) : ""}</div>
         <div class="grow-sub">${esc(x.name)}</div></div>
         <div class="grow-r"><button class="btn sm" data-mom="${esc(x.id)}">Give a name</button>
           <button class="tiny" data-momx="${esc(x.id)}" aria-label="They keep their name">\u00d7</button></div></div>`; }).join("")}
@@ -8274,6 +8569,12 @@ function bindMoments(root, redraw){
       {back: redraw, moment: x.id, lead: m.name + " \u2014 " + x.name.charAt(0).toLowerCase() + x.name.slice(1) + ". People will call them something for it; it replaces the name they had."});
   });
   root.querySelectorAll("[data-momx]").forEach(btn => btn.onclick = () => { resolveMoment(btn.dataset.momx); redraw(); });
+}
+
+/* A cause that names an enemy who never showed itself is not read out. */
+function causeLabel(cause, S){
+  const c = String(cause || "").toLowerCase();
+  return (S.unseen || []).some(n => n && c.includes(n.toLowerCase())) ? "Something unseen" : cause;
 }
 
 /* What the stone says when someone is gone: three lines the scenario wrote about
@@ -8432,10 +8733,11 @@ function openAdvance(mid, keepCat){
   }
   [["traits", "Traits"], ["abilities", "Abilities"], ["powers", "Powers"]].forEach(([field, label]) => {
     Object.values(catOf(field)).forEach(o => {
-      if((m[field] || []).includes(o.id)) return;
+      const have_ = (m[field] || []).filter(x => x === o.id).length;
+      if(have_ >= (field === "traits" ? traitMax(o.id) : 1)) return;
       if(o.cost < 0) return;                       // a drawback is not an advance
       const why = typeof pickBlocked === "function" ? pickBlocked(m, field, o) : null;
-      offers.push({kind: field, label: o.name, note: o.desc, blocked: why,
+      offers.push({kind: field, label: o.name + (have_ ? " (second pair)" : ""), note: o.desc, blocked: why,
         price: xpPrice(m, t => t[field] = (t[field] || []).concat([o.id])),
         apply: t => t[field] = (t[field] || []).concat([o.id])});
     });
@@ -8454,6 +8756,7 @@ function openAdvance(mid, keepCat){
 
     <div class="cardhead" style="padding-bottom:12px;margin-bottom:12px">
       <div class="cardname" style="font-size:21px">${esc(fullName(m)) || "Unnamed"}</div>
+      ${combatStyle(m) ? `<div style="margin:2px 0 4px">${styleBadge(m)}</div>` : ""}
       ${m.epitaph ? `<div class="cardepi">\u201c${esc(m.epitaph)}\u201d</div>` : ""}
     </div>`;
 
@@ -8851,10 +9154,28 @@ function addStone(b, m, how, gilded, epitaph, options){
   b.wall = b.wall.slice(0, 200);
   qlogBand(b, (m.name || "Someone") + " — " + (how || "gone"));
 }
-/* A member leaves the band for good. Their gear has nowhere to go in this
-   app yet, so it goes with them. */
+/* The band's stash: what the fallen carried. Anyone can take it up again, free. */
+function stashOf(b){
+  b.stash = b.stash || {};
+  ["weapons", "armour", "items"].forEach(k => { b.stash[k] = b.stash[k] || []; });
+  return b.stash;
+}
+function stashGear(b, m){
+  const st = stashOf(b);
+  ["weapons", "items"].forEach(k => (m[k] || []).forEach(e => {
+    const id = e.id || e, n = e.qty || 1, have = st[k].find(x => x.id === id);
+    if(have) have.qty = (have.qty || 1) + n; else st[k].push({id, qty: n, mods: (e.mods || []).slice()});
+  }));
+  (m.armour || []).forEach(a => st.armour.push(a.id || a));
+}
+function stashCount(b){
+  const st = b.stash || {};
+  return (st.weapons || []).reduce((n, e) => n + (e.qty || 1), 0) + (st.items || []).reduce((n, e) => n + (e.qty || 1), 0) + (st.armour || []).length;
+}
+/* A member leaves the band for good. Their gear goes to the stash. */
 function layToGrave(b, m, how, gilded, epitaph, options){
   addStone(b, m, how, gilded, epitaph, options);
+  stashGear(b, m);
   b.members = b.members.filter(x => x.id !== m.id);
   save();
 }
@@ -8984,12 +9305,16 @@ function openCamp(){
       shaken nerves stay until surgery. Spend XP to train, Cash on gear, and Cash on surgery for scars — as much as you can afford,
       in any order.</p>
     ${momentsHTML(b)}
+    ${campRisks(b).length ? `<div class="slab" style="border-color:var(--rust)">
+      <div class="head"><span class="eyebrow" style="color:var(--rust)">When the band sets out</span><span class="rule"></span></div>
+      ${campRisks(b).map(r => `<p class="quiet" style="margin:0 0 5px">${esc(r.text)}</p>`).join("")}
+    </div>` : ""}
     <div class="slab" style="margin-top:12px">
       <div class="head"><span class="eyebrow">The Unburied</span><span class="rule"></span></div>
       ${rows || `<p class="quiet" style="margin:0">Nobody to camp.</p>`}
     </div>
     <div class="sheet-actions">
-      <button class="btn danger ghost" id="cpBreak" style="margin-left:0">Break camp</button>
+      <span class="quiet" style="margin:0">Camp ends by itself when the band sets out again.</span>
       ${b.tether && b.tether.frayed ? `<span class="quiet">The tether is frayed — mend it from the band header.</span>` : ""}
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
@@ -9027,7 +9352,6 @@ function openCamp(){
       options: rec.epitaphOptions, back: openCamp,
       done: ep => { layToGrave(b, m, how, false, ep, rec.epitaphOptions); toast(m.name + " is gone"); openCamp(); render(); }});
   });
-  $("#cpBreak").onclick = () => breakCamp();
 }
 
 /* ---- buying and selling gear with Cash: 1 Cash buys 1 point, sell for half ---- */
@@ -9042,6 +9366,14 @@ function openBuy(mid){
     return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(skinOf(m, e.id, o.name))}${k.qty && (e.qty || 1) > 1 ? " ×" + e.qty : ""}</div></div>
       <div class="grow-r"><button class="btn sm ghost" data-sell="${esc(e.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div></div>`;
   }).join("");
+  const st = stashOf(b);
+  const stashRows = (buyKind === "armour" ? st.armour.map(id => ({id, qty: 1})) : st[buyKind]).map(e => {
+    const o = cat[e.id]; if(!o) return "";
+    const why = handsBlock(m, buyKind, o.id);
+    return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(o.name)}${(e.qty || 1) > 1 ? " \u00d7" + e.qty : ""}</div>
+      ${why ? `<div class="pick-no">${esc(why)}</div>` : ""}</div>
+      <div class="grow-r"><button class="btn sm" data-take="${esc(e.id)}" ${why ? "disabled" : ""}>Take</button></div></div>`;
+  }).join("");
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="byX" aria-label="Back">
@@ -9052,12 +9384,14 @@ function openBuy(mid){
     <div class="sheet-actions" style="margin:0 0 12px;flex-wrap:wrap;gap:7px">
       ${kinds.map(([id, label]) => `<button class="chip ${buyKind === id ? "gilt" : ""}" data-bk="${id}" style="cursor:pointer;font-size:13px;padding:6px 12px">${label}</button>`).join("")}
     </div>
+    ${stashRows ? `<div class="slab" style="border-color:var(--gilt-deep)"><div class="head"><span class="eyebrow">From the stash</span><span class="rule"></span><span class="quiet">left by the fallen, free</span></div>${stashRows}</div>` : ""}
     ${mine ? `<div class="slab"><div class="head"><span class="eyebrow">Carried now</span><span class="rule"></span></div>${mine}</div>` : ""}
     <div class="picks">
       ${Object.values(cat).map(o => `
-        <button class="pick" data-buy="${esc(o.id)}" ${(b.cash || 0) < o.cost ? "disabled" : ""}>
+        <button class="pick ${handsBlock(m, buyKind, o.id) ? "no" : ""}" data-buy="${esc(o.id)}" ${(b.cash || 0) < o.cost || handsBlock(m, buyKind, o.id) ? "disabled" : ""}>
           <div class="pick-main"><div class="pick-name">${esc(o.name)}</div>
-            <div class="pick-desc">${esc(o.desc)}</div></div>
+            <div class="pick-desc">${esc(o.desc)}</div>
+            ${handsBlock(m, buyKind, o.id) ? `<div class="pick-no">${esc(handsBlock(m, buyKind, o.id))}</div>` : ""}</div>
           <div class="pick-cost mono">${o.cost} Cash</div></button>`).join("")}
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
@@ -9066,15 +9400,36 @@ function openBuy(mid){
   $("#sheet2In").querySelectorAll("[data-buy]").forEach(btn => btn.onclick = () => {
     const o = cat[btn.dataset.buy]; if(!o || (b.cash || 0) < o.cost) return;
     const arr = m[buyKind] = m[buyKind] || [];
-    if(k.single){
-      const old = arr[0] ? cat[arr[0].id || arr[0]] : null;
-      if(old) b.cash += Math.floor(old.cost / 2);       // the old suit is sold on
-      arr.length = 0; arr.push(o.id);
+    if(buyKind === "armour"){
+      /* a suit replaces a suit and a shield a shield; the old one is sold on for half */
+      const uses = armourUsesHand(o.id);
+      const oldId = arr.map(a => a.id || a).find(x => armourUsesHand(x) === uses);
+      if(oldId) b.cash += Math.floor((cat[oldId] || {cost: 0}).cost / 2);
+      m.armour = arr.filter(x => armourUsesHand(x.id || x) !== uses);
+      m.armour.push(o.id);
     } else {
       const e = arr.find(x => x.id === o.id);
       if(e) e.qty = (e.qty || 1) + 1; else arr.push({id: o.id, qty: 1, mods: []});
     }
     b.cash -= o.cost; save(); toast(o.name + " bought"); openBuy(mid); render();
+  });
+  $("#sheet2In").querySelectorAll("[data-take]").forEach(btn => btn.onclick = () => {
+    const id = btn.dataset.take, o = cat[id]; if(!o) return;
+    const arr = m[buyKind] = m[buyKind] || [];
+    if(buyKind === "armour"){
+      const uses = armourUsesHand(id);
+      const oldId = arr.map(a => a.id || a).find(x => armourUsesHand(x) === uses);
+      m.armour = arr.filter(x => armourUsesHand(x.id || x) !== uses);
+      m.armour.push(id);
+      const i = st.armour.indexOf(id); if(i >= 0) st.armour.splice(i, 1);
+      if(oldId) st.armour.push(oldId);   /* what they set down goes back to the stash */
+    } else {
+      const s = st[buyKind].find(x => x.id === id); if(!s) return;
+      const e = arr.find(x => x.id === id);
+      if(e) e.qty = (e.qty || 1) + 1; else arr.push({id, qty: 1, mods: (s.mods || []).slice()});
+      if((s.qty || 1) > 1) s.qty--; else st[buyKind] = st[buyKind].filter(x => x !== s);
+    }
+    save(); toast(o.name + " taken up"); openBuy(mid); render();
   });
   $("#sheet2In").querySelectorAll("[data-sell]").forEach(btn => btn.onclick = () => {
     const id = btn.dataset.sell, o = cat[id]; if(!o) return;
@@ -9149,23 +9504,38 @@ function openTreat(mid){
   });
 }
 
-function breakCamp(){
-  const b = band(), C = campState(b), lines = [];
-  /* A mortal wound with no surgery this camp is a death. */
+/* Camp ends by itself when the band sets out again. What that costs is settled then,
+   not by a button someone might forget: an unpaid Mortal wound is a death, and anyone
+   with four or more scars rolls to walk away. Until then it is only a warning. */
+function campRisks(b){
+  const out = [];
+  b.members.forEach(m => {
+    const rec = mortalRec(m);
+    if(rec) out.push({m, kind: "death", text: fullName(m) + " dies of their wound unless surgery is paid first."});
+  });
+  const lb = (RS.campaign || {}).liability || {};
+  if(lb.rawScars) b.members.forEach(m => {
+    if(!mortalRec(m) && (m.scars || []).filter(s => s.scar).length >= lb.rawScars)
+      out.push({m, kind: "quit", text: fullName(m) + " may walk away: " + (m.scars || []).filter(s => s.scar).length + " scars, a d6 roll of " + (lb.quitsOn || 1) + " and they go."});
+  });
+  return out;
+}
+/* The night passes. Returns what happened, one line each. */
+function campBreaks(b){
+  const C = campState(b), lines = [];
   b.members.filter(m => mortalRec(m)).forEach(m => {
     const rec = mortalRec(m);
     layToGrave(b, m, rec.flavourCause ? "Mortal wound from " + rec.flavourCause + ", no surgery" : "Mortal wound, no surgery", false,
                (rec.epitaphOptions || [])[0], rec.epitaphOptions);
     lines.push(m.name + " died of their wound.");
   });
-  /* Too many scars, and every camp is a chance to walk away. */
   const lb = (RS.campaign || {}).liability || {};
   if(lb.rawScars){
     b.members.slice().forEach(m => {
       if((m.scars || []).filter(s => s.scar).length >= lb.rawScars){
         const r = 1 + Math.floor(Math.random() * 6);
         if(r <= (lb.quitsOn || 1)){
-          layToGrave(b, m, "Worn out — walked away", false);
+          layToGrave(b, m, "Worn out \u2014 walked away", false);
           lines.push(m.name + " (d6 " + r + ") has had enough and leaves.");
         }
       }
@@ -9173,14 +9543,19 @@ function breakCamp(){
   }
   C.n++;
   save();
+  return lines;
+}
+/* shown before a quest begins, only when the night cost someone */
+function showCampBroken(lines, next){
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">Camp is broken</div></div>
+    <p class="lead">The band sets out. Before it goes:</p>
     <div class="slab">
-      ${(lines.length ? lines : ["Nobody was lost in the night."]).map(l => `<div class="says"><div class="says-d">${esc(l)}</div></div>`).join("")}
+      ${lines.map(l => `<div class="says"><div class="says-d">${esc(l)}</div></div>`).join("")}
     </div>
-    <div class="sheet-actions"><button class="btn primary" id="cbOK" style="margin-left:auto">On</button></div>`;
+    <div class="sheet-actions"><button class="btn primary" id="cbOK" style="margin-left:auto">Set out</button></div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#cbOK").onclick = () => { closePicker(); render(); };
+  $("#cbOK").onclick = () => { closePicker(); render(); next(); };
 }
 
 /* The camp's own menu. Camp, the after-battle sheet, the Cenotaph and the rules
@@ -9213,13 +9588,18 @@ function openCampMenu(){
 /* ---- scnmap.js ---- */
 /* =====================================================================
    THE MAP
-   A scenario is easier to lay out than to read. This draws the table:
-   deployment zones, terrain, the ground under it, and a numbered badge on
-   everything the text refers to, so "the bell tower (3)" is somewhere you
-   can point at.
+   A scenario is easier to lay out than to read. This draws the table from
+   above: start zones, the ground, and every piece of terrain as what it is,
+   in the look of the place (ruin, wilds, under, machine, sacred, frontier).
+   Each piece carries a small number, so "the bell tower (3)" can be pointed at.
 
    Coordinates are percentages of the table, so it does not matter whether
-   you play on a door or a dining table.
+   you play on a door or a dining table. A piece has a shape:
+     block    a building or a tower (w by h, turned by angle)
+     wall     a long thin barrier (w long, h thick, turned by angle)
+     blob     a hill, a pool, a pit, a patch of ground (r wide)
+     cluster  trees, rubble, stones, crates, pipes (r wide)
+   A piece with no shape is given one from its role, so older scenarios draw too.
    ===================================================================== */
 
 const GROUND = {
@@ -9236,59 +9616,246 @@ const ROLE_MARK = {
   hazard:    {sym: "✵", tint: "var(--rust)"},
   marker:    {sym: "◈", tint: "var(--gilt)"}
 };
+const MAP_SHAPES = ["block", "wall", "blob", "cluster"];
+
+/* the look of each kind of place */
+const MAP_THEME = {
+  ruin:     {ground: "#26272c", grain: "#32343a", solid: "#6b6963", dark: "#3b3a37", edge: "#111214", accent: "#8d8a82", prop: "rubble"},
+  wilds:    {ground: "#1c2a1f", grain: "#26372a", solid: "#5b6a55", dark: "#3d4d3a", edge: "#0b140d", accent: "#6f9a5f", prop: "tree"},
+  under:    {ground: "#181630", grain: "#221f42", solid: "#4f4a86", dark: "#312d5c", edge: "#090816", accent: "#8f86d8", prop: "stalag"},
+  machine:  {ground: "#212529", grain: "#2b3137", solid: "#66717c", dark: "#414a53", edge: "#0d0f11", accent: "#d19a2e", prop: "pipe"},
+  sacred:   {ground: "#2a2620", grain: "#342f27", solid: "#9a8d72", dark: "#6b6049", edge: "#14110c", accent: "#c9a227", prop: "stone"},
+  frontier: {ground: "#2c251c", grain: "#372f24", solid: "#8a7256", dark: "#5c4a37", edge: "#15110b", accent: "#c08c4a", prop: "crate"}
+};
+function mapPal(theme){ return MAP_THEME[theme] || MAP_THEME.ruin; }
+
+/* the same map always draws the same way */
+function mapRng(seed){
+  let h = 2166136261;
+  String(seed).split("").forEach(c => { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); });
+  h = h || 1;
+  return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; };
+}
+const mapClamp = v => Math.max(0, Math.min(100, +v || 0));
+const mapN = v => Math.round(v * 100) / 100;
+
+function mapShapeOf(f){
+  if(MAP_SHAPES.includes(f.shape)) return f.shape;
+  if(f.role === "blocking") return "wall";
+  if(f.role === "high") return "block";
+  if(f.role === "cover") return "cluster";
+  if(f.role === "objective" || f.role === "marker") return "marker";
+  return "blob";
+}
+/* a name often says what the ground is */
+function mapKind(f){
+  const t = String(f.label || "").toLowerCase();
+  if(/pool|lake|river|sea|pond|flood|well|tide|water|moat|canal|marsh|swamp|bog/.test(t)) return "water";
+  if(/lava|forge|fire|magma|ember|furnace|burn|pyre|brazier/.test(t)) return "fire";
+  if(/tree|wood|forest|grove|thicket|copse|orchard/.test(t)) return "wood";
+  return "";
+}
+
+function blobD(cx, cy, r, rnd, sx){
+  const n = 10, pts = [];
+  for(let i = 0; i < n; i++){
+    const a = i / n * Math.PI * 2, rr = r * (0.78 + rnd() * 0.42);
+    pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * (sx || 0.9)]);
+  }
+  const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  const start = mid(pts[n - 1], pts[0]);
+  let d = `M${mapN(start[0])} ${mapN(start[1])}`;
+  for(let i = 0; i < n; i++){
+    const m = mid(pts[i], pts[(i + 1) % n]);
+    d += ` Q${mapN(pts[i][0])} ${mapN(pts[i][1])} ${mapN(m[0])} ${mapN(m[1])}`;
+  }
+  return d + "Z";
+}
+
+/* one prop of a cluster */
+function mapProp(kind, x, y, s, rnd, pal){
+  x = mapN(x); y = mapN(y);
+  if(kind === "tree"){
+    const r = 1.1 + s * 0.9;
+    return `<circle cx="${x + .5}" cy="${y + .6}" r="${mapN(r)}" fill="#000" opacity=".35"/>
+      <circle cx="${x}" cy="${y}" r="${mapN(r)}" fill="${pal.dark}" stroke="${pal.edge}" stroke-width=".2"/>
+      <circle cx="${mapN(x - r * .25)}" cy="${mapN(y - r * .25)}" r="${mapN(r * .55)}" fill="${pal.accent}" opacity=".55"/>`;
+  }
+  if(kind === "stalag"){
+    const h = 1.8 + s * 1.6;
+    return `<path d="M${mapN(x - h * .38)} ${mapN(y + h * .5)} L${x} ${mapN(y - h * .6)} L${mapN(x + h * .38)} ${mapN(y + h * .5)}Z" fill="${pal.dark}" stroke="${pal.accent}" stroke-width=".2" stroke-linejoin="round"/>
+      <path d="M${x} ${mapN(y - h * .6)} L${mapN(x + h * .38)} ${mapN(y + h * .5)} L${x} ${mapN(y + h * .3)}Z" fill="#000" opacity=".3"/>`;
+  }
+  if(kind === "pipe"){
+    const r = 0.9 + s * 0.7;
+    return `<circle cx="${x + .4}" cy="${y + .5}" r="${mapN(r)}" fill="#000" opacity=".35"/>
+      <circle cx="${x}" cy="${y}" r="${mapN(r)}" fill="${pal.solid}" stroke="${pal.edge}" stroke-width=".22"/>
+      <circle cx="${x}" cy="${y}" r="${mapN(r * .45)}" fill="none" stroke="${pal.accent}" stroke-width=".25"/>`;
+  }
+  if(kind === "stone"){
+    const h = 2 + s * 1.6, w = 0.9 + s * 0.4;
+    return `<rect x="${mapN(x - w / 2 + .35)}" y="${mapN(y - h / 2 + .4)}" width="${mapN(w)}" height="${mapN(h)}" rx=".3" fill="#000" opacity=".35"/>
+      <rect x="${mapN(x - w / 2)}" y="${mapN(y - h / 2)}" width="${mapN(w)}" height="${mapN(h)}" rx=".3" fill="${pal.solid}" stroke="${pal.edge}" stroke-width=".2"/>`;
+  }
+  if(kind === "crate"){
+    const w = 1.6 + s * 1.2, a = (rnd() - .5) * 40;
+    return `<g transform="translate(${x} ${y}) rotate(${mapN(a)})"><rect x="${mapN(-w / 2 + .35)}" y="${mapN(-w / 2 + .4)}" width="${mapN(w)}" height="${mapN(w)}" fill="#000" opacity=".35"/>
+      <rect x="${mapN(-w / 2)}" y="${mapN(-w / 2)}" width="${mapN(w)}" height="${mapN(w)}" fill="${pal.solid}" stroke="${pal.edge}" stroke-width=".22"/>
+      <path d="M${mapN(-w / 2)} ${mapN(-w / 2)} L${mapN(w / 2)} ${mapN(w / 2)} M${mapN(w / 2)} ${mapN(-w / 2)} L${mapN(-w / 2)} ${mapN(w / 2)}" stroke="${pal.edge}" stroke-width=".18" opacity=".7"/></g>`;
+  }
+  // rubble: a few angular chunks
+  const w = 1.2 + s * 1.3;
+  const pts = [0, 1, 2, 3, 4].map(i => { const a = i / 5 * Math.PI * 2 + rnd(), rr = w * (0.6 + rnd() * .5); return [mapN(x + Math.cos(a) * rr), mapN(y + Math.sin(a) * rr)]; });
+  return `<polygon points="${pts.map(p => p.join(",")).join(" ")}" fill="${pal.solid}" stroke="${pal.edge}" stroke-width=".2" stroke-linejoin="round"/>`;
+}
+
+/* One piece of terrain. Returns what to draw and how far it reaches, so its number badge can sit at the edge. */
+function mapPiece(f, i, pal, id){
+  const rnd = mapRng((f.label || "") + i);
+  const x = mapClamp(f.x), y = mapClamp(f.y), shape = mapShapeOf(f), kind = mapKind(f);
+  const r = Math.max(3, Math.min(30, +f.r || 7));
+  let svg = "", ext = 3.5;
+
+  if(shape === "wall"){
+    const w = Math.max(6, Math.min(60, +f.w || r * 2.4)), h = Math.max(1.6, Math.min(5, +f.h || 2.2)), a = +f.angle || 0;
+    ext = Math.min(30, w / 2);
+    svg = `<g transform="translate(${x} ${y}) rotate(${mapN(a)})">
+      <rect x="${mapN(-w / 2 + .5)}" y="${mapN(-h / 2 + .6)}" width="${mapN(w)}" height="${mapN(h)}" rx=".5" fill="#000" opacity=".4"/>
+      <rect x="${mapN(-w / 2)}" y="${mapN(-h / 2)}" width="${mapN(w)}" height="${mapN(h)}" rx=".5" fill="${pal.solid}" stroke="${pal.edge}" stroke-width=".3"/>
+      <path d="M${mapN(-w / 2 + 1)} 0 H${mapN(w / 2 - 1)}" stroke="${pal.edge}" stroke-width=".25" stroke-dasharray="1.4 1" opacity=".55"/>
+      <rect x="${mapN(-w / 2)}" y="${mapN(-h / 2)}" width="${mapN(w)}" height="${mapN(h * .35)}" rx=".4" fill="#fff" opacity=".08"/>
+    </g>`;
+    // a broken end or two
+    if(pal.prop === "rubble" || rnd() > .5)
+      svg += mapProp("rubble", x + Math.cos((+f.angle || 0) * Math.PI / 180) * (w / 2 + 1), y + Math.sin((+f.angle || 0) * Math.PI / 180) * (w / 2 + 1), .5, rnd, pal);
+  } else if(shape === "block"){
+    const w = Math.max(5, Math.min(40, +f.w || r * 1.6)), h = Math.max(4, Math.min(40, +f.h || r * 1.2)), a = +f.angle || 0;
+    ext = Math.min(26, Math.max(w, h) / 2);
+    const tower = f.role === "high";
+    svg = `<g transform="translate(${x} ${y}) rotate(${mapN(a)})">
+      <rect x="${mapN(-w / 2 + .7)}" y="${mapN(-h / 2 + .8)}" width="${mapN(w)}" height="${mapN(h)}" rx=".6" fill="#000" opacity=".4"/>
+      <rect x="${mapN(-w / 2)}" y="${mapN(-h / 2)}" width="${mapN(w)}" height="${mapN(h)}" rx=".6" fill="${pal.dark}" stroke="${pal.edge}" stroke-width=".35"/>
+      <rect x="${mapN(-w / 2 + 1)}" y="${mapN(-h / 2 + 1)}" width="${mapN(w - 2)}" height="${mapN(h - 2)}" rx=".4" fill="${pal.solid}" stroke="${pal.edge}" stroke-width=".2" opacity=".95"/>
+      <path d="${Array.from({length: Math.max(2, Math.floor(w / 2.4))}, (_, k) => `M${mapN(-w / 2 + 1 + (k + 1) * (w - 2) / (Math.floor(w / 2.4) + 1))} ${mapN(-h / 2 + 1)} V${mapN(h / 2 - 1)}`).join(" ")}" stroke="${pal.edge}" stroke-width=".18" opacity=".45"/>
+      ${tower ? `<circle r="${mapN(Math.min(w, h) * .22)}" fill="none" stroke="${pal.accent}" stroke-width=".35"/><circle r=".7" fill="${pal.accent}"/>` : ""}
+      <rect x="${mapN(-1)}" y="${mapN(h / 2 - .6)}" width="2" height="1.2" fill="${pal.edge}"/>
+    </g>`;
+  } else if(shape === "cluster"){
+    const n = Math.max(4, Math.min(14, Math.round(r * 1.1)));
+    const prop = kind === "wood" ? "tree" : pal.prop;
+    ext = r * .8;
+    for(let k = 0; k < n; k++){
+      const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * r * .8;
+      svg += mapProp(prop, x + Math.cos(a) * d, y + Math.sin(a) * d * .85, rnd(), rnd, pal);
+    }
+  } else if(shape === "marker"){
+    ext = 3;
+    svg = "";               // drawn on top by the badge step
+  } else {                    // blob
+    ext = r * .9;
+    const water = kind === "water", fire = kind === "fire" || f.role === "hazard" && kind === "fire";
+    const fill = water ? "#1c3a45" : fire ? "#4a1c10" : f.role === "hazard" ? "#3a1c18" : f.role === "high" ? pal.dark : pal.solid;
+    const line = water ? "#4a8598" : fire ? "#ff8a3a" : f.role === "hazard" ? "#b5503c" : pal.edge;
+    svg = `<path d="${blobD(x + .6, y + .8, r, rnd)}" fill="#000" opacity=".35"/>
+      <path d="${blobD(x, y, r, rnd)}" fill="${fill}" stroke="${line}" stroke-width=".4"/>`;
+    if(water){
+      svg += [0, 1, 2].map(k => `<path d="M${mapN(x - r * .4 + k * r * .25)} ${mapN(y - r * .2 + k * r * .3)} q${mapN(r * .18)} ${mapN(-r * .12)} ${mapN(r * .36)} 0" fill="none" stroke="#7ab0c2" stroke-width=".25" opacity=".7"/>`).join("");
+    } else if(fire){
+      svg += `<path d="${blobD(x, y, r * .55, rnd)}" fill="#ff7a2a" opacity=".55"/><path d="${blobD(x, y, r * .28, rnd)}" fill="#ffd28a" opacity=".8"/>`;
+    } else if(f.role === "high"){
+      svg += `<path d="${blobD(x, y, r * .66, rnd)}" fill="none" stroke="${pal.edge}" stroke-width=".25" opacity=".7"/><path d="${blobD(x, y, r * .36, rnd)}" fill="none" stroke="${pal.edge}" stroke-width=".25" opacity=".7"/>`;
+    } else if(f.role === "hazard"){
+      svg += `<path d="M${mapN(x - r * .5)} ${mapN(y + r * .4)} L${x} ${mapN(y - r * .5)} L${mapN(x + r * .5)} ${mapN(y + r * .4)}Z" fill="none" stroke="#b5503c" stroke-width=".4" stroke-linejoin="round"/><path d="M${x} ${mapN(y - r * .15)} V${mapN(y + r * .12)}" stroke="#b5503c" stroke-width=".45"/>`;
+    } else {
+      // stony ground: a scatter of chunks
+      for(let k = 0; k < Math.round(r * .8); k++){
+        const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * r * .6;
+        svg += mapProp("rubble", x + Math.cos(a) * d, y + Math.sin(a) * d * .8, rnd() * .6, rnd, pal);
+      }
+    }
+  }
+  return {svg, ext, x, y, shape};
+}
 
 function mapSVG(map, opts){
   map = map || {};
   const mini = opts && opts.mini;
+  const pal = mapPal(opts && opts.theme);
   const zones = Array.isArray(map.zones) ? map.zones : [];
   const feats = Array.isArray(map.features) ? map.features : [];
-  const clamp = v => Math.max(0, Math.min(100, +v || 0));
   const id = "m" + Math.random().toString(36).slice(2, 7);
+  const rnd = mapRng("board" + feats.length + zones.length + (opts && opts.theme));
 
   const defs = `<defs>
-    <pattern id="${id}grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M10 0V10H0" fill="none" stroke="currentColor" stroke-width=".25" opacity=".18"/></pattern>
     <pattern id="${id}rough" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <line x1="0" y1="0" x2="0" y2="3" stroke="currentColor" stroke-width=".55" opacity=".35"/></pattern>
+      <line x1="0" y1="0" x2="0" y2="3" stroke="${pal.accent}" stroke-width=".5" opacity=".4"/></pattern>
     <pattern id="${id}hazard" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
-      <line x1="0" y1="0" x2="0" y2="2.6" stroke="var(--rust)" stroke-width=".7" opacity=".55"/></pattern>
+      <line x1="0" y1="0" x2="0" y2="2.6" stroke="#b5503c" stroke-width=".7" opacity=".6"/></pattern>
+    <radialGradient id="${id}vig" cx="50%" cy="50%" r="75%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".55"/></radialGradient>
   </defs>`;
 
-  let out = `<rect width="100" height="100" fill="url(#${id}grid)"/>`;
+  // the board itself: ground, grain, and the mark of the place
+  let out = `<rect width="100" height="100" fill="${pal.ground}"/>`;
+  let grain = "";
+  for(let i = 0; i < 170; i++){
+    const gx = mapN(rnd() * 100), gy = mapN(rnd() * 100), gr = mapN(0.15 + rnd() * .5);
+    grain += `<circle cx="${gx}" cy="${gy}" r="${gr}" fill="${pal.grain}" opacity="${mapN(.5 + rnd() * .5)}"/>`;
+  }
+  out += grain;
+  if(pal.prop === "rubble" || pal.prop === "stone" || pal.prop === "crate")
+    for(let i = 1; i < 6; i++) out += `<path d="M0 ${i * 16.6} H100 M${i * 16.6} 0 V100" stroke="${pal.grain}" stroke-width=".35" opacity=".8"/>`;
+  else if(pal.prop === "pipe")
+    for(let i = 1; i < 10; i++) out += `<path d="M0 ${i * 10} H100 M${i * 10} 0 V100" stroke="${pal.grain}" stroke-width=".3" opacity=".9"/>` +
+      `<circle cx="${i * 10}" cy="${((i * 7) % 9 + 1) * 10}" r=".5" fill="${pal.dark}"/>`;
+  else out += `<path d="M0 50 H100 M50 0 V100" stroke="${pal.grain}" stroke-width=".3" opacity=".6"/>`;
 
-  /* deployment zones first, so everything else sits on top */
+  // start zones under everything
   zones.forEach(z => {
-    const x = clamp(z.x), y = clamp(z.y);
+    const x = mapClamp(z.x), y = mapClamp(z.y);
     const w = Math.min(100 - x, Math.max(4, +z.w || 20));
     const h = Math.min(100 - y, Math.max(4, +z.h || 18));
-    const col = z.side === "b" ? "var(--rust)" : z.side === "neutral" ? "var(--ash-mute)" : "var(--gilt)";
-    out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" fill="${col}" fill-opacity=".07"
+    const col = z.side === "b" ? "#c25a44" : z.side === "neutral" ? "#9aa3b0" : "#c9a227";
+    out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" fill="${col}" fill-opacity=".10"
       stroke="${col}" stroke-width=".5" stroke-dasharray="2 1.6"/>`;
     if(!mini && z.label)
-      out += `<text x="${x + 1.5}" y="${y + 4}" font-size="3" fill="${col}" opacity=".9">${esc(String(z.label).slice(0, 22))}</text>`;
+      out += `<text x="${x + 1.5}" y="${y + 4}" font-size="2.6" letter-spacing=".2" fill="${col}" opacity=".95" font-family="Cinzel,serif">${esc(String(z.label).slice(0, 22).toUpperCase())}</text>`;
   });
 
-  /* the ground each feature sits on, shaded where it is not plain */
+  // the ground that is not plain, under the pieces
   feats.forEach(f => {
     const g = GROUND[f.ground] || GROUND.even;
     if(g.fill === "none") return;
-    const r = Math.max(3, Math.min(30, +f.r || 7));
-    const fill = g.fill === "rough" ? `url(#${id}rough)` : g.fill === "hazard" ? `url(#${id}hazard)` : "currentColor";
-    out += `<circle cx="${clamp(f.x)}" cy="${clamp(f.y)}" r="${r}" fill="${fill}"
-      ${g.fill === "solid" ? 'opacity=".22"' : ""}/>`;
+    const gr = Math.max(3, Math.min(30, +f.r || 7));
+    const fill = g.fill === "rough" ? `url(#${id}rough)` : g.fill === "hazard" ? `url(#${id}hazard)` : pal.edge;
+    out += `<circle cx="${mapClamp(f.x)}" cy="${mapClamp(f.y)}" r="${gr}" fill="${fill}" ${g.fill === "solid" ? 'opacity=".55"' : ""}/>`;
   });
 
-  /* the pieces themselves, numbered in the order the text uses */
+  // the pieces themselves, then their numbers on top
+  const pieces = feats.map((f, i) => mapPiece(f, i, pal, id));
+  out += pieces.map(p => p.svg).join("");
   let n = 0;
-  feats.forEach(f => {
+  feats.forEach((f, i) => {
     n++;
-    const x = clamp(f.x), y = clamp(f.y);
-    const mark = ROLE_MARK[f.role] || ROLE_MARK.cover;
+    const p = pieces[i], mark = ROLE_MARK[f.role] || ROLE_MARK.cover;
+    const bx = mapN(Math.min(96, p.x + p.ext * .55)), by = mapN(Math.max(4, p.y - p.ext * .55));
+    if(f.role === "objective")
+      out += `<g><circle cx="${p.x}" cy="${p.y}" r="4.2" fill="${pal.accent}" opacity=".18"/>
+        <path d="M${p.x} ${mapN(p.y - 2.6)} L${mapN(p.x + 2.2)} ${p.y} L${p.x} ${mapN(p.y + 2.6)} L${mapN(p.x - 2.2)} ${p.y}Z" fill="#c9a227" stroke="#3a2f1c" stroke-width=".3"/></g>`;
+    else if(f.role === "marker")
+      out += `<circle cx="${p.x}" cy="${p.y}" r="2.6" fill="none" stroke="#c9a227" stroke-width=".35" stroke-dasharray="1 .8"/><circle cx="${p.x}" cy="${p.y}" r=".7" fill="#c9a227"/>`;
     out += `<g class="mapnum" data-n="${n}" data-label="${esc(String(f.label || ""))}">
-      <circle cx="${x}" cy="${y}" r="3" fill="var(--stone-1)" stroke="${mark.tint}" stroke-width=".7"/>
-      <text x="${x}" y="${y}" font-size="3.2" font-weight="700" fill="${mark.tint}"
-        text-anchor="middle" dominant-baseline="central">${n}</text></g>`;
+      <circle cx="${bx}" cy="${by}" r="2.3" fill="#0d1016" fill-opacity=".85" stroke="${mark.tint}" stroke-width=".5"/>
+      <text x="${bx}" y="${by}" font-size="2.8" font-weight="700" fill="${mark.tint}" text-anchor="middle" dominant-baseline="central"
+        font-family="Space Mono,monospace">${n}</text></g>`;
   });
+
+  // a little furniture: compass, and a soft dark edge
+  if(!mini)
+    out += `<g transform="translate(93 8)" stroke="${pal.accent}" fill="none" opacity=".7"><circle r="3.6" stroke-width=".3"/>
+      <path d="M0 -5.4 L1 0 L0 5.4 L-1 0Z" fill="${pal.accent}" fill-opacity=".3" stroke-width=".25"/>
+      <text y="-6.4" text-anchor="middle" font-size="2.4" fill="${pal.accent}" stroke="none" font-family="Cinzel,serif">N</text></g>`;
+  out += `<rect width="100" height="100" fill="url(#${id}vig)"/>
+    <rect x=".3" y=".3" width="99.4" height="99.4" fill="none" stroke="${pal.accent}" stroke-width=".5" opacity=".55"/>`;
 
   return `<svg viewBox="0 0 100 100" class="scnmap ${mini ? "mini" : ""}"
     role="img" aria-label="the table">${defs}${out}</svg>`;
@@ -9438,7 +10005,8 @@ function drawGenerate(ai){
       <button class="btn primary" id="gGo" ${S.busy ? "disabled" : ""} style="margin-left:0">
         ${S.busy ? "Writing\u2026" : "Write it"}</button>
     </div>
-    <div id="gOut" style="margin-top:14px">${S.out ? scenarioHTML(S.out) + addTerrainHTML(S) + `
+    <div id="gOut" style="margin-top:14px">${S.out ? `<div class="sheet-actions" style="margin:0 0 12px"><button class="btn sm ${S.showAll ? "primary" : ""}" id="gAll" style="margin-left:0">${S.showAll ? "Hide the hidden parts" : "Show everything"}</button>
+      <button class="btn sm" id="gEdit">Edit the words</button></div>` + scenarioHTML(S.out, S.showAll) + addTerrainHTML(S) + `
       <p class="quiet" style="margin:11px 0 0">Kept in the Reliquary already — write another to
         replace it, or done is done.</p>
       <div class="sheet-actions">
@@ -9469,7 +10037,15 @@ function drawGenerate(ai){
   const df = $("#gDiff"); if(df) df.onchange = e => { keep(); S.difficulty = e.target.value; drawGenerate(ai); };
   const ln = $("#gLen"); if(ln) ln.onchange = e => { keep(); S.length = e.target.value; drawGenerate(ai); };
   $("#gGo").onclick = () => { keep(); runGenerate(ai); };
-  if(S.out){ bindScenario(); bindAddTerrain(S, ai); }
+  if(S.out){
+    bindScenario(); bindAddTerrain(S, ai);
+    const gAll = $("#gAll"); if(gAll) gAll.onclick = () => { S.showAll = !S.showAll; drawGenerate(ai); };
+    const gEdit = $("#gEdit");
+    if(gEdit) gEdit.onclick = () => openScenarioEdit(S.out, ok => {
+      if(ok && S.savedId) updateLibrary(S.savedId, S.out);
+      drawGenerate(ai);
+    });
+  }
 }
 
 /* ---- asking ---- */
@@ -9545,9 +10121,14 @@ WHAT TO WRITE
              examples above read, not the way a field description reads.
   scenery    one or two sentences on what to put on the table.
   deployment where each side starts, by table edge or feature.
-  plane      what kind of place this is, one of: land, water, fire, under (the underworld or a
-             cavern), void (elsewhere: space, a dream, beyond a door). Pick the one that fits the
-             place; a battle in the open, in ruins or in a town is land.
+  plane      what kind of place this is, exactly one of:
+               land     the open, ruins, a town, a road          water   the sea, a flood, under the waves
+               fire     lava, forges, burning places             under   the underworld, a cavern, the deep
+               space    stars, ships, a station, another world   sky     high places, airships, cloud islands
+               ice      frozen wastes, the cold dead             dream   the mind, memory, a mirror, a place that is not physical
+               void     elsewhere: beyond a door, a rift, something that fits none of these
+               mystery  a rumour, an anomaly, an unanswered question, where nobody knows what is going on
+             Pick the one that fits the place best. A battle in the open, in ruins or in a town is land.
 
   terrain    four to eight pieces to build or stand in. Each: name, note (how many, what it
              looks like), role (one of ${roles}), ground (one of ${grounds}), size (one of
@@ -9564,9 +10145,15 @@ WHAT TO WRITE
   map        a top-down plan. Coordinates are percentages: x 0 (left) to 100 (right),
              y 0 (top) to 100 (bottom).
              zones: two to four deployment areas {label, side ("a","b","neutral"), x, y, w, h}
-             features: six to ten {label, role (${roles}), ground (${grounds}), x, y, r}
-             where r is how far that ground spreads, 4 to 28. Every feature needs a role and
-             a ground. Keep labels under 22 characters. The features are numbered in order,
+             features: six to ten {label, role (${roles}), ground (${grounds}), shape, x, y, ...}
+             "shape" says how the piece is drawn, and it must match what the piece is:
+               "block"   a building or tower: give w and h (6 to 24) and angle (0 to 180)
+               "wall"    a long thin barrier, hedge or fence: give w (10 to 40) and angle (0 to 180)
+               "blob"    a hill, pool, pit or patch of ground: give r (4 to 22)
+               "cluster" trees, rubble, standing stones, crates, pipes: give r (4 to 18)
+             Vary them; not everything is a blob. An objective or marker piece can be any shape.
+             r is also how far unusual ground (rough, hazardous) spreads. Every feature needs a
+             role, a ground and a shape. Keep labels under 22 characters. The features are numbered in order,
              so refer to them in the text as "the bell tower (3)".
 
   objectives only from: ${objList.join(", ")}.
@@ -9663,6 +10250,11 @@ actions (default ${statDefault("actions")}); size one of ${RSX.stat.size.values.
 
 ${aiCatalogue()}
 
+A model has two hands (two more for each pair of Extra arms). Each weapon takes one hand, a Two-handed
+weapon two, and a shield one. Armour has two parts that go together: a SUIT ("armour": one of the suits) and
+a SHIELD ("shield": the shield id), and a model may have one of each. Give a shield only to someone who
+fights with one hand free; a shield plus a suit is a good fit for a guard, a duelist or a survivor.
+
 GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" \u2014 a name that suits that
 creature. A drowned thing does not carry a "Melee weapon", it swings a "Rusted clapper".
 
@@ -9673,7 +10265,8 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
  "terrain":[{"name":"...","note":"...","role":"cover","ground":"even","size":"medium"}],
  "events":[{"round":3,"title":"...","text":"...","effect":{"type":"damage","amount":"1","where":"within 10 cm of the bell tower (3)","who":"every model"}}],
  "map":{"note":"one line on the table","zones":[{"label":"...","side":"a","x":5,"y":40,"w":18,"h":30}],
-        "features":[{"label":"...","role":"cover","ground":"rough","x":50,"y":50,"r":8}]},
+        "features":[{"label":"...","role":"cover","ground":"rough","shape":"cluster","x":50,"y":50,"r":8},
+                    {"label":"...","role":"high","ground":"even","shape":"block","x":30,"y":40,"w":14,"h":10,"angle":20}]},
  "objectives":[{"type":"allowed id","what":"what it is, in the fiction","vp":1}],
  "specialRules":["..."],"twist":"...",
  "woundFlavour":[{"cause":"...","text":"...","scar":"...","epithets":["...","...","..."],"epitaphs":["...","...","..."]}],
@@ -9683,7 +10276,7 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
    "deploy":"only if not hidden \u2014 where it starts",
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
    "size":"man","traits":["id"],"weapons":[{"id":"id","as":"its name","mods":["id"]}],
-   "armour":"id or null","protocol":["condition: order"]}]}`;
+   "armour":"id or null","shield":"id or null","protocol":["condition: order"]}]}`;
 
   try{
     const raw = await ai.json(prompt, {modelTier: "default", cache: false});
@@ -9723,7 +10316,7 @@ function legaliseScenario(raw, ctx){
     briefing: str(raw.briefing, 1200),
     scenery: str(raw.scenery, 400),
     deployment: str(raw.deployment, 300),
-    plane: ["land", "water", "fire", "under", "void"].includes(raw.plane) ? raw.plane : "",
+    plane: PLANE_IDS.includes(raw.plane) ? raw.plane : "",
     twist: str(raw.twist, 300),
     environment: (RS.scenario.environment || []).some(e => e.id === raw.environment) ? raw.environment : null,
     size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
@@ -9775,7 +10368,9 @@ function legaliseScenario(raw, ctx){
     out.map.features.push({label: str(f.label, 22),
       role: ROLES.includes(f.role) ? f.role : "cover",
       ground: GROUNDS.includes(f.ground) ? f.ground : "even",
-      x: num(f.x, 0, 100, 50), y: num(f.y, 0, 100, 50), r: num(f.r, 3, 30, 7)});
+      shape: MAP_SHAPES.includes(f.shape) ? f.shape : "",
+      x: num(f.x, 0, 100, 50), y: num(f.y, 0, 100, 50), r: num(f.r, 3, 30, 7),
+      w: num(f.w, 0, 60, 0), h: num(f.h, 0, 40, 0), angle: num(f.angle, -180, 180, 0)});
   });
   if(!out.map.features.length) out.notes.push("no map came back, so there is nothing to lay out");
 
@@ -9906,10 +10501,56 @@ function maskSecrets(text, s){
 }
 
 /* ---- showing it ---- */
-function scenarioHTML(s){
+/* `all` is the author's view: the hidden parts are shown too (events and when they
+   spring, envelopes and the truth behind them, the enemy held back, the twist).
+   Without it, everything a player is not meant to know yet stays out of sight. The
+   names, scars and epitaphs the place has written are not shown even here; those
+   are only read out when they are earned. */
+function eventsBlock(s, all){
+  if(!s.events.length) return "";
+  if(!all) return `<div class="slab">
+    <div class="head"><span class="eyebrow">What happens, and when</span><span class="rule"></span>
+      <span class="chip">${s.events.length} kept back</span></div>
+    <p class="quiet" style="margin:0">${s.events.length === 1 ? "Something is" : "A few things are"}
+      written into this scenario. Neither what nor when stays here \u2014 the app keeps it and
+      plays it as a surprise when its round actually comes.</p>
+  </div>`;
+  return `<div class="slab" style="border-color:var(--gilt-deep)">
+    <div class="head"><span class="eyebrow">What happens, and when</span><span class="rule"></span>
+      <span class="chip gilt">hidden from players</span></div>
+    ${s.events.map(e => `<div class="says">
+      <div class="says-n">Round ${e.round} \u00b7 ${esc(e.title)}</div>
+      <div class="says-d">${esc(e.text)}</div>
+      ${e.effect && e.effect.type !== "none" ? `<div class="says-d quiet">${esc([e.effect.type, e.effect.amount, e.effect.who, e.effect.where].filter(Boolean).join(" \u00b7 "))}</div>` : ""}
+    </div>`).join("")}
+  </div>`;
+}
+function envelopesBlock(s, all){
+  const m = s.mystery;
+  if(!(m && m.envelopes && m.envelopes.length)) return "";
+  if(!all) return `<div class="slab">
+    <div class="head"><span class="eyebrow">Envelopes</span><span class="rule"></span>
+      <span class="quiet">${m.envelopes.length} sealed \u2014 opened during play, not read ahead</span></div>
+    <p class="quiet" style="margin:0">What each holds stays unknown, even to whoever is running
+      it, until the moment in play that opens it.</p>
+  </div>`;
+  return `<div class="slab" style="border-color:var(--gilt-deep)">
+    <div class="head"><span class="eyebrow">The mystery</span><span class="rule"></span><span class="chip gilt">hidden from players</span></div>
+    ${m.question ? `<p class="lead" style="margin:0 0 8px"><b>The question:</b> ${esc(m.question)}</p>` : ""}
+    ${m.truth ? `<p class="lead" style="margin:0 0 11px"><b>The truth:</b> ${esc(m.truth)}</p>` : ""}
+    ${m.envelopes.map((e, i) => `<div class="says">
+      <div class="says-n">${i + 1}. ${esc(e.title)}${e.revealsObjectives ? ` <span class="chip gilt">reveals the objectives</span>` : ""}</div>
+      <div class="says-d quiet">Opens when: ${esc(e.trigger)}</div>
+      <div class="says-d">${esc(e.text)}</div></div>`).join("")}
+    ${m.finale ? `<div class="says"><div class="says-n">Once all are open</div><div class="says-d">${esc(m.finale)}</div></div>` : ""}
+  </div>`;
+}
+function scenarioHTML(s, all){
   if(!s) return `<p class="quiet">Nothing came back.</p>`;
+  const mk = t => all ? t : maskSecrets(t, s);
   const env = s.environment ? (RS.scenario.environment || []).find(e => e.id === s.environment) : null;
   return `
+  ${all ? `<p class="quiet" style="margin:0 0 10px;color:var(--gilt)">The author's view: the parts players never see are shown.</p>` : ""}
   <div class="slab" style="border-color:var(--gilt-deep)">
     <div class="cardname" style="font-size:22px;margin-bottom:6px">${esc(s.title)}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px">
@@ -9932,7 +10573,7 @@ function scenarioHTML(s){
   ${s.map && s.map.features.length ? `<div class="slab">
     <div class="head"><span class="eyebrow">The table</span><span class="rule"></span>
       ${s.map.note ? `<span class="quiet">${esc(s.map.note)}</span>` : ""}</div>
-    <div class="mapwrap">${mapSVG(s.map)}</div>
+    <div class="mapwrap">${mapSVG(s.map, {theme: s.theme})}</div>
     ${mapKeyHTML(s.map)}
     ${s.deployment ? `<p class="quiet" style="margin:11px 0 0"><b>Deployment.</b> ${esc(s.deployment)}</p>` : ""}
   </div>` : ""}
@@ -9947,7 +10588,7 @@ function scenarioHTML(s){
       ${t.note ? `<div class="says-d">${esc(t.note)}</div>` : ""}</div>`).join("")}
   </div>` : ""}
 
-  ${s.objectives.length ? (s.sealed ? `<div class="slab">
+  ${s.objectives.length ? (s.sealed && !all ? `<div class="slab">
     <div class="head"><span class="eyebrow">What is worth points</span><span class="rule"></span></div>
     <p class="quiet" style="margin:0">Sealed. ${s.objectives.length} objective${s.objectives.length === 1 ? "" : "s"}
       are set, but nobody \u2014 not even whoever runs this \u2014 knows them yet. They come out
@@ -9960,29 +10601,18 @@ function scenarioHTML(s){
       <div class="says-d">${esc(o.rule)}</div></div>`).join("")}
   </div>`) : ""}
 
-  ${s.mystery && s.mystery.envelopes && s.mystery.envelopes.length ? `<div class="slab">
-    <div class="head"><span class="eyebrow">Envelopes</span><span class="rule"></span>
-      <span class="quiet">${s.mystery.envelopes.length} sealed — opened during play, not read ahead</span></div>
-    <p class="quiet" style="margin:0">What each holds stays unknown, even to whoever is running
-      it, until the moment in play that opens it.</p>
-  </div>` : ""}
+  ${envelopesBlock(s, all)}
 
-  ${s.events.length ? `<div class="slab">
-    <div class="head"><span class="eyebrow">What happens, and when</span><span class="rule"></span>
-      <span class="chip">${s.events.length} kept back</span></div>
-    <p class="quiet" style="margin:0">${s.events.length === 1 ? "Something is" : "A few things are"}
-      written into this scenario. Neither what nor when stays here \u2014 the app keeps it and
-      plays it as a surprise when its round actually comes.</p>
-  </div>` : ""}
+  ${eventsBlock(s, all)}
 
-  ${(s.specialRules.length || (s.twist && !s.sealed) || env) ? `<div class="slab">
+  ${(s.specialRules.length || (s.twist && (!s.sealed || all)) || env) ? `<div class="slab">
     <div class="head"><span class="eyebrow">Also true here</span><span class="rule"></span></div>
     ${env ? `<div class="says"><div class="says-n">${esc(env.id.charAt(0).toUpperCase() + env.id.slice(1))}</div>
       <div class="says-d">${esc(env.effect)}</div></div>` : ""}
-    ${s.specialRules.map(r => `<div class="says"><div class="says-d">${esc(maskSecrets(r, s))}</div></div>`).join("")}
-    ${s.twist && !s.sealed ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(maskSecrets(s.twist, s))}</div></div>` : ""}
+    ${s.specialRules.map(r => `<div class="says"><div class="says-d">${esc(mk(r))}</div></div>`).join("")}
+    ${s.twist && (!s.sealed || all) ? `<div class="says"><div class="says-n">Later</div><div class="says-d">${esc(mk(s.twist))}</div></div>` : ""}
   </div>` : ""}
-  ${s.twist && s.sealed ? `<div class="slab">
+  ${s.twist && s.sealed && !all ? `<div class="slab">
     <div class="head"><span class="eyebrow">Also true here</span><span class="rule"></span></div>
     <p class="quiet" style="margin:0">Something turns later on — kept with the mystery,
       not read ahead.</p>
@@ -9993,13 +10623,14 @@ function scenarioHTML(s){
       <span class="chip ${s.enemySpent > s.enemyBudget ? "bad" : "gilt"} mono">${s.enemySpent} of ${s.enemyBudget}</span></div>
     <div class="bar" style="margin-bottom:12px"><i class="${s.enemySpent > s.enemyBudget ? "over" : ""}"
       style="width:${Math.min(100, s.enemyBudget ? s.enemySpent / s.enemyBudget * 100 : 0)}%"></i></div>
-    ${s.enemy.map(u => u.hidden ? `<div class="says">
+    ${s.enemy.map(u => u.hidden && !all ? `<div class="says">
       <div class="says-n">Something unseen <span class="chip mono">${u.cost}</span>
         <span class="chip gilt">not on the table yet</span></div>
       <div class="says-d">${esc(u.hint || "Kept back. What it is stays unknown until it reveals itself.")}</div>
     </div>` : `<div class="says">
       <div class="says-n">${esc(u.name)} <span class="chip">\u00d7${u.count}</span>
-        <span class="chip mono">${u.cost}</span></div>
+        <span class="chip mono">${u.cost}</span>${u.hidden ? ` <span class="chip gilt">held back</span>` : ""}${u.boss ? ` <span class="chip bad">boss</span>` : ""}</div>
+      ${u.hidden && u.hint ? `<div class="says-d quiet">The table is told: ${esc(u.hint)}</div>` : ""}
       ${u.deploy ? `<div class="says-d"><b>Starts:</b> ${esc(u.deploy)}</div>` : ""}
       <div class="says-d">${esc(enemyLine(u.built))}</div>
       ${u.protocol.length ? `<div class="says-d quiet">${u.protocol.map(esc).join(" \u00b7 ")}</div>` : ""}
@@ -10014,27 +10645,8 @@ function scenarioHTML(s){
     </div></div>`).join("")}
   </div>
 
-  ${namingsHTML(s)}
-
   ${s.notes.length ? `<div class="slab"><div class="head"><span class="eyebrow">What was trimmed</span><span class="rule"></span></div>
     ${s.notes.map(n => `<p class="quiet" style="margin:0 0 5px">${esc(n)}</p>`).join("")}</div>` : ""}`;
-}
-
-/* The names this place can give (scars, nicknames, epitaphs) are written when the
-   scenario is, but kept sealed: nobody reads them ahead of time. The camp brings
-   each one out only at the moment it is needed. This just says they exist. */
-function namingsHTML(s){
-  const wf = (s.woundFlavour || []).filter(f => f && f.cause);
-  const nm = s.namings || {boss: [], survived: []};
-  const any = wf.some(f => f.scar || (f.epithets || []).length || (f.epitaphs || []).length)
-    || (nm.boss || []).length || (nm.survived || []).length;
-  if(!any) return "";
-  return `<div class="slab">
-    <div class="head"><span class="eyebrow">Names, scars and epitaphs</span><span class="rule"></span>
-      <span class="chip gilt">sealed</span></div>
-    <p class="quiet" style="margin:0">This place has already written what it will call the Unburied it marks, and what it will
-      carve over the ones it kills. It stays sealed. Each name is read out only when it is earned.</p>
-  </div>`;
 }
 
 function enemyLine(m){
@@ -10152,25 +10764,153 @@ function deleteFromLibrary(id){ saveLibrary(loadLibrary().filter(r => r.id !== i
 /* Written ahead of time, looked at again before it is decided this is the
    one to play — taking them out here is the only place a saved scenario
    actually starts a quest. */
+/* ---- editing the words of a written scenario, and writing one part of it again ----
+   Only the prose can be changed (title, premise, briefing, scenery, deployment, twist, the special
+   rules, and each event's name and text). The enemy, the map, the objectives and the numbers stay as
+   they were, so the scenario stays legal. */
+const EDIT_LIMITS = {title: 60, premise: 300, briefing: 1200, scenery: 400, deployment: 300, twist: 300, rule: 200, evTitle: 50, evText: 500};
+const EDIT_BRIEF = {
+  title: "a title of four words or fewer",
+  premise: "a premise: one or two sentences, the hook",
+  briefing: "a briefing: four to six sentences, second person, present tense, read aloud at the table before a model is placed; ground it in one or two exact physical details, and never tell the reader how to feel",
+  scenery: "a note on what to put on the table: one or two sentences",
+  deployment: "where each side starts, by table edge or feature",
+  twist: "a twist: one sentence, something that turns in the second half",
+  rule: "a special rule: one line, only what the place demands"
+};
+async function rewritePart(ai, s, part, current){
+  const ctx = "Title: " + s.title + "\nPremise: " + s.premise + "\nMission: " + s.type + ". Where: " + s.theme + ". Mode: " + s.mode
+    + ".\nBriefing: " + s.briefing + (s.twist ? "\nTwist: " + s.twist : "");
+  const prompt = `You are improving ONE part of a scenario for ${RS.meta.name}, a grim tabletop skirmish game where a
+band of the Unburied fights for whatever the place holds. Write like someone who has actually been there: specific,
+concrete, never explaining the mood.
+
+THE SCENARIO
+${ctx}
+
+Write again ${EDIT_BRIEF[part]}. Keep it consistent with the rest, and make it different from what is there now:
+${current ? '"' + current + '"' : "(nothing yet)"}
+
+Reply with ONLY a JSON string. No other text.`;
+  const r = await ai.json(prompt, {modelTier: "default", cache: false});
+  return String(Array.isArray(r) ? r[0] : r).trim().slice(0, EDIT_LIMITS[part] || 400);
+}
+async function rewriteEvent(ai, s, ev){
+  const prompt = `You are improving ONE event of a scenario for ${RS.meta.name}, a grim tabletop skirmish game. It happens on round ${ev.round}.
+Write the moment the way it is discovered, in the same voice as the briefing, ending with the measurable rule stated plainly.
+Keep the same effect (${(ev.effect && ev.effect.type) || "none"} ${(ev.effect && ev.effect.amount) || ""}
+${(ev.effect && ev.effect.who) || ""} ${(ev.effect && ev.effect.where) || ""}), and make it different from this:
+"${ev.title}: ${ev.text}"
+
+THE SCENARIO
+Title: ${s.title}. Premise: ${s.premise}. Briefing: ${s.briefing}
+
+Reply with ONLY JSON: {"title":"...","text":"..."}`;
+  const r = await ai.json(prompt, {modelTier: "default", cache: false});
+  return {title: String(r.title || ev.title).slice(0, EDIT_LIMITS.evTitle), text: String(r.text || ev.text).slice(0, EDIT_LIMITS.evText)};
+}
+
+async function openScenarioEdit(s, done){
+  const ai = await getAI();
+  const fld = (label, id, val, rows, part) => `
+    <div class="field" style="margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px">${esc(label)}
+        ${ai && part ? `<button type="button" class="chip gilt" data-again="${esc(part)}|${esc(id)}" style="margin-left:auto;cursor:pointer;font-size:11px">Write again</button>` : ""}</label>
+      ${rows > 1 ? `<textarea class="input serif" id="${esc(id)}" rows="${rows}">${esc(val || "")}</textarea>`
+                 : `<input class="input serif" id="${esc(id)}" value="${esc(val || "")}">`}</div>`;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="seBack" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Edit the words</div></div>
+    <p class="lead">Change the writing, or ask for one part to be written again. The enemy, the map and the objectives stay as they are.</p>
+    <div class="slab" style="margin-top:12px">
+      ${fld("Title", "edTitle", s.title, 1, "title")}
+      ${fld("Premise", "edPremise", s.premise, 3, "premise")}
+      ${fld("Briefing", "edBriefing", s.briefing, 7, "briefing")}
+      ${fld("What to put on the table", "edScenery", s.scenery, 3, "scenery")}
+      ${fld("Deployment", "edDeploy", s.deployment, 3, "deployment")}
+      ${fld("Twist", "edTwist", s.twist, 2, "twist")}
+    </div>
+    ${(s.specialRules || []).length ? `<div class="slab"><div class="head"><span class="eyebrow">Special rules</span><span class="rule"></span></div>
+      ${s.specialRules.map((r, i) => fld("Rule " + (i + 1), "edRule" + i, r, 2, "rule")).join("")}</div>` : ""}
+    ${(s.events || []).length ? `<div class="slab"><div class="head"><span class="eyebrow">Events</span><span class="rule"></span><span class="quiet">hidden from players</span></div>
+      ${s.events.map((e, i) => `<div style="margin-bottom:14px">
+        <div class="eyebrow" style="margin-bottom:6px;display:flex;align-items:center;gap:8px">Round ${e.round}
+          ${ai ? `<button type="button" class="chip gilt" data-evagain="${i}" style="margin-left:auto;cursor:pointer;font-size:11px">Write again</button>` : ""}</div>
+        <input class="input serif" id="edEvT${i}" value="${esc(e.title || "")}" style="margin-bottom:8px">
+        <textarea class="input serif" id="edEvX${i}" rows="3">${esc(e.text || "")}</textarea></div>`).join("")}</div>` : ""}
+    <div class="sheet-actions">
+      <button class="btn ghost" id="seCancel" style="margin-left:0">Leave it as it was</button>
+      <button class="btn primary" id="seSave">Keep these words</button>
+    </div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  const val = id => ($("#" + id) || {value: ""}).value;
+  /* what is on screen right now, so writing one part again sees your other edits */
+  const draft = () => Object.assign({}, s, {title: val("edTitle"), premise: val("edPremise"), briefing: val("edBriefing"), twist: val("edTwist")});
+  $("#seBack").onclick = () => done(false);
+  $("#seCancel").onclick = () => done(false);
+  $("#sheet2In").querySelectorAll("[data-again]").forEach(btn => btn.onclick = async () => {
+    const [part, id] = btn.dataset.again.split("|");
+    btn.disabled = true; const was = btn.textContent; btn.textContent = "Writing…";
+    try{ $("#" + id).value = await rewritePart(ai, draft(), part, val(id)); }
+    catch(e){ toast(aiTrouble(e && e.code) || "That did not work"); }
+    btn.disabled = false; btn.textContent = was;
+  });
+  $("#sheet2In").querySelectorAll("[data-evagain]").forEach(btn => btn.onclick = async () => {
+    const i = +btn.dataset.evagain; btn.disabled = true; const was = btn.textContent; btn.textContent = "Writing…";
+    try{
+      const r = await rewriteEvent(ai, draft(), Object.assign({}, s.events[i], {title: val("edEvT" + i), text: val("edEvX" + i)}));
+      $("#edEvT" + i).value = r.title; $("#edEvX" + i).value = r.text;
+    }catch(e){ toast(aiTrouble(e && e.code) || "That did not work"); }
+    btn.disabled = false; btn.textContent = was;
+  });
+  $("#seSave").onclick = () => {
+    const L = EDIT_LIMITS;
+    s.title = val("edTitle").trim().slice(0, L.title) || s.title;
+    s.premise = val("edPremise").trim().slice(0, L.premise);
+    s.briefing = val("edBriefing").trim().slice(0, L.briefing);
+    s.scenery = val("edScenery").trim().slice(0, L.scenery);
+    s.deployment = val("edDeploy").trim().slice(0, L.deployment);
+    s.twist = val("edTwist").trim().slice(0, L.twist);
+    s.specialRules = (s.specialRules || []).map((r, i) => val("edRule" + i).trim().slice(0, L.rule)).filter(Boolean);
+    (s.events || []).forEach((e, i) => { e.title = val("edEvT" + i).trim().slice(0, L.evTitle) || e.title; e.text = val("edEvX" + i).trim().slice(0, L.evText); });
+    done(true);
+  };
+}
+
+let libAll = {};
 function openLibraryScenario(id){
   const rec = loadLibrary().find(r => r.id === id); if(!rec) return;
+  const all = !realmAvailable() && !!libAll[id];
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="lsX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Ready to play</div></div>
-    ${scenarioHTML(rec.out)}
+    ${realmAvailable() ? "" : `<div class="sheet-actions" style="margin:0 0 12px"><button class="btn sm ${all ? "primary" : ""}" id="lsAll" style="margin-left:0">${all ? "Hide the hidden parts" : "Show everything"}</button>
+      <button class="btn sm" id="lsEdit">Edit the words</button>
+      <span class="quiet">${all ? "" : "events, the enemy held back, the twist"}</span></div>`}
+    ${scenarioHTML(rec.out, all)}
     <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn danger ghost" id="lsDel" style="margin-left:0">Delete</button>
       ${realmAvailable() ? "" : `<button class="btn" id="lsSend">Send to the Realm</button>`}
-      <button class="btn primary" id="lsGo" style="margin-left:${realmAvailable() ? "auto" : "0"}">Take them out</button>
+      ${realmAvailable() ? `<button class="btn primary" id="lsGo" style="margin-left:auto">Take them out</button>` : ""}
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#lsX").onclick = closePicker;
   $("#lsDel").onclick = () => { deleteFromLibrary(id); closePicker(); render(); toast("Deleted"); };
   const send = $("#lsSend");
   if(send) send.onclick = () => openScenarioSend(rec);
-  $("#lsGo").onclick = () => {
+  const lsEdit = $("#lsEdit");
+  if(lsEdit) lsEdit.onclick = () => openScenarioEdit(rec.out, ok => {
+    if(ok){ updateLibrary(rec.id, rec.out); if(store.way === "realm") renderRealm(); toast("Words kept"); }
+    openLibraryScenario(id);
+  });
+  const lsAll = $("#lsAll");
+  if(lsAll) lsAll.onclick = () => { libAll[id] = !libAll[id]; openLibraryScenario(id); };
+  const lsGo = $("#lsGo");
+  if(lsGo) lsGo.onclick = () => {
     deleteFromLibrary(id);
     startFromScenario(rec.out);
   };
@@ -10218,6 +10958,8 @@ async function openScenarioSend(rec){
       </div>
       <p class="quiet" style="margin:9px 0 0">${code.length} characters \u00b7 written against ruleset ${esc(RS.meta.version)}</p>
     </div>`;
+  /* opened straight from a card, the sheet is not already up */
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#ssBack").onclick = () => openLibraryScenario(rec.id);
   $("#ssCopy").onclick = async () => {
     try{ await navigator.clipboard.writeText(code); toast("Copied"); }
@@ -10300,8 +11042,13 @@ function openScenarioBring(){
 }
 
 /* ---- into a quest ---- */
-function startFromScenario(s){
+function startFromScenario(s, campDone){
   if(!s) return;
+  /* setting out ends the camp: whatever it cost is settled first, and shown */
+  if(!campDone && realmAvailable() && typeof campBreaks === "function" && ruleOn("campaign", band())){
+    const lines = campBreaks(band());
+    if(lines.length){ showCampBroken(lines, () => startFromScenario(s, true)); return; }
+  }
   const typeObj = (RS.scenario.battleTypes || []).find(t => t.id === s.type) || null;
   if(!questBegin(s.size, {type: typeObj, players: s.players || 1})) return;
   Q.difficulty = s.difficulty;
@@ -10732,13 +11479,19 @@ const RM_PLANES = {
   water: {label: "Water"},
   fire:  {label: "Fire"},
   under: {label: "Underworld"},
-  void:  {label: "Elsewhere"}
+  void:  {label: "Elsewhere"},
+  space: {label: "Space"},
+  sky:   {label: "Sky"},
+  dream: {label: "Dream"},
+  ice:   {label: "Ice"},
+  mystery: {label: "Mystery"}
 };
 /* A scenario may say which plane it is on. If it does not, its theme decides;
    this is presentation only and changes no rule. */
 const RM_THEME_PLANE = {ruin: "land", wilds: "land", frontier: "land", under: "under", machine: "fire", sacred: "void"};
 function planeOf(s){
   if(s && RM_PLANES[s.plane]) return s.plane;
+  if(s && s.sealed) return "mystery";              // a sealed scenario is, by nature, a question
   return RM_THEME_PLANE[s && s.theme] || "land";
 }
 
@@ -10746,6 +11499,7 @@ let rmView = "map";
 try{ rmView = localStorage.getItem("ep_realm_view") || "map"; }catch(e){}
 
 function rmIcon(plane, x, y, c){
+  if(planeGlyph(plane, c)) return `<g transform="translate(${x} ${y})">${planeGlyph(plane, c)}</g>`;
   const s = 5.2;
   if(plane === "water")
     return `<path d="M${x - s} ${y} q${s / 2} ${-s} ${s} 0 t${s} 0" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`;
@@ -10785,18 +11539,18 @@ function rmPlaces(){
   loadHistory().forEach(r => {
     const s = r.scenario;
     const st = rmState(r.result);
-    out.push({key: "h" + r.id, kind: "history", id: r.id, name: r.title || "A place", plane: planeOf(s), state: st,
+    out.push({key: "h" + r.id, kind: "history", doneAt: r.at, id: r.id, name: r.title || "A place", plane: planeOf(s), state: st,
       sub: st === "claimed" ? "CLAIMED · ROUND " + r.round : st === "lost" ? "LOST · TRY AGAIN" : "UNSETTLED",
-      found: (s && s.foundAt) || r.at, slot: s ? s.slot : null, openable: !!s, scn: s || null, r});
+      found: (s && s.foundAt) || r.at, slot: s ? s.slot : null, size: s ? s.size : 0, openable: !!s, scn: s || null, r});
   });
   loadLibrary().forEach(r => {
     out.push({key: "l" + r.id, kind: "library", id: r.id, name: r.out.title || "A place", plane: planeOf(r.out),
-      state: "waiting", sub: "DISCOVERED", found: r.out.foundAt || r.at, slot: r.out.slot, openable: true, scn: r.out, r});
+      state: "waiting", sub: "DISCOVERED", found: r.out.foundAt || r.at, slot: r.out.slot, size: r.out.size, openable: true, scn: r.out, r});
   });
   if(questOn() && Q.scenario){
     const src = Q.scenarioSource || {};
     out.push({key: "q", kind: "quest", name: Q.scenario.name, plane: planeOf(src), state: "entered",
-      sub: "IN PROGRESS · ROUND " + Q.round, found: src.foundAt || Q.startedAt || 0, slot: src.slot, openable: true, scn: Object.keys(src).length ? src : null});
+      sub: "IN PROGRESS · ROUND " + Q.round, found: src.foundAt || Q.startedAt || 0, slot: src.slot, size: src.size, openable: true, scn: Object.keys(src).length ? src : null});
   }
   /* a record with nothing kept has no slot: it takes the first one left over */
   const taken = new Set(out.filter(p => Number.isInteger(p.slot)).map(p => p.slot));
@@ -10805,23 +11559,29 @@ function rmPlaces(){
     while(taken.has(free)) free++;
     p.slot = free; taken.add(free);
   });
+  /* the order they were completed in: a history running through the map */
+  out.filter(p => p.kind === "history").sort((a, b) => (a.doneAt || 0) - (b.doneAt || 0)).forEach((p, i) => { p.order = i + 1; });
   out.sort((a, b) => a.slot - b.slot);
   return out;
 }
 
-/* ---- where each point sits: a widening spiral, so nothing ever overlaps ---- */
-function rmLayout(slots){
+/* ---- where each point sits: its own bearing, and a distance that grows with the size of the game ---- */
+function rmLayout(items){
   const pos = [];
-  for(const k of slots){
-    const a = k * 2.399963 + 0.55;                       // the golden angle
-    const rx = 165 + 62 * Math.sqrt(k + .4);
+  for(const it of items){
+    const k = it.slot;
+    const a = k * 2.399963 + 0.55;                       // the golden angle: each place gets its own bearing
+    /* how far out is set by the size of the game: a small scrap is near the Barrow, a
+       big war is far. A fixed scale, so nothing moves when another place is found. */
+    const t = Math.max(0, Math.min(1, ((it.size || 500) - 200) / 900));
+    const rx = 150 + t * 230 + (k % 3) * 16;              // a little stagger so equals do not stack
     pos.push({dx: Math.cos(a) * rx, dy: Math.sin(a) * rx * .74});
   }
   return pos;
 }
 
 function rmSVG(places, cw){
-  const lay = rmLayout(places.map(p => p.slot));
+  const lay = rmLayout(places.map(p => ({slot: p.slot, size: p.size})));
   const halfW = Math.max(280, ...lay.map(p => Math.abs(p.dx) + 120));
   const halfH = Math.max(190, ...lay.map(p => Math.abs(p.dy) + 96));
   const W = Math.max(cw, halfW * 2), H = Math.max(380, halfH * 2);
@@ -10862,6 +11622,22 @@ function rmSVG(places, cw){
     });
   });
 
+  /* The path walked: a faint thread from each finished place to the next one finished, so the
+     map reads as a history. It bends away from the Barrow strings so the two do not tangle. */
+  const walked = places.filter(p => p.order).sort((a, b) => a.order - b.order);
+  walked.forEach((pl, i) => {
+    if(i === 0) return;
+    const q = walked[i - 1];
+    const dx = pl.x - q.x, dy = pl.y - q.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const sx = q.x + ux * 20, sy = q.y + uy * 20, ex = pl.x - ux * 20, ey = pl.y - uy * 20;
+    const cxm = (sx + ex) / 2 - uy * L * .16, cym = (sy + ey) / 2 + ux * L * .16;
+    p.push(`<path d="M${sx.toFixed(1)} ${sy.toFixed(1)} Q${cxm.toFixed(1)} ${cym.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}" fill="none" stroke="#d8d2c4" stroke-width="1.1" stroke-dasharray="5 4" opacity=".5"/>`);
+    // a small arrowhead at the middle, pointing the way it went
+    const mx = .25 * sx + .5 * cxm + .25 * ex, my = .25 * sy + .5 * cym + .25 * ey;
+    const tx = (ex - sx), ty = (ey - sy), tl = Math.hypot(tx, ty) || 1, ax = tx / tl, ay = ty / tl;
+    p.push(`<path d="M${(mx + ax * 5).toFixed(1)} ${(my + ay * 5).toFixed(1)} L${(mx - ax * 3 - ay * 3.4).toFixed(1)} ${(my - ay * 3 + ax * 3.4).toFixed(1)} L${(mx - ax * 3 + ay * 3.4).toFixed(1)} ${(my - ay * 3 - ax * 3.4).toFixed(1)}Z" fill="#d8d2c4" opacity=".6"/>`);
+  });
+
   // where the strings run on into the dark
   [[60, 90], [W - 60, 110], [70, H - 70], [W - 70, H - 90]].forEach(([x, y]) => {
     p.push(`<g class="rmRumour" data-rumour style="cursor:pointer" tabindex="0" role="button" aria-label="Follow a rumour"><title>Follow a rumour</title>
@@ -10881,6 +11657,8 @@ function rmSVG(places, cw){
     else
       p.push(`<circle cx="${x}" cy="${y}" r="15" fill="#0d1016" stroke="${c}" stroke-width="1.6"/><circle cx="${x}" cy="${y}" r="19.5" fill="none" stroke="${c}" stroke-width=".7" opacity=".55" ${pl.state === "entered" ? 'class="rmPulse"' : ""}/>`);
     p.push(rmIcon(pl.plane, x, y, pl.state === "lost" ? "#8a6a66" : c));
+    if(pl.order) p.push(`<g><circle cx="${x - 14}" cy="${y + 13}" r="6.2" fill="#0d1016" stroke="#d8d2c4" stroke-width=".8" opacity=".95"/>
+      <text x="${x - 14}" y="${y + 13}" text-anchor="middle" dominant-baseline="central" font-family="Space Mono,monospace" font-size="7.5" fill="#d8d2c4">${pl.order}</text></g>`);
     if(pl.state === "lost")
       p.push(`<path d="M${x - 9} ${y - 9} L${x + 9} ${y + 9} M${x + 9} ${y - 9} L${x - 9} ${y + 9}" stroke="${c}" stroke-width="1.2" opacity=".85" stroke-linecap="round"/>`);
     p.push(`<text x="${x}" y="${y + 34}" text-anchor="middle" font-family="Cinzel,serif" font-size="11.5" letter-spacing="2" fill="#e8e4dc" font-weight="600" paint-order="stroke" stroke="#0d1016" stroke-width="3">${esc(String(pl.name).toUpperCase().slice(0, 30))}</text>`);
@@ -10929,15 +11707,19 @@ function realmKnownHTML(){
   const main = document.querySelector("main");
   const cw = Math.max(300, ((main && main.clientWidth) || 820) - 62);
   const m = rmSVG(places, cw);
-  const legend = [[RM_GOLD, "Claimed"], [RM_GREEN, "Discovered, not entered"], [RM_RUST, "Lost"]]
+  const legend = [[RM_GOLD, "Claimed"], [RM_GREEN, "Discovered, not entered"], [RM_RUST, "Lost"], ["#d8d2c4", "Order completed (the path walked)"]]
     .map(([c, t]) => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ash-dim)"><i style="display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid ${c}"></i>${t}</span>`).join("");
   return `<div class="slab">
     <div class="head"><span class="eyebrow">What is known</span><span class="rule"></span>${tabs}</div>
-    <div class="rmScroll" style="overflow-x:auto;border-radius:10px;-webkit-overflow-scrolling:touch">${m.svg}</div>
+    <div class="rmScroll" style="overflow-x:auto;border-radius:4px;-webkit-overflow-scrolling:touch">${m.svg}</div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;align-items:center">${legend}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${rmCounts(places)}</div>
     <div id="rmCard" style="margin-top:12px">${rmHintHTML()}</div>
   </div>`;
+}
+function rmOrdinal(n){
+  const w = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (w[(v - 20) % 10] || w[v] || w[0]);
 }
 const RM_MODE = {coop: "Co-op", pvp: "Player vs player", solo: "Solo"};
 function rmHintHTML(){
@@ -10954,7 +11736,7 @@ function rmCardHTML(pl){
   const openLabel = pl.kind === "quest" ? "Read the brief" : pl.kind === "library" ? "Look closer" : "Open the record";
   return `<div class="card-rm" style="border-left:2px solid ${c};padding:2px 0 2px 13px">
     <div class="cardname" style="font-size:19px">${esc(pl.name)}</div>
-    <div style="font:600 9.5px Inter,sans-serif;letter-spacing:.16em;color:${c};margin:3px 0 8px">${esc(pl.sub)}</div>
+    <div style="font:600 9.5px Inter,sans-serif;letter-spacing:.16em;color:${c};margin:3px 0 8px">${esc(pl.sub)}${pl.order ? " \u00b7 COMPLETED " + rmOrdinal(pl.order).toUpperCase() : ""}</div>
     ${s.premise ? `<p class="serif" style="margin:0 0 10px;color:var(--ash-dim);line-height:1.55">${esc(s.premise)}</p>` : ""}
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       ${mode ? `<span class="chip gilt">${esc(mode)}</span>` : ""}
