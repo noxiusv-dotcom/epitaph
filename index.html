@@ -136,6 +136,7 @@ header{
 .iconbtn:hover{color:var(--gilt);border-color:var(--gilt-deep);box-shadow:0 0 12px var(--gilt-glow)}
 
 /* ---- the two halves of the app ---- */
+nav.ways[hidden]{display:none}
 nav.ways{max-width:860px;margin:12px auto 0;padding:0 16px;display:flex;gap:8px}
 .way{
   flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -390,6 +391,117 @@ body.table-on{overflow:hidden}
 .eai-t b{font:500 9px "Cinzel",serif;letter-spacing:.14em;text-transform:uppercase;min-width:28px}
 .eai-t.yes b{color:var(--verdigris)}.eai-t.no b{color:var(--ash-mute)}.eai-t.no span{opacity:.65}
 .eai-t small{color:var(--ash-mute)}
+/* ---- the battle screen: a player's phone ---- */
+#battleScreen{position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;background:
+  radial-gradient(90% 40% at 50% 0,var(--halo),transparent 70%),var(--stone-0)}
+.bt-top{padding:10px 14px 10px;background:linear-gradient(180deg,var(--panel-a),var(--stone-1));border-bottom:1px solid var(--gilt-deep);box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:2}
+.bt-t1{display:flex;align-items:center;gap:10px}
+.bt-rd{font:600 15px "Cinzel",serif;letter-spacing:.12em;min-width:0}
+.bt-rd small{display:block;font:500 9px "Cinzel",serif;letter-spacing:.2em;color:var(--gilt-deep);margin-top:1px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt-go{margin-left:auto;flex:none;padding:10px 16px}
+.bt-t2{display:flex;gap:6px;margin-top:9px}
+.bt-st{flex:1;border:1px solid var(--edge);padding:5px 4px;text-align:center;background:transparent;color:inherit;font:inherit}
+button.bt-st{cursor:pointer}
+.bt-st b{display:block;font:600 14px "Space Mono",monospace;color:var(--gilt)}
+.bt-st span{font:500 8px "Cinzel",serif;letter-spacing:.14em;color:var(--ash-mute);text-transform:uppercase}
+.bt-list{flex:1;overflow:auto;padding:12px 12px 14px;display:grid;gap:12px;align-content:start}
+.bt-row{position:relative;background:linear-gradient(180deg,var(--panel-a),var(--panel-b));border:1px solid var(--edge);
+  box-shadow:0 0 0 2px var(--stone-0),0 0 0 3px var(--frame);margin:0 3px;padding:10px 12px}
+.bt-row.done{opacity:.55}.bt-row.open{opacity:1;border-color:var(--gilt-deep)}
+.bt-row.hurt{border-left:2px solid var(--rust)}.bt-row.down{border-left:2px solid var(--rust)}
+.bt-r1{display:flex;align-items:center;gap:10px;cursor:pointer}
+.bt-tick{width:34px;height:34px;border:1px solid var(--gilt-deep);background:transparent;color:var(--gilt);display:grid;place-items:center;font-size:16px;flex:none;padding:0;cursor:pointer}
+.bt-tick.on{background:var(--gilt);color:#17130a}
+.bt-tick:disabled{opacity:.4}
+.bt-nm{min-width:0;flex:1}
+.bt-name{font:500 14px "Cinzel",serif;letter-spacing:.08em;display:inline-flex;align-items:center;gap:5px}
+.bt-name small{font:400 10px "Inter",sans-serif;color:var(--ash-mute);letter-spacing:0}
+.bt-nm .m-style{margin:0 0 0 8px}
+.bt-hp{text-align:right;flex:none}.bt-hp b{font:600 15px "Space Mono",monospace}
+.bt-hp span{display:block;font:500 8px "Cinzel",serif;letter-spacing:.14em;color:var(--ash-mute);text-transform:uppercase}
+.bt-bar{height:4px;background:var(--stone-3);margin:8px 0 6px}.bt-bar i{display:block;height:100%;background:var(--verdigris)}
+.bt-bar i.m{background:var(--gilt)}.bt-bar i.l{background:var(--rust)}
+.bt-cd{display:flex;gap:5px;flex-wrap:wrap;min-height:6px}
+.bt-cd .c{font:500 9px "Cinzel",serif;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--edge);padding:2px 7px;color:var(--ash-dim)}
+.bt-cd .c.bad{color:var(--rust);border-color:var(--rust)}.bt-cd .c.g{color:var(--gilt);border-color:var(--gilt-deep)}
+.bt-ex{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.bt-ab{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.bt-ab button{background:transparent;border:1px solid var(--gilt-deep);color:var(--gilt);padding:12px 0;font:500 10px "Cinzel",serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.bt-ab button.p{background:var(--gilt);color:#17130a;font-weight:600}
+.bt-ab button:disabled{opacity:.35;cursor:default}
+.bt-pips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:12px 0}
+.bt-pip{display:flex;align-items:center;gap:8px;border:1px solid var(--edge);padding:2px}
+.bt-pip b{font:600 20px "Space Mono",monospace;min-width:34px;text-align:center}
+.bt-pip.hurt b{color:var(--gilt)}.bt-pip.dead b{color:var(--rust)}
+.bt-pip button{width:44px;height:44px;border:1px solid var(--gilt-deep);background:transparent;color:var(--gilt);font:20px "Inter",sans-serif;cursor:pointer}
+.bt-cs{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.bt-cs button{font:500 9px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;border:1px dashed var(--line);padding:9px 10px;color:var(--ash-mute);background:transparent;cursor:pointer}
+.bt-cs button.on{border:1px solid var(--gilt);color:var(--gilt);background:var(--gilt-glow)}
+.bt-note{font-size:12px;color:var(--ash-dim);margin-top:10px;display:grid;gap:5px}.bt-note b{color:var(--ash)}
+.bt-more{text-align:center;margin-top:10px}
+.bt-more button{background:none;border:0;color:var(--gilt-deep);font:500 10px "Cinzel",serif;letter-spacing:.16em;text-transform:uppercase;text-decoration:underline;cursor:pointer;padding:6px}
+.bt-dock{display:grid;grid-template-columns:repeat(6,1fr);background:var(--stone-1);border-top:1px solid var(--gilt-deep);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.bt-dock button{background:none;border:0;color:var(--ash-dim);font:500 8px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;display:grid;justify-items:center;gap:3px;padding:6px 0;position:relative;cursor:pointer}
+.bt-dock button svg{color:var(--gilt)}.bt-dock button:disabled{opacity:.35}
+.bt-dot{position:absolute;top:2px;right:30%;width:7px;height:7px;border-radius:50%;background:var(--rust)}
+
+
+.bt-theme{flex:none;margin-left:auto}
+.bt-theme + .bt-go{margin-left:0}
+#questDock{position:fixed;left:0;right:0;bottom:0;z-index:47;display:grid;grid-template-columns:repeat(6,1fr);background:var(--stone-1);
+  border-top:1px solid var(--gilt-deep);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -8px 20px rgba(0,0,0,.3)}
+#questDock button{background:none;border:0;color:var(--ash-dim);font:500 8px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;display:grid;justify-items:center;gap:3px;padding:6px 0;position:relative;cursor:pointer}
+#questDock button svg{color:var(--gilt-deep)}
+#questDock button.on{color:var(--gilt)}#questDock button.on svg{color:var(--gilt)}
+#questDock button.on::before{content:"";position:absolute;top:-7px;left:25%;right:25%;height:2px;background:var(--gilt)}
+#questDock button:disabled{opacity:.35}
+#questDock button.dim{opacity:.4}
+body.has-dock main{padding-bottom:110px}
+body.has-dock #battleScreen{padding-bottom:64px}
+/* ---- which device is this: a barrow under a moon ---- */
+#rolePick{position:fixed;inset:0;z-index:80;overflow:hidden;background:linear-gradient(180deg,#05070c,#0e1420 42%,#1a2230 66%,#0d0f12);color:#e8e4dc}
+body:has(#rolePick){overflow:hidden}
+.rp-sc{position:absolute;top:0;left:50%;height:100%;width:auto;aspect-ratio:375/760;transform:translateX(-50%);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+@media (max-aspect-ratio:1/2){.rp-sc{-webkit-mask-image:none;mask-image:none}}
+.rp-star{fill:#f4efe0;opacity:.8;animation:rpTw 5s ease-in-out infinite}
+@keyframes rpTw{0%,100%{opacity:.25}50%{opacity:.95}}
+.rp-cloud{animation:rpDrift 40s ease-in-out infinite alternate}
+.rp-fog1{animation:rpDrift 26s ease-in-out infinite alternate}
+@keyframes rpDrift{from{transform:translateX(-26px)}to{transform:translateX(26px)}}
+.rp-strings path{stroke-dasharray:3 4;animation:rpFlow 14s linear infinite}
+@keyframes rpFlow{to{stroke-dashoffset:-140}}
+.rp-nodes g{animation:rpPulse 3.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.rp-nodes g:nth-child(2){animation-delay:-.9s}.rp-nodes g:nth-child(3){animation-delay:-1.8s}.rp-nodes g:nth-child(4){animation-delay:-2.6s}
+@keyframes rpPulse{0%,100%{opacity:.55}50%{opacity:1}}
+.rp-flicker{animation:rpFlk 3.2s ease-in-out infinite}
+@keyframes rpFlk{0%,100%{opacity:.82}18%{opacity:1}34%{opacity:.7}52%{opacity:.95}70%{opacity:.78}}
+.rp-win{animation:rpFlk 5s ease-in-out infinite}
+.rp-ember{fill:#ffb84a;opacity:0;animation:rpUp 9s ease-in infinite}
+@keyframes rpUp{0%{opacity:0;transform:translate(0,0)}15%{opacity:.9}100%{opacity:0;transform:translate(14px,-120px)}}
+.rp-ttl{position:absolute;top:max(40px,7vh);left:0;right:0;text-align:center;padding:0 16px;text-shadow:0 2px 18px rgba(0,0,0,.8)}
+.rp-ttl h1{font-size:30px;letter-spacing:.3em;font-weight:500;padding-left:.3em}
+.rp-ttl p{margin:10px 0 0;font:italic 17px "Spectral",Georgia,serif;color:#b9b4a8}
+.rp-signs{position:absolute;left:0;right:0;bottom:0;padding:0 16px max(26px,env(safe-area-inset-bottom));display:grid;gap:12px;max-width:470px;margin:0 auto;
+  background:linear-gradient(180deg,transparent,rgba(8,10,13,.82) 28%)}
+.rp-sign{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:15px 16px;color:inherit;font:inherit;cursor:pointer;position:relative;
+  background:linear-gradient(180deg,rgba(26,27,24,.92),rgba(14,14,12,.94));border:1px solid #4a3d22;
+  box-shadow:0 0 0 3px #080a0d,0 0 0 4px #2a241a,0 12px 22px -8px rgba(0,0,0,.7),0 0 26px rgba(224,168,60,.07);
+  transition:transform .22s cubic-bezier(.3,.8,.3,1),box-shadow .22s,border-color .2s}
+.rp-sign::before,.rp-sign::after{content:"";position:absolute;width:9px;height:9px;border:1px solid #c9a227;pointer-events:none}
+.rp-sign::before{top:5px;left:5px;border-right:0;border-bottom:0}.rp-sign::after{bottom:5px;right:5px;border-left:0;border-top:0}
+.rp-sign:hover,.rp-sign:focus-visible,.rp-sign.on{transform:translateY(-4px);border-color:#9c7d18;box-shadow:0 0 0 3px #080a0d,0 0 0 4px #9c7d18,0 18px 28px -8px rgba(0,0,0,.75),0 0 34px rgba(224,168,60,.22);outline:none}
+.rp-sign:active{transform:translateY(-1px)}
+.rp-sign i{flex:none;width:46px;height:46px;display:grid;place-items:center;border:1px solid #9c7d18;color:#c9a227;background:rgba(201,162,39,.06)}
+.rp-sign b{display:block;font:600 15px "Cinzel",serif;letter-spacing:.2em;text-transform:uppercase;color:#c9a227}
+.rp-sign span{display:block;font-size:12.5px;line-height:1.5;color:#a8a49c;margin-top:4px}
+.rp-sign em{margin-left:auto;font-style:normal;font-size:26px;color:#c9a227;line-height:1;transition:transform .2s}
+.rp-sign:hover em{transform:translateX(3px)}
+.rp-note,.rp-cancel{margin:2px 0 0;text-align:center;font-size:12px;color:#7a766e}
+.rp-cancel{background:none;border:0;text-decoration:underline;cursor:pointer;font-family:inherit}
+@media (prefers-reduced-motion:reduce){#rolePick *{animation:none!important;transition:none!important}}
+@media (max-height:640px){.rp-ttl{top:22px}.rp-sign{padding:11px 14px}.rp-sign span{display:none}}
+
 .ma-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:900px){
   #tableScreen{overflow:auto}
@@ -5268,13 +5380,27 @@ function closeSheet(){
 /* ---------------------------------------------------------------- render */
 function render(){
   const b = band();
-  $("#rsVer").textContent = realmAvailable() ? "Camp of the Unburied · ruleset " + RS.meta.version : "The Reliquary";
+  /* In a battle there is one place to be: the Barrow's roster and the battle screens. The Realm's map and the
+     tab that leads to it step aside until the quest is left. */
+  const inQuest = questOn();
+  const role = typeof getRole === "function" ? getRole() : "";
+  /* A device is one thing or the other: a Barrow shows the roster, the Realm shows the table. */
+  if(role){ const want = role === "realm" ? "realm" : "unburied"; if(store.way !== want) store.way = want; }
+  else if(inQuest && store.way !== "unburied") store.way = "unburied";
+  const ways = document.querySelector("nav.ways"); if(ways) ways.hidden = inQuest || !!role;
+  if(!realmAvailable()) $("#rsVer").textContent = "The Reliquary";
+  else $("#rsVer").innerHTML = (role === "realm" ? "The Realm" : "Camp of the Unburied") + " \u00b7 ruleset " + RS.meta.version
+    + (role ? ` \u00b7 <a href="#" data-role-switch onclick="return false" style="color:inherit;text-decoration:underline">switch</a>` : "");
   $$(".way").forEach(w => w.classList.toggle("on", w.dataset.way === store.way));
   $("#viewUnburied").hidden = store.way !== "unburied";
   $("#viewRealm").hidden = store.way !== "realm";
   if(store.way === "unburied") renderUnburied(b); else renderRealm();
   document.body.classList.toggle("has-qbar", store.way === "unburied" && questOn());
   if(typeof drawTable === "function") drawTable();
+  if(typeof drawBattle === "function"){ drawBattle(); maybeAutoBattle(); drawDock(); }
+  if(typeof drawRolePick === "function") drawRolePick();
+  /* the table device opens straight onto the table when a quest begins */
+  if(role === "realm" && inQuest && !Q.tableSeen && typeof openTable === "function" && !tableOpen){ Q.tableSeen = true; questSave(); openTable(); }
   save();
 }
 
@@ -6121,14 +6247,16 @@ function unitStanding(u){ return u.models.filter(h => h > 0).length; }
 
 function questBegin(size, opts){
   const b = band();
-  const mine = b.members.filter(fielded);
-  if(!mine.length){ toast("Field someone first"); return false; }
+  const tableOnly = typeof getRole === "function" && getRole() === "realm";     // the Realm runs the table and brings no band
+  const mine = tableOnly ? [] : b.members.filter(fielded);
+  if(!mine.length && !tableOnly){ toast("Field someone first"); return false; }
   /* The band's build is theirs to shape freely right up until they are
      actually sent out. The first time that happens, whoever holds the
      Leader trait is bound by a tether, and every member already in the
      band at that moment has its build fixed from here on — recruits
      added afterward are unaffected until their own first mission. */
-  if(!b.sealed){
+  if(tableOnly){ /* no band here, so nothing to seal or bind */ }
+  else if(!b.sealed){
     const leader = leaderOf(b);
     if(!leader){ toast("Someone needs to be the " + leaderTerm() + " before the band's first mission"); return false; }
     b.sealed = true;
@@ -6143,12 +6271,13 @@ function questBegin(size, opts){
   }
   /* the tether is normally rolled already, back at the barrow; this catches a band
      with none (a severed one, or narrative switched on late) */
-  if(ruleOn("narrative", b) && leaderOf(b) && !b.tether){ bindTether(b); save(); }
+  if(!tableOnly && ruleOn("narrative", b) && leaderOf(b) && !b.tether){ bindTether(b); save(); }
   Q = {round: 1, step: "tempo", size,
        nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
        units: mine.map(questUnitFrom),
        markers: rollMarkers(size, opts),
        log: []};
+  questStep();           // the first round opens with its Tempo: Nerve gained, activations ready
   questSave();
   return true;
 }
@@ -7522,9 +7651,8 @@ function questBarHTML(){
       <div class="qbar-l">
         <b>${Q.scenario ? esc(Q.scenario.name) + " · " : ""}Round ${Q.round}${
           Q.scenario && Q.scenario.rounds ? " of " + Q.scenario.rounds : ""}</b>
-        <span>${Q.step === "tempo" ? "Tempo" : Q.step === "acts" ? "Activations" : "End step"}</span>
       </div>
-      <button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">${Q.step === "end" ? "Next round ▸" : Q.step === "tempo" ? "Begin ▸" : "End step ▸"}</button>
+      <button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">End turn ▸</button>
     </div>
     <div class="qbar-r">
       <button class="chip gilt" data-q="nerve">◆ ${Q.nerve.us} Nerve</button>
@@ -7535,7 +7663,8 @@ function questBarHTML(){
       ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}% — break test</span>` : ""}
       ${Q.scenario ? `<button class="chip ${questDue() ? "bad" : ""}" data-q="brief">${
         questDue() ? "⚠ " + questDue() + " happening" : "The brief"}</button>` : ""}
-      <button class="chip gilt" data-q="table">\u25a4 Table screen</button>
+      <button class="chip gilt" data-q="battle">\u25a3 Battle screen</button>
+      <button class="chip" data-q="table">\u25a4 Table screen</button>
       <button class="btn sm ghost" data-q="end">End</button>
     </div>
   </div>`;
@@ -7549,16 +7678,13 @@ function questBarBind(root){
   };
   root.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
     switch(b.dataset.q){
-      case "step":
-        questStep();
-        if(Q.pending){ showRoundPopup(Q.pending); Q.pending = null; questSave(); }
-        else render();
-        break;
+      case "step": tableEndTurn(); break;
       case "nerve":   openNerve(); break;
       case "vp":      openVP(); break;
       case "markers": openMarkers(); break;
       case "brief": openBrief(); break;
       case "table": openTable(); break;
+      case "battle": openBattle(); break;
       case "end": askEnd(); break;
     }
   });
@@ -7706,21 +7832,7 @@ function questBind(root, m){
   root.querySelectorAll("[data-qp]").forEach(b => b.onclick = e => {
     e.stopPropagation();
     const [what, a, c] = b.dataset.qp.split("|");
-    if(what === "hp"){ u.models[+a] = Math.max(0, Math.min(u.max, u.models[+a] + +c)); writeThrough(u); }
-    else if(what === "ready") u.ready = !u.ready;
-    else if(what === "act")   u.used = Math.min(u.acts, u.used + 1);
-    else if(what === "unact") u.used = Math.max(0, u.used - 1);
-    else if(what === "push"){ u.pushed = true; strainUnit(u, 1); }
-    else if(what === "recover"){
-      /* One Recover: 1 Strain, or Shaken, or Pinned. Not all three. */
-      if(u.strain > 0) u.strain--;
-      else if((u.cond || []).includes("shaken")) u.cond = u.cond.filter(x => x !== "shaken");
-      else if((u.cond || []).includes("pinned")) u.cond = u.cond.filter(x => x !== "pinned");
-    }
-    else if(what === "cond"){
-      u.cond = u.cond || [];
-      u.cond = u.cond.includes(a) ? u.cond.filter(x => x !== a) : u.cond.concat([a]);
-    }
+    questDo(u, what, a, c);
     questSave(); drawCard(); renderUnburied(band());
   });
 }
@@ -8273,8 +8385,11 @@ function markerSpot(m, i, total){
 
 function openTable(){
   if(!questOn()){ toast("No quest is running"); return; }
+  if(typeof battleOpen !== "undefined" && battleOpen) closeBattle();
   tableOpen = true;
   document.body.classList.add("table-on");
+  /* The table runs a round as one thing: Tempo (Nerve, activations reset) happens as the round opens. */
+  if(Q.step === "tempo") questStep();
   drawTable();
 }
 function closeTable(){
@@ -8453,14 +8568,14 @@ function drawTable(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div class="tb-ttl">${esc(s.name || "The quest")}<small>${Q.realm && Q.joinCode ? "JOIN CODE " + esc(Q.joinCode) : "ONE DEVICE"}${s.type ? " · " + esc(String(s.type).toUpperCase()) : ""}</small></div>
     <div class="tb-st"><b>${Q.round}${s.rounds ? " / " + s.rounds : ""}</b><span>Round</span></div>
-    <div class="tb-st"><b>${Q.step === "tempo" ? "Tempo" : Q.step === "acts" ? "Acts" : "End"}</b><span>Step</span></div>
     <div class="tb-st"><b>${Q.vp.us}–${Q.vp.them}</b><span>Victory</span></div>
     <button class="tb-st tb-btn" data-tq="nerve"><b>${Q.nerve.us}</b><span>Nerve</span></button>
     ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}%</span>` : ""}
     <div style="flex:1"></div>
+    <button class="iconbtn" data-tq="theme" aria-label="Switch between light and dark" title="Light / dark">${(document.getElementById("btnTheme") || {}).innerHTML || "◐"}</button>
     ${s.name ? `<button class="btn sm" data-tq="brief">The brief</button>` : ""}
     <button class="btn sm ghost" data-tq="end">End quest</button>
-    ${isHost ? `<button class="btn primary" data-tq="step">${Q.step === "end" ? "Next round ▸" : Q.step === "tempo" ? "Begin ▸" : "End step ▸"}</button>` : ""}
+    ${isHost ? `<button class="btn primary" data-tq="step">End turn ▸</button>` : ""}
   </div>
   <div class="tb-main">
     <div class="tb-left">
@@ -8503,12 +8618,24 @@ function drawTable(){
   bindTableScreen(el);
 }
 
+/* One press closes the round: the Acts step, then the End step (events, burning, strain), and the next round opens with its Tempo. */
+function tableEndTurn(){
+  if(Q.step === "tempo") questStep();
+  if(Q.step === "acts") questStep();
+  if(Q.step === "end") questStep();         // the round turns over; anything that sprang is in Q.pending
+  const pending = Q.pending; Q.pending = null;
+  if(Q.step === "tempo") questStep();       // the new round's Tempo
+  questSave();
+  if(pending) showRoundPopup(pending); else render();
+}
+
 function bindTableScreen(el){
   const done = () => { questSave(); render(); };
   el.querySelector("#tbClose").onclick = closeTable;
   el.querySelectorAll("[data-tq]").forEach(b => b.onclick = () => {
     switch(b.dataset.tq){
-      case "step": questStep(); if(Q.pending){ showRoundPopup(Q.pending); Q.pending = null; questSave(); } else render(); break;
+      case "step": tableEndTurn(); break;
+      case "theme": { const t = document.getElementById("btnTheme"); if(t) t.click(); } break;
       case "nerve": openNerve(); break;
       case "brief": openBrief(); break;
       case "end": askEnd(); break;
@@ -8625,6 +8752,206 @@ function openMarkerAct(n){
     openMarkers(r ? [Object.assign({n}, r)] : null); render();
   };
 }
+
+/* ---- battleview.js ---- */
+/* =====================================================================
+   THE BATTLE SCREEN (a player's phone)
+   While a quest runs, a player sees only their own warband: one line per model,
+   the whole band on one screen, and the tools for the model they are planning
+   with opening in place. Everything it does goes through the same call as
+   the model's own card, so the two can never disagree.
+   ===================================================================== */
+
+let battleOpen = false, battleSel = null, battleOrder = null;
+
+function openBattle(){
+  if(!questOn()){ toast("No quest is running"); return; }
+  if(typeof closeTable === "function" && tableOpen) closeTable();
+  battleOpen = true; Q.dockOn = true; questSave();     // once you are in the battle, the bar stays until the quest is over
+  document.body.classList.add("table-on");
+  if(Q.step === "tempo") questStep();
+  drawBattle(); drawDock();
+}
+function closeBattle(){
+  battleOpen = false; battleSel = null; battleOrder = null;
+  if(typeof tableOpen === "undefined" || !tableOpen) document.body.classList.remove("table-on");
+  const el = document.getElementById("battleScreen"); if(el) el.remove();
+  drawDock();
+}
+
+const BT_ICON = {
+  brief:   '<path d="M6 4h10a2 2 0 012 2v14H8a2 2 0 01-2-2zM9 8h6M9 12h6"/>',
+  foes:    '<path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z"/>',
+  markers: '<path d="M12 3l8 5v8l-8 5-8-5V8z"/><circle cx="12" cy="12" r="2"/>',
+  table:   '<rect x="3" y="4" width="18" height="14" rx="1"/><path d="M8 21h8M12 18v3"/>',
+  battle:  '<path d="M6 18L18 6M15 5.5h3.5V9M8.5 12.5l3 3M4 20l3-3"/>',
+  band:    '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5.5"/>',
+  end:     '<path d="M18 6L6 18M6 6l12 12"/>'
+};
+const btIcon = k => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${BT_ICON[k]}</svg>`;
+
+/* The one place a model's tracker buttons do their work, shared with the full card. */
+function questDo(u, what, a, c){
+  if(what === "hp"){ u.models[+a] = Math.max(0, Math.min(u.max, u.models[+a] + +c)); writeThrough(u); }
+  else if(what === "ready") u.ready = !u.ready;
+  else if(what === "act")   u.used = Math.min(u.acts, u.used + 1);
+  else if(what === "unact") u.used = Math.max(0, u.used - 1);
+  else if(what === "push"){ u.pushed = true; strainUnit(u, 1); }
+  else if(what === "recover"){
+    /* One Recover: 1 Strain, or Shaken, or Pinned. Not all three. */
+    if(u.strain > 0) u.strain--;
+    else if((u.cond || []).includes("shaken")) u.cond = u.cond.filter(x => x !== "shaken");
+    else if((u.cond || []).includes("pinned")) u.cond = u.cond.filter(x => x !== "pinned");
+  }
+  else if(what === "cond"){
+    u.cond = u.cond || [];
+    u.cond = u.cond.includes(a) ? u.cond.filter(x => x !== a) : u.cond.concat([a]);
+  }
+}
+
+function btRow(u){
+  const m = band().members.find(x => x.id === u.uid);
+  const now = u.models.reduce((s, h) => s + Math.max(0, h), 0), max = u.max * u.models.length;
+  const f = max ? now / max : 0, cls = f <= .3 ? "l" : f <= .6 ? "m" : "";
+  const down = unitDown(u), spent = u.used >= u.acts;
+  const sel = battleSel === u.uid;
+  const conds = (u.cond || []).filter(c => c !== "leader");
+  const byId = {}; (RS.conditions || []).forEach(c => byId[c.id] = c);
+  const st = RS.strain;
+  const all = ["shaken", "pinned", "burning", "tainted", "marked", "stabilised"];
+  const effects = conds.map(id => byId[id]).filter(Boolean);
+  return `<div class="bt-row ${sel ? "open" : ""} ${spent || down ? "done" : ""} ${f <= .5 && !down ? "hurt" : ""} ${down ? "down" : ""}" data-btrow="${esc(u.uid)}">
+    <div class="bt-r1" data-btpick="${esc(u.uid)}" role="button" tabindex="0">
+      <button class="bt-tick ${spent ? "on" : ""}" data-btq="${esc(u.uid)}|${spent ? "unact" : "act"}" aria-label="${spent ? "Undo activation" : "Activate"}" ${down ? "disabled" : ""}>${spent ? "✓" : "○"}</button>
+      <div class="bt-nm">
+        <span class="bt-name">${m && isLeaderM(m) && typeof crownHTML === "function" ? crownHTML(14) : ""}${esc(u.name)}${u.models.length > 1 ? ` <small>×${u.models.length}</small>` : ""}</span>
+        ${m && typeof styleBadge === "function" ? styleBadge(m, 13) : ""}
+      </div>
+      <div class="bt-hp"><b>${now}/${max}</b><span>Health</span></div>
+    </div>
+    <div class="bt-bar"><i class="${cls}" style="width:${max ? Math.round(f * 100) : 0}%"></i></div>
+    <div class="bt-cd">${down ? `<span class="c bad">Down</span>` : ""}${conds.map(c => `<span class="c bad">${esc(c)}</span>`).join("")}${u.strain ? `<span class="c g">Strain ${u.strain}</span>` : ""}${u.acts > 1 ? `<span class="c">${u.used}/${u.acts} acts</span>` : ""}${u.ready ? `<span class="c g">Ready</span>` : ""}</div>
+    ${sel ? `<div class="bt-ex">
+      <div class="bt-ab">
+        <button class="p" data-btq="${esc(u.uid)}|act" ${spent || down ? "disabled" : ""}>Activate</button>
+        <button data-btq="${esc(u.uid)}|push" ${down ? "disabled" : ""} title="A push costs 1 Strain">Push</button>
+        <button data-btq="${esc(u.uid)}|recover" ${!u.strain && !conds.length ? "disabled" : ""}>Recover</button>
+        <button data-btq="${esc(u.uid)}|unact" ${!u.used ? "disabled" : ""}>Undo</button>
+      </div>
+      <div class="bt-pips">${u.models.map((h, i) => `<div class="bt-pip ${h <= 0 ? "dead" : h <= u.max * .5 ? "hurt" : ""}">
+        <button data-btq="${esc(u.uid)}|hp|${i}|-1" aria-label="Damage">−</button><b>${h}</b><button data-btq="${esc(u.uid)}|hp|${i}|1" aria-label="Heal">+</button></div>`).join("")}</div>
+      <div class="bt-cs">${all.map(id => `<button class="${conds.includes(id) ? "on" : ""}" data-btq="${esc(u.uid)}|cond|${id}">${id.charAt(0).toUpperCase() + id.slice(1)}</button>`).join("")}</div>
+      ${effects.length || u.strain ? `<div class="bt-note">${effects.map(c => `<div><b>${esc(c.id.charAt(0).toUpperCase() + c.id.slice(1))}</b> ${esc(c.desc)}</div>`).join("")}${u.strain ? `<div><b>Strain ${u.strain}</b> ${u.strain >= st.autoBurnoutAt - 1
+        ? "One more push and it burns out: " + st.burnoutEffect.damage + " damage, no save."
+        : "Push again and the Risk die burns it out if it rolls under " + (u.strain + 1) + "."}</div>` : ""}</div>` : ""}
+      <div class="bt-more"><button data-btcard="${esc(u.uid)}">Open the full card</button></div>
+    </div>` : ""}
+  </div>`;
+}
+
+function drawBattle(){
+  if(!battleOpen) return;
+  if(!questOn()){ closeBattle(); return; }
+  let el = document.getElementById("battleScreen");
+  if(!el){ el = document.createElement("div"); el.id = "battleScreen"; document.body.appendChild(el); }
+  const keep = el.querySelector(".bt-list") ? el.querySelector(".bt-list").scrollTop : 0;
+  const s = Q.scenario || {}, mine = Q.units.filter(u => u.side === "us" && !u.remote);
+  const acted = mine.filter(u => u.used >= u.acts || unitDown(u)).length;
+  /* not yet acted first; but while a row is open the order holds still, so it does not jump under your thumb */
+  if(!battleSel) battleOrder = null;
+  const ranked = battleOrder ? battleOrder.map(id => mine.find(u => u.uid === id)).filter(Boolean)
+    : mine.slice().sort((a, b) => ((a.used >= a.acts || unitDown(a)) - (b.used >= b.acts || unitDown(b))));
+  if(battleSel && !battleOrder) battleOrder = ranked.map(u => u.uid);
+  const isHost = !Q.realm || Q.host;
+  const due = questDue();
+  el.innerHTML = `
+  <div class="bt-top">
+    <div class="bt-t1">
+      <div class="bt-rd">Round ${Q.round}${s.rounds ? " of " + s.rounds : ""}<small>${esc(s.name || "The quest")}</small></div>
+      <button class="iconbtn bt-theme" data-bt="theme" aria-label="Switch between light and dark" title="Light / dark">${(document.getElementById("btnTheme") || {}).innerHTML || "\u25d0"}</button>
+      ${isHost ? `<button class="btn primary bt-go" data-bt="step">End turn ▸</button>` : ""}
+    </div>
+    <div class="bt-t2">
+      <button class="bt-st" data-bt="nerve"><b>${Q.nerve.us}</b><span>Nerve</span></button>
+      <button class="bt-st" data-bt="vp"><b>${Q.vp.us}–${Q.vp.them}</b><span>Victory</span></button>
+      <div class="bt-st"><b>${acted}/${mine.length}</b><span>Acted</span></div>
+      <button class="bt-st" data-bt="markers"><b>${Q.markers.filter(m => m.state === "hidden").length}</b><span>Unknown</span></button>
+    </div>
+  </div>
+  <div class="bt-list" data-btscroll>${ranked.map(btRow).join("") || `<p class="quiet" style="padding:20px">No one from your band is in this quest.</p>`}</div>`;
+  const list = el.querySelector(".bt-list"); if(list) list.scrollTop = keep;
+  bindBattle(el);
+}
+
+function bindBattle(el){
+  const done = () => { questSave(); render(); };
+  el.querySelectorAll("[data-bt]").forEach(b => b.onclick = () => {
+    switch(b.dataset.bt){
+      case "step":    battleSel = null; battleOrder = null; tableEndTurn(); break;
+      case "nerve":   openNerve(); break;
+      case "vp":      openVP(); break;
+      case "markers": openMarkers(); break;
+      case "brief":   openBrief(); break;
+      case "foes":    openFoes(); break;
+      case "table":   closeBattle(); openTable(); break;
+      case "end":     askEnd(); break;
+      case "theme":   { const t = document.getElementById("btnTheme"); if(t) t.click(); } break;
+      case "close":   closeBattle(); render(); break;
+    }
+  });
+  el.querySelectorAll("[data-btpick]").forEach(r => r.onclick = ev => {
+    if(ev.target.closest("button")) return;
+    battleSel = battleSel === r.dataset.btpick ? null : r.dataset.btpick;
+    if(!battleSel) battleOrder = null;
+    drawBattle();
+  });
+  el.querySelectorAll("[data-btq]").forEach(b => b.onclick = ev => {
+    ev.stopPropagation();
+    const [uid, what, a, c] = b.dataset.btq.split("|");
+    const u = Q.units.find(x => x.uid === uid); if(!u) return;
+    questDo(u, what, a, c);
+    done();
+  });
+  el.querySelectorAll("[data-btcard]").forEach(b => b.onclick = () => openCard(b.dataset.btcard));
+}
+
+/* A phone opens straight onto its own battle screen the first time a quest is seen. */
+function maybeAutoBattle(){
+  if(battleOpen || !questOn() || Q.battleSeen) return;
+  if(window.innerWidth > 700 || (typeof tableOpen !== "undefined" && tableOpen)) return;
+  Q.battleSeen = true; questSave();
+  openBattle();
+}
+
+/* The bar along the bottom. It belongs to the quest, not to one screen: it stays, in the same place, on
+   the battle screen and on the band, until the quest is over. */
+function drawDock(){
+  const want = questOn() && (battleOpen || Q.dockOn || window.innerWidth <= 900) && !(typeof tableOpen !== "undefined" && tableOpen);
+  let el = document.getElementById("questDock");
+  if(!want){ if(el) el.remove(); document.body.classList.remove("has-dock"); return; }
+  if(!el){ el = document.createElement("div"); el.id = "questDock"; document.body.appendChild(el); }
+  document.body.classList.add("has-dock");
+  const s = Q.scenario || {}, due = questDue();
+  el.innerHTML = `
+    <button class="${battleOpen ? "on" : ""}" data-dk="battle">${btIcon("battle")}Battle</button>
+    <button class="${battleOpen ? "" : "on"}" data-dk="band">${btIcon("band")}Band</button>
+    <button data-dk="brief" class="${s.name ? "" : "dim"}">${btIcon("brief")}Brief${due ? `<i class="bt-dot"></i>` : ""}</button>
+    <button data-dk="foes">${btIcon("foes")}Enemy</button>
+    <button data-dk="markers">${btIcon("markers")}Markers</button>
+    <button data-dk="end">${btIcon("end")}End quest</button>`;
+  el.querySelectorAll("[data-dk]").forEach(b => b.onclick = () => {
+    switch(b.dataset.dk){
+      case "battle":  if(!battleOpen) openBattle(); break;
+      case "band":    if(battleOpen){ closeBattle(); render(); } break;
+      case "brief":   if(Q.scenario && Q.scenario.name) openBrief(); else toast("This quest was started without a scenario, so there is no brief to read"); break;
+      case "foes":    openFoes(); break;
+      case "markers": openMarkers(); break;
+      case "end":     askEnd(); break;
+    }
+  });
+}
+/* a tablet turned, or a window narrowed: the bar follows */
+window.addEventListener("resize", () => { try{ drawDock(); }catch(e){} });
 
 /* ---- enemyai.js ---- */
 /* =====================================================================
@@ -8973,7 +9300,7 @@ function drawAfter(){
         <p class="lead" style="margin:0">${esc(rec.effect)}</p>
         ${rec.flavourText ? `<p class="serif" style="margin:9px 0 0;color:var(--ash-dim)">${esc(rec.flavourText)}</p>` : ""}
         ${rec.scar ? `<p class="quiet" style="margin:9px 0 0">A scar. It stays, and it shows on the card.</p>` : ""}
-        ${rec.mend ? `<p class="quiet" style="margin:6px 0 0">Can be mended in camp for ${rec.mend.cost}: ${esc(rec.mend.effect)}</p>` : ""}
+        ${rec.mend ? `<p class="quiet" style="margin:6px 0 0">Can be mended at the Barrow for ${rec.mend.cost}: ${esc(rec.mend.effect)}</p>` : ""}
       </div>
       ${flavours.length && !rec.flavourText ? `<div class="slab">
         <div class="head"><span class="eyebrow">What did it</span><span class="rule"></span><span class="quiet">names the scar and offers words</span></div>
@@ -9138,15 +9465,15 @@ function drawAfterDone(){
             <span class="chip mono">d20 ${r.roll}</span>${r.scar ? `<span class="chip bad">scar</span>` : ""}${r.dead ? `<span class="chip bad">dead</span>` : ""}</div>
           <div class="says-d">${esc(r.effect)}</div>
           ${r.flavourText ? `<div class="says-d serif" style="opacity:.85">${esc(r.flavourText)}</div>` : ""}
-          ${r.mend ? `<div class="says-d quiet">Can be mended in camp for ${r.mend.cost}: ${esc(r.mend.effect)}</div>` : ""}
+          ${r.mend ? `<div class="says-d quiet">Can be mended at the Barrow for ${r.mend.cost}: ${esc(r.mend.effect)}</div>` : ""}
           ${(r.replace || []).length ? `<div class="says-d quiet">Or replaced outright, if the band can afford it.</div>` : ""}
-          ${r.id === "mortalWound" && m ? `<div class="says-d quiet">Surgery in camp costs ${surgeryCost(m)} Cash. Without it they die when camp is broken.</div>` : ""}
+          ${r.id === "mortalWound" && m ? `<div class="says-d quiet">Surgery at the Barrow costs ${surgeryCost(m)} Cash. Without it they die when camp is broken.</div>` : ""}
         </div>`; }).join("")}</div>` : ""}
     <div id="adMoments">${momentsHTML(b)}</div>
-    <p class="quiet" style="margin:0">Spend what was earned in camp: train with XP, buy gear, have scars seen to.</p>
+    <p class="quiet" style="margin:0">Spend what was earned at the Barrow: train with XP, buy gear, have scars seen to.</p>
     <div class="sheet-actions">
       <button class="btn ghost" id="adClose" style="margin-left:0">Close</button>
-      <button class="btn primary" id="adCamp">To camp</button>
+      <button class="btn primary" id="adCamp">To the Barrow</button>
     </div>`;
   bindMoments($("#sheet2In"), () => { afterState.step = "done"; drawAfter(); });
   $("#adClose").onclick = closeAfter;
@@ -9942,7 +10269,7 @@ function openCamp(){
     <div class="sheet-head">
       <button class="iconbtn" id="cpX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">Camp ${C.n}</div>${cashChip(b)}${lvlChip(b)}</div>
+      </button><div class="eyebrow">At the Barrow · Camp ${C.n}</div>${cashChip(b)}${lvlChip(b)}</div>
     <p class="lead">The fighting is done, so take your time. Health comes back on its own, but scars do not: lost limbs, eyes, ribs and
       shaken nerves stay until surgery. Spend XP to train, Cash on gear, and Cash on surgery for scars — as much as you can afford,
       in any order.</p>
@@ -11717,7 +12044,7 @@ function openScenarioBring(){
 function startFromScenario(s, campDone){
   if(!s) return;
   /* setting out ends the camp: whatever it cost is settled first, and shown */
-  if(!campDone && realmAvailable() && typeof campBreaks === "function" && ruleOn("campaign", band())){
+  if(!campDone && realmAvailable() && getRole() !== "realm" && typeof campBreaks === "function" && ruleOn("campaign", band())){
     const lines = campBreaks(band());
     if(lines.length){ showCampBroken(lines, () => startFromScenario(s, true)); return; }
   }
@@ -12141,6 +12468,149 @@ function renderRealm(){
   const leave = $("#rmLeave");
   if(leave) leave.onclick = () => { leaveRealm(); renderRealm(); render(); toast("Left the table"); };
 }
+
+/* ---- role.js ---- */
+/* =====================================================================
+   WHAT IS THIS DEVICE?
+   The camp app runs on two kinds of device at one table. A player's phone is a
+   BARROW: their Unburied, their roster, their part of the battle. The device that
+   holds the scenario is the REALM: the map of lands, the markers, the enemy, the
+   table. On first opening the app asks which this is, and remembers.
+   (The Reliquary, where things are made, has no such choice.)
+   ===================================================================== */
+
+const ROLE_KEY = "ep_role";
+function getRole(){
+  if(typeof realmAvailable !== "function" || !realmAvailable()) return "";
+  try{ const r = localStorage.getItem(ROLE_KEY); return r === "realm" || r === "barrow" ? r : ""; }catch(e){ return ""; }
+}
+function setRole(r){
+  try{ if(r) localStorage.setItem(ROLE_KEY, r); else localStorage.removeItem(ROLE_KEY); }catch(e){}
+  if(r === "realm") store.way = "realm"; else if(r === "barrow") store.way = "unburied";
+  const el = document.getElementById("rolePick"); if(el) el.remove();
+  render();
+}
+
+/* The picture behind the question: a barrow under a moon, with strings running out to far lands. */
+function roleScene(){
+  /* a fixed little random, so the sky is the same every time */
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const stars = Array.from({length: 74}, (_, i) => {
+    const x = (rnd() * 375).toFixed(1), y = (rnd() * 330).toFixed(1), r = (.35 + rnd() * .85).toFixed(2), d = (rnd() * 6).toFixed(1);
+    return `<circle class="rp-star" cx="${x}" cy="${y}" r="${r}" style="animation-delay:-${d}s"/>`;
+  }).join("");
+  const embers = Array.from({length: 14}, (_, i) => {
+    const x = (130 + rnd() * 110).toFixed(0), d = (rnd() * 9).toFixed(1), t = (7 + rnd() * 6).toFixed(1);
+    return `<circle class="rp-ember" cx="${x}" cy="610" r="${(.7 + rnd() * .9).toFixed(1)}" style="animation-delay:-${d}s;animation-duration:${t}s"/>`;
+  }).join("");
+  return `
+  <svg class="rp-sc" viewBox="0 0 375 760" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="rpSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#05070c"/><stop offset=".42" stop-color="#0e1420"/><stop offset=".7" stop-color="#1a2230"/><stop offset="1" stop-color="#232c3a"/></linearGradient>
+      <radialGradient id="rpMoon"><stop offset="0" stop-color="#fff6dc" stop-opacity=".55"/><stop offset=".3" stop-color="#e8e4dc" stop-opacity=".18"/><stop offset="1" stop-color="#e8e4dc" stop-opacity="0"/></radialGradient>
+      <radialGradient id="rpDoor" cx=".5" cy=".6" r=".7"><stop offset="0" stop-color="#ffd27a"/><stop offset=".45" stop-color="#e0a23c"/><stop offset="1" stop-color="#5a3a10"/></radialGradient>
+      <radialGradient id="rpGlow"><stop offset="0" stop-color="#ffb84a" stop-opacity=".5"/><stop offset="1" stop-color="#ffb84a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="rpGround" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f131a"/><stop offset="1" stop-color="#0a0c10"/></linearGradient>
+      <filter id="rpBlur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+      <filter id="rpBlur2"><feGaussianBlur stdDeviation="1.6"/></filter>
+    </defs>
+    <rect width="375" height="760" fill="url(#rpSky)"/>
+    <g>${stars}</g>
+    <circle cx="276" cy="168" r="120" fill="url(#rpMoon)"/>
+    <circle cx="276" cy="168" r="25" fill="#f3ecd8"/>
+    <g fill="#cfc6ad" opacity=".5"><circle cx="268" cy="160" r="5"/><circle cx="285" cy="176" r="3.4"/><circle cx="272" cy="180" r="2"/></g>
+    <g class="rp-cloud" fill="#2b3547" opacity=".55" filter="url(#rpBlur2)"><ellipse cx="240" cy="150" rx="70" ry="5"/><ellipse cx="320" cy="190" rx="60" ry="4"/></g>
+
+    <g transform="translate(0 -176)">
+    <path d="M-10 452 L40 392 L78 424 L132 340 L176 408 L226 352 L268 414 L318 372 L390 430 V560 H-10Z" fill="#1b2330"/>
+    <path d="M-10 452 L40 392 L78 424 L132 340 L176 408 L226 352 L268 414 L318 372 L390 430" fill="none" stroke="#33415a" stroke-width=".8" opacity=".7"/>
+    <!-- far ruins on the ridge, and a light in them -->
+    <g fill="#10151d"><path d="M312 372v-26h5v-6l3-6 3 6v6h5v32z"/><path d="M60 400v-18h8v-8l2-4 2 4v8h6v22z"/></g>
+    <g fill="#ffcf6a"><rect x="318" y="356" width="1.6" height="2.6" class="rp-win"/><rect x="63" y="388" width="1.6" height="2.6" class="rp-win" style="animation-delay:-2s"/></g>
+
+    <path d="M-10 500 L36 462 L96 494 L158 440 L214 492 L262 456 L322 488 L390 458 V600 H-10Z" fill="#141a24"/>
+    <path d="M-10 500 L36 462 L96 494 L158 440 L214 492 L262 456 L322 488 L390 458" fill="none" stroke="#2a364a" stroke-width=".8" opacity=".8"/>
+
+    <g class="rp-fog1" filter="url(#rpBlur)" fill="#9fb4c8" opacity=".16"><ellipse cx="90" cy="520" rx="150" ry="18"/><ellipse cx="300" cy="548" rx="160" ry="16"/></g>
+
+    <!-- the strings out to far lands -->
+    <g fill="none" stroke="#7fbfa8" stroke-width=".9" stroke-linecap="round" class="rp-strings">
+      <path d="M176 556 Q120 500 58 470"/><path d="M176 556 Q226 490 322 462"/><path d="M176 556 Q262 540 344 540"/><path d="M176 556 Q150 508 190 438"/></g>
+    <g class="rp-nodes">
+      <g transform="translate(58 470)"><circle r="9" fill="url(#rpGlow)"/><circle r="2.6" fill="#c9a227"/></g>
+      <g transform="translate(322 462)"><circle r="9" fill="url(#rpGlow)"/><circle r="2.6" fill="#c9a227"/></g>
+      <g transform="translate(344 540)"><circle r="9" fill="url(#rpGlow)"/><circle r="2.6" fill="#c9a227"/></g>
+      <g transform="translate(190 438)"><circle r="9" fill="url(#rpGlow)"/><circle r="2.6" fill="#c9a227"/></g></g>
+
+    <!-- the ground, the barrow, what stands around it -->
+    <path d="M-10 590 Q60 560 140 572 L390 580 V960 H-10Z" fill="url(#rpGround)"/>
+    <path d="M30 640 Q110 538 178 534 Q250 540 330 640Z" fill="#0b0e13"/>
+    <path d="M30 640 Q110 538 178 534 Q250 540 330 640" fill="none" stroke="#2b3748" stroke-width=".9"/>
+    <path d="M70 628 Q110 560 160 548" fill="none" stroke="#1d2735" stroke-width="1"/>
+    <ellipse cx="178" cy="600" rx="46" ry="30" fill="url(#rpGlow)" class="rp-flicker"/>
+    <path d="M152 612 v-30 a26 26 0 0152 0 v30z" fill="#06070a" stroke="#8a6c1a" stroke-width="1.4"/>
+    <path d="M160 612 v-26 a18 18 0 0136 0 v26z" fill="url(#rpDoor)" class="rp-flicker" opacity=".9"/>
+    <path d="M168 612 v-18 a10 10 0 0120 0 v18z" fill="#fff0b8" opacity=".55" class="rp-flicker"/>
+    <path d="M150 614h56" stroke="#8a6c1a" stroke-width="1.2"/>
+    <g fill="#0a0c10" stroke="#27313f" stroke-width=".7"><path d="M92 628l-3-30 7-6 8 6-2 30z"/><path d="M104 630l1-22 6-4 6 5-1 21z"/><path d="M258 628l3-26 6-5 6 6-3 25z"/></g>
+    <g fill="none" stroke="#06080b" stroke-width="2.4" stroke-linecap="round"><path d="M320 640V560M320 584l-16-14M320 572l14-16M320 600l-12-8M320 592l10-10"/></g>
+    <g class="rp-grass" fill="none" stroke="#1b2430" stroke-width="1"><path d="M40 654l2-8M46 656l-1-9M300 656l2-8M308 658l-1-9M214 660l1-9"/></g>
+    <g>${embers}</g>
+    <rect y="620" width="375" height="340" fill="#0d0f12" opacity=".55"/>
+    </g>
+  </svg>`;
+}
+
+/* the question, until it is answered */
+function drawRolePick(){
+  if(typeof realmAvailable !== "function" || !realmAvailable()) return;
+  if(getRole() || document.getElementById("rolePick")) return;     // answered, or the question is already up
+  openRolePick(false);
+}
+function openRolePick(force){
+  const cur = getRole();
+  const el = document.createElement("div");
+  el.id = "rolePick"; el.dataset.open = force ? "force" : "first";
+  const icon = {
+    barrow: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 20h19M4.5 20c0-7.5 3.2-11.5 7.5-11.5s7.5 4 7.5 11.5M9.8 20v-4.4a2.2 2.2 0 014.4 0V20"/></svg>',
+    realm:  '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6" stroke-dasharray="1.6 2"/><path d="M12 3.5v17M3.5 12h17"/><path d="M12 7.6l1.6 4.4-1.6 4.4-1.6-4.4z" fill="currentColor" fill-opacity=".25"/></svg>'
+  };
+  el.innerHTML = `
+    ${roleScene()}
+    <div class="rp-ttl">
+      <h1>Epitaph</h1>
+      <p>${force ? "Change what this device is" : "Where do you stand tonight?"}</p>
+    </div>
+    <div class="rp-signs">
+      <button class="rp-sign ${cur === "barrow" ? "on" : ""}" data-role="barrow">
+        <i>${icon.barrow}</i>
+        <div><b>A Barrow</b><span>Your Unburied, your camp, and your band in the battle. The phone you play from.</span></div>
+        <em aria-hidden="true">\u203a</em>
+      </button>
+      <button class="rp-sign ${cur === "realm" ? "on" : ""}" data-role="realm">
+        <i>${icon.realm}</i>
+        <div><b>The Realm</b><span>The table: the map of lands, the scenario, its markers and the enemy. The device that runs it.</span></div>
+        <em aria-hidden="true">\u203a</em>
+      </button>
+      ${force ? `<button class="rp-cancel" data-role="">Keep it as it is</button>` : `<p class="rp-note">You can change this later, from the line under the title.</p>`}
+    </div>`;
+  document.body.appendChild(el);
+  el.querySelectorAll("[data-role]").forEach(b => b.onclick = () => {
+    const r = b.dataset.role;
+    if(force && r === ""){ el.remove(); return; }
+    setRole(r);
+  });
+}
+/* "switch" under the title */
+document.addEventListener("click", e => {
+  const t = e.target.closest && e.target.closest("[data-role-switch]");
+  if(t){
+    if(questOn()){ toast("Leave the quest first"); return; }
+    const old = document.getElementById("rolePick"); if(old) old.remove();
+    openRolePick(true);
+  }
+});
 
 /* ---- realmmap.js ---- */
 /* =====================================================================
