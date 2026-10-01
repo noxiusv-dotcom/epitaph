@@ -524,7 +524,8 @@ body:has(#rolePick){overflow:hidden}
 }
 .sheet.show{transform:none;box-shadow:0 -1px 0 var(--frame),0 -10px 40px rgba(0,0,0,.45)}
 .sheet-in{max-width:860px;margin:0 auto;padding:16px 16px 22px}
-.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:14px;flex-wrap:wrap}
+.sheet-head .eyebrow{white-space:nowrap}
 .sheet-head .eyebrow{flex:1}
 
 .toast{
@@ -832,8 +833,8 @@ body.has-qbar #toast{bottom:82px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.17",
-    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced",
+    "version": "0.11.18",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons)",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -1739,6 +1740,13 @@ body.has-qbar #toast{bottom:82px}
       "desc": "+2 hands. First pair 18 points (4 arms); a second pair costs 30 more (6 arms). Extra hands carry more gear (e.g. a Heavy melee weapon and a Shield). Flurry is built in: if it carries 2 or more melee weapons, its melee Attack makes one attack with each, all stepped down, up to 3 attacks with four arms or 4 with six. This replaces Rapid for that Attack and still counts as its one Attack action. Its Flurry attacks may be split between any enemies it is Engaged with (declared before the throw). Each extra pair of arms cancels one Outnumber step for enemies attacking it (six arms: none; a Swarm squad keeps its third step).",
       "verified": "round 9-10: first pair worth ~21 in melee, ~10 vs shooters -> 18. Second pair measured at the 100% ceiling, so 30 is a guess, flagged; test at the table",
       "secondPairCost": 30
+    },
+    {
+      "id": "animal",
+      "name": "Animal",
+      "cost": -2,
+      "desc": "No hands. Its weapons are natural (a bite, a maw, claws, a stinging tail, spit): any weapon stat line, named by what it is, costing what that weapon costs, and using no hands. It cannot carry a shield or use Tools, and cannot Interact with anything that needs handling. Extra arms still add hands if it needs to wield real gear.",
+      "verified": "0.11.18: user ask. Priced like Mindless, a drawback for a limit; the natural weapons are not free, they cost what the weapon does"
     }
   ],
   "abilities": [
@@ -4373,7 +4381,8 @@ body.has-qbar #toast{bottom:82px}
   "hands": {
     "default": 2,
     "rule": "Each model has hands (default 2). Weapons and a Shield need hands to be carried: one each, two for Two-handed. A model may carry any gear its hands allow, but still makes one Attack action per activation.",
-    "noHands": "a model with 0 hands (a worm, a turret) uses only natural weapons reskinned as Light or Unarmed, and cannot Interact that needs handling, unless given Tools"
+    "noHands": "a model with 0 hands (a worm, a turret) uses only natural weapons reskinned as Light or Unarmed, and cannot Interact that needs handling, unless given Tools",
+    "animal": "a model with the Animal trait has 0 hands but its weapons are natural and take none; it carries no shield and cannot work things that need hands"
   },
   "conditionRules": {
     "stacking": "conditions never stack: a model is either Burning/Tainted/Pinned or not. Applying a condition it already has only restarts its duration.",
@@ -4867,8 +4876,10 @@ function traitPriceAt(id, nth){
 function traitMax(id){ const o = RSX.trait[id]; return (o && o.max) || 1; }
 function traitCount(m, id){ return (m.traits || []).filter(x => x === id).length; }
 /* hands: two, and two more for each pair of Extra arms */
+function isAnimal(m){ return traitCount(m, "animal") > 0; }
 function handsOf(m){
-  const base = (RS.hands && RS.hands.default) || 2;
+  /* an Animal has no hands: what it fights with is natural and needs none */
+  const base = isAnimal(m) ? 0 : ((RS.hands && RS.hands.default) || 2);
   return base + 2 * traitCount(m, "extraArms");
 }
 
@@ -4901,7 +4912,7 @@ function bodyArmourId(m){ return armourIds(m).find(id => !armourUsesHand(id)) ||
 function shieldId(m){ return armourIds(m).find(id => armourUsesHand(id)) || null; }
 function handsUsed(m){
   let n = 0;
-  (m.weapons || []).forEach(e => { n += weaponHands(e.id) * (e.qty || 1); });
+  if(!isAnimal(m)) (m.weapons || []).forEach(e => { n += weaponHands(e.id) * (e.qty || 1); });
   (m.armour || []).forEach(a => { if(armourUsesHand(a.id || a)) n++; });
   return n;
 }
@@ -4913,6 +4924,7 @@ function handsBlock(m, field, id){
     if((m.size === "small") && ((w.keywords || []).includes("heavy") || (w.keywords || []).includes("twoHanded")))
       return "Too small for a Heavy or Two-handed weapon.";
     const need = weaponHands(id);
+    if(isAnimal(m)) return null;       // natural weapons: no hands needed
     if(need > handsFree(m))
       return need > 1 && handsFree(m) >= 1 ? "Needs two hands; only one is free."
         : "No free hand (" + handsUsed(m) + " of " + handsOf(m) + " in use). Drop something, or take a second pair of arms.";
@@ -6582,7 +6594,7 @@ function attackHTML(m, e){
       <span class="atk-name">${ranged ? "➤" : "⚔"} ${esc(shown)}</span>
       <span class="atk-roll">${esc(RSX.stat[stat].name)} <b>${esc(die)}</b> <small>4+</small></span>
     </div>
-    <div class="atk-line">${esc(w.desc)}${shown !== w.name ? ` · <span class="quiet">${esc(w.name)}</span>` : ""}</div>
+    <div class="atk-line">${esc(isAnimal(m) ? w.desc.replace(/ · Two Handed/i, "") : w.desc)}${shown !== w.name ? ` · <span class="quiet">${esc(w.name)}</span>` : ""}</div>
     ${mods.length ? `<div class="atk-mods">${mods.map(x =>
       `<span class="mod"><b>${esc(x.name)}</b> ${esc(x.desc)}</span>`).join("")}</div>` : ""}
   </div>`;
@@ -7161,7 +7173,7 @@ Also give a "build" that matches the story — a brawler fights, a marksman aims
 
 STATS: fight, aim, will, wits are dice on the ladder ${RS.dice.ladder.join(", ")}, default ${statDefault("fight")}; stepping up costs points, stepping down gives a few back. Also move in cm (default ${statDefault("move")}, steps of ${RSX.stat.move.step}), ${RSX.stat.wounds.name.toLowerCase()} (default ${statDefault("wounds")}, bought in ${RSX.stat.wounds.upStep}s), actions (default ${statDefault("actions")}), size (${RSX.stat.size.values.join(", ")}).
 
-A model has two hands (two more for each pair of Extra arms). Each weapon takes one hand, a Two-handed
+A model has two hands (two more for each pair of Extra arms). (An ANIMAL, trait "animal" at -2 points, has no hands: its weapons are natural, a bite, a maw, claws, a stinging tail, spit, and take no hands, so choose the weapon stat line that fits and name it by what it is; it carries no shield. A creature with pincers or a tail still has these as natural weapons.) Each weapon takes one hand, a Two-handed
 weapon two, and a shield one. Armour has two parts that go together: a SUIT ("armour": one of the suits) and
 a SHIELD ("shield": the shield id), and a model may have one of each. Give a shield only to someone who
 fights with one hand free; a shield plus a suit is a good fit for a guard, a duelist or a survivor.
@@ -11242,7 +11254,7 @@ actions (default ${statDefault("actions")}); size one of ${RSX.stat.size.values.
 
 ${aiCatalogue()}
 
-A model has two hands (two more for each pair of Extra arms). Each weapon takes one hand, a Two-handed
+A model has two hands (two more for each pair of Extra arms). (An ANIMAL, trait "animal" at -2 points, has no hands: its weapons are natural, a bite, a maw, claws, a stinging tail, spit, and take no hands, so choose the weapon stat line that fits and name it by what it is ("as"); it carries no shield.) Each weapon takes one hand, a Two-handed
 weapon two, and a shield one. Armour has two parts that go together: a SUIT ("armour": one of the suits) and
 a SHIELD ("shield": the shield id), and a model may have one of each. Give a shield only to someone who
 fights with one hand free; a shield plus a suit is a good fit for a guard, a duelist or a survivor.
@@ -12512,6 +12524,8 @@ function roleScene(){
       <radialGradient id="rpDoor" cx=".5" cy=".6" r=".7"><stop offset="0" stop-color="#ffd27a"/><stop offset=".45" stop-color="#e0a23c"/><stop offset="1" stop-color="#5a3a10"/></radialGradient>
       <radialGradient id="rpGlow"><stop offset="0" stop-color="#ffb84a" stop-opacity=".5"/><stop offset="1" stop-color="#ffb84a" stop-opacity="0"/></radialGradient>
       <linearGradient id="rpGround" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f131a"/><stop offset="1" stop-color="#0a0c10"/></linearGradient>
+      <linearGradient id="rpMFade" gradientUnits="userSpaceOnUse" x1="0" y1="338" x2="0" y2="468"><stop offset="0" stop-color="#000"/><stop offset=".55" stop-color="#555"/><stop offset="1" stop-color="#fff"/></linearGradient>
+      <mask id="rpMask" maskUnits="userSpaceOnUse" x="-20" y="300" width="420" height="700"><rect x="-20" y="300" width="420" height="700" fill="url(#rpMFade)"/></mask>
       <filter id="rpBlur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
       <filter id="rpBlur2"><feGaussianBlur stdDeviation="1.6"/></filter>
     </defs>
@@ -12523,6 +12537,7 @@ function roleScene(){
     <g class="rp-cloud" fill="#2b3547" opacity=".55" filter="url(#rpBlur2)"><ellipse cx="240" cy="150" rx="70" ry="5"/><ellipse cx="320" cy="190" rx="60" ry="4"/></g>
 
     <g transform="translate(0 -176)">
+    <g mask="url(#rpMask)">
     <path d="M-10 452 L40 392 L78 424 L132 340 L176 408 L226 352 L268 414 L318 372 L390 430 V560 H-10Z" fill="#1b2330"/>
     <path d="M-10 452 L40 392 L78 424 L132 340 L176 408 L226 352 L268 414 L318 372 L390 430" fill="none" stroke="#33415a" stroke-width=".8" opacity=".7"/>
     <!-- far ruins on the ridge, and a light in them -->
@@ -12532,6 +12547,7 @@ function roleScene(){
     <path d="M-10 500 L36 462 L96 494 L158 440 L214 492 L262 456 L322 488 L390 458 V600 H-10Z" fill="#141a24"/>
     <path d="M-10 500 L36 462 L96 494 L158 440 L214 492 L262 456 L322 488 L390 458" fill="none" stroke="#2a364a" stroke-width=".8" opacity=".8"/>
 
+    </g>
     <g class="rp-fog1" filter="url(#rpBlur)" fill="#9fb4c8" opacity=".16"><ellipse cx="90" cy="520" rx="150" ry="18"/><ellipse cx="300" cy="548" rx="160" ry="16"/></g>
 
     <!-- the strings out to far lands -->
