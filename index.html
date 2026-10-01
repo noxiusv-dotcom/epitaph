@@ -15,6 +15,7 @@
    into a marker. Body is plain and readable because rules text has to be.
    ===================================================================== */
 :root{
+  color-scheme:dark;       /* native pop-ups (the effect list, selects) follow the theme */
   --stone-0:#0d0f12;        /* the dark between markers */
   --stone-1:#14171c;        /* panel */
   --stone-2:#1c2026;        /* raised panel */
@@ -46,6 +47,7 @@
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]){
+    color-scheme:light;
     --stone-0:#e9e5dd; --stone-1:#f3f0e9; --stone-2:#fbf9f4; --stone-3:#ffffff;
     --line:#d2ccc0; --line-soft:#e0dbd1;
     --ash:#1b1916; --ash-dim:#55504a; --ash-mute:#8a8479;
@@ -58,6 +60,7 @@
   }
 }
 [data-theme="light"]{
+  color-scheme:light;
   --stone-0:#e9e5dd; --stone-1:#f3f0e9; --stone-2:#fbf9f4; --stone-3:#ffffff;
   --line:#d2ccc0; --line-soft:#e0dbd1;
   --ash:#1b1916; --ash-dim:#55504a; --ash-mute:#8a8479;
@@ -70,6 +73,23 @@
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+select,option,optgroup{background-color:var(--stone-2);color:var(--ash)}
+/* Where the browser lets a drop-down be dressed (Chrome, Edge), its list is ours: translucent glass, gilt edge, gilt highlight instead of the system blue. */
+@supports (appearance:base-select){
+  select,select::picker(select){appearance:base-select}
+  select::picker-icon{color:var(--gilt);transition:rotate .2s}
+  select:open::picker-icon{rotate:180deg}
+  select::picker(select){
+    background:color-mix(in srgb,var(--panel-a) 72%,transparent);
+    -webkit-backdrop-filter:blur(12px) saturate(1.1);backdrop-filter:blur(12px) saturate(1.1);
+    border:1px solid var(--gilt-deep);border-radius:3px;padding:4px;margin-top:4px;
+    box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 3px color-mix(in srgb,var(--stone-0) 70%,transparent);
+    max-height:min(60vh,360px);overflow:auto;color:var(--ash)}
+  select option{background:transparent;color:var(--ash);padding:9px 12px;border-radius:2px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  select option:hover,select option:focus-visible{background:var(--gilt-glow);color:var(--gilt);outline:none}
+  select option:checked{background:color-mix(in srgb,var(--gilt) 18%,transparent);color:var(--gilt)}
+  select option::checkmark{color:var(--gilt);order:2;margin-left:auto}
+}
 html,body{margin:0;padding:0}
 body{
   background:
@@ -5819,7 +5839,7 @@ function gearSlab(m, label, field){
         <div class="grow-name">${esc(shown)}${nth > 1 ? ` <span class="chip gilt">second pair</span>` : ""}
           ${k.reskin ? `<button class="tiny" data-skin="${field}|${esc(id)}" title="Call it something else">✎</button>` : ""}</div>
         ${shown !== o.name ? `<div class="grow-sub">${esc(o.name)}</div>` : ""}
-        <div class="grow-sub">${esc(o.desc)}</div>
+        <div class="grow-sub">${esc(field === "weapons" && isAnimal(m) ? o.desc.replace(/ \u00b7 Two Handed/i, "") : o.desc)}</div>
         ${field === "weapons" ? `
           <div class="mods">
             ${mods.map(x => { const mo = CAT.mods[x]; return mo ? `<span class="mod">${esc(mo.name)} <b>${mo.cost}</b><button data-modoff="${esc(id)}|${esc(x)}" aria-label="Remove">×</button></span>` : ""; }).join("")}
@@ -5850,7 +5870,7 @@ function gearSlab(m, label, field){
   return `
   <div class="slab">
     <div class="head"><span class="eyebrow">${esc(label)}</span><span class="rule"></span>
-      ${field === "weapons" || field === "armour" ? `<span class="chip ${handsFree(m) < 0 ? "bad" : ""}" title="Weapons and a shield need a hand each; two for Two-handed">\u270b ${handsUsed(m)} of ${handsOf(m)} hands</span>` : ""}
+      ${field === "weapons" || field === "armour" ? `<span class="chip ${handsFree(m) < 0 ? "bad" : ""}" title="Weapons and a shield need a hand each; two for Two-handed">${isAnimal(m) && handsOf(m) === 0 ? (field === "weapons" ? "natural \u2014 no hands needed" : "no hands, so no shield") : "\u270b " + handsUsed(m) + " of " + handsOf(m) + " hands"}</span>` : ""}
       <span class="quiet mono">${arr.length ? (k.qty ? total + " pts" : signed(total)) : "—"}</span></div>
     ${field === "weapons" && handsFree(m) < 0 ? `<p class="quiet" style="margin:0 0 8px;color:var(--rust)">More gear than hands: ${handsUsed(m)} carried, ${handsOf(m)} hands. Drop something or take a second pair of arms.</p>` : ""}
     ${rows || `<p class="quiet" style="margin:0">Nothing yet.</p>`}
@@ -10839,6 +10859,11 @@ function mapSVG(map, opts){
     }
   });
 
+  // the scale: the table is 90 cm across, so 10 cm is a little over a ninth of it
+  if(!mini)
+    out += `<g stroke="${pal.accent}" fill="none" opacity=".85"><path d="M4 95.5h11.11M4 94v3M15.11 94v3" stroke-width=".45"/>
+      <text x="9.6" y="93" text-anchor="middle" font-size="2.6" fill="${pal.accent}" stroke="none" font-family="Space Mono,monospace">10 cm</text></g>`;
+
   // a little furniture: compass, and a soft dark edge
   if(!mini)
     out += `<g transform="translate(93 8)" stroke="${pal.accent}" fill="none" opacity=".7"><circle r="3.6" stroke-width=".3"/>
@@ -10861,10 +10886,73 @@ function mapKeyHTML(map){
       return `<div class="mk-row">
         <span class="mk-n">${i + 1}</span>
         <span class="mk-l"><b>${esc(f.label || "unnamed")}</b>
-          <span>${esc([f.role, g && g.fill !== "none" ? g.label : null].filter(Boolean).join(" · "))}</span></span>
+          <span>${esc(f.cm ? f.cm.l + " \u00d7 " + f.cm.w + " \u00d7 " + f.cm.h + " cm \u00b7 " + ({low: "low cover", high: "high cover", tall: "tall", flat: "flat"}[f.cls] || "cover")
+            : [f.role, g && g.fill !== "none" ? g.label : null].filter(Boolean).join(" \u00b7 "))}</span></span>
       </div>`;
     }).join("")}
   </div>`;
+}
+
+/* ---- terrain.js ---- */
+/* =====================================================================
+   SET PIECES
+   The table is 90 x 90 cm. The terrain on it is a short list of real pieces, the
+   ones you have printed, each with a footprint, a height and a number owned. The
+   scenario writer chooses from that list and no more than you own, so every map is one
+   you can actually build. Add a piece when you print another.
+
+   How high a piece is decides what it does, from the rules' own distances:
+     up to 5 cm    low cover      a model hops over it (free jump 5)
+     5 to 10 cm    high cover     harder to cross, up to the longest jump (10)
+     over 10 cm    tall           blocks sight, and climbing it needs a test
+   ===================================================================== */
+
+const TABLE_CM = 90, CM_UNIT = TABLE_CM / 100;       // one map unit is 0.9 cm
+const TERRAIN_KEY = "ep_terrain_v1";
+const PIECE_SHAPES = {wall: "A long, thin barrier", block: "A solid footprint (a crate, a building)", cluster: "A round thing (a tree, a pillar, rubble)"};
+
+const STARTER_PIECES = [
+  {id: "lowwall",  name: "Low wall",    shape: "wall",    l: 15, w: 2,  h: 4,  qty: 4, note: "Knee-high rubble, a garden wall, a hedge"},
+  {id: "ruinwall", name: "Ruined wall", shape: "wall",    l: 15, w: 2,  h: 8,  qty: 4, note: "A broken wall with gaps to shoot through"},
+  {id: "crates",   name: "Crate stack", shape: "block",   l: 6,  w: 6,  h: 6,  qty: 4, note: "Crates, barrels, a wreck, a boulder"},
+  {id: "pillar",   name: "Pillar",      shape: "cluster", l: 3,  w: 3,  h: 12, qty: 4, note: "A standing stone, a column, a chimney"},
+  {id: "deadtree", name: "Dead tree",   shape: "cluster", l: 6,  w: 6,  h: 14, qty: 3, note: "A tree, a lamp post, a mast"},
+  {id: "hall",     name: "Ruined hall", shape: "block",   l: 18, w: 12, h: 14, qty: 1, note: "A building to fight around, or through"}
+];
+
+function loadPieces(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(TERRAIN_KEY) || "null");
+    if(Array.isArray(raw) && raw.length) return raw.filter(p => p && p.id && p.name);
+  }catch(e){}
+  return STARTER_PIECES.map(p => Object.assign({}, p));
+}
+function savePieces(list){ try{ localStorage.setItem(TERRAIN_KEY, JSON.stringify(list)); }catch(e){} }
+function pieceById(id, list){ return (list || loadPieces()).find(p => p.id === id) || null; }
+
+function coverClass(h){
+  h = +h || 0;
+  return h <= 0 ? "flat" : h <= 5 ? "low" : h <= 10 ? "high" : "tall";
+}
+const COVER_LABEL = {flat: "Flat ground", low: "Low cover", high: "High cover", tall: "Tall: blocks sight, climb to cross"};
+const COVER_SHORT = {flat: "flat", low: "low cover", high: "high cover", tall: "tall"};
+function pieceDims(p){ return p.l + " × " + p.w + " × " + p.h + " cm"; }
+
+/* what the piece looks like on the 0-100 plan, from its real size */
+function pieceOnMap(p){
+  const L = p.l / CM_UNIT, W = p.w / CM_UNIT;
+  if(p.shape === "wall")    return {shape: "wall", w: Math.max(3, Math.min(60, L)), h: 0};
+  if(p.shape === "block")   return {shape: "block", w: Math.max(3, Math.min(60, L)), h: Math.max(3, Math.min(40, W))};
+  return {shape: "cluster", r: Math.max(3, Math.min(30, Math.max(L, W) / 2 + 1))};
+}
+function pieceSizeId(p){
+  const m = Math.max(p.l, p.w);
+  return m <= 6 ? "small" : m <= 15 ? "medium" : "large";
+}
+
+/* the piece list as the writer is told about it */
+function piecesPrompt(list){
+  return list.map(p => `  ${p.id}: ${p.name}, ${pieceDims(p)} (${COVER_SHORT[coverClass(p.h)]}), you own ${p.qty}. ${p.note || ""}`.trim()).join("\n");
 }
 
 /* ---- scenario.js ---- */
@@ -11068,6 +11156,7 @@ async function runGenerate(ai){
   const objCount = sealed ? (type.baseObjectives || 2) : null;
   const markers = Math.max(1, Math.min(8, Math.round(size / 100) || 1));
 
+  const pieceList = loadPieces();
   const roles = TERRAIN_ROLES.join(", ");
   const grounds = TERRAIN_GROUNDS.join(", ");
   const sizes = TERRAIN_SIZES.map(sz => sz.id + " (" + sz.desc + ")").join("; ");
@@ -11120,10 +11209,7 @@ WHAT TO WRITE
                mystery  a rumour, an anomaly, an unanswered question, where nobody knows what is going on
              Pick the one that fits the place best. A battle in the open, in ruins or in a town is land.
 
-  terrain    four to eight pieces to build or stand in. Each: name, note (how many, what it
-             looks like), role (one of ${roles}), ground (one of ${grounds}), size (one of
-             ${sizes} — pick the one closest to what the piece would actually take up).
-             If a piece is something they probably do not own, say so in "note".
+  terrain    leave this as []. The pieces to build come from the map below, so there is nothing to list twice.
 
   events     two to four things that happen on a named round. Each: round, title, text
              (write the moment the way it is discovered, in the same voice as the briefing,
@@ -11135,18 +11221,22 @@ WHAT TO WRITE
   map        a top-down plan. Coordinates are percentages: x 0 (left) to 100 (right),
              y 0 (top) to 100 (bottom).
              zones: two to four deployment areas {label, side ("a","b","neutral"), x, y, w, h}
-             features: six to ten {label, role (${roles}), ground (${grounds}), shape, x, y, ...}
-             "shape" says how the piece is drawn, and it must match what the piece is:
-               "block"   a building or tower: give w and h (6 to 24) and angle (0 to 180)
-               "wall"    a long thin barrier, hedge or fence: give w (10 to 40) and angle (0 to 180)
-               "blob"    a hill, pool, pit or patch of ground: give r (4 to 22)
-               "cluster" trees, rubble, standing stones, crates, pipes: give r (4 to 18)
-             Vary them; not everything is a blob. An objective or marker piece can be any shape.
-             "use" (optional, at most three pieces): give it when a model can work the piece with
-             Interact, as a single word for what it is: door, gate, switch, lever, wheel, hatch. Leave it out otherwise.
-             r is also how far unusual ground (rough, hazardous) spreads. Every feature needs a
-             role, a ground and a shape. Keep labels under 22 characters. The features are numbered in order,
-             so refer to them in the text as "the bell tower (3)".
+             The table is ${TABLE_CM} x ${TABLE_CM} cm, so one unit is under a centimetre. THE TERRAIN IS A LIST OF REAL PIECES
+             the host owns. Use ONLY these, by id, and never more of one than they own:
+${piecesPrompt(pieceList)}
+             features: eight to fourteen, each one of two kinds.
+               a PIECE:  {piece: "<id from the list>", x, y, angle, label (optional, a few words: what it is HERE,
+                         "the chapel's east wall"), use (optional)}. Its size, its shape and how it behaves come from the
+                         list: DO NOT give w, h, r, role or shape for a piece. Give only where it stands and how it is turned
+                         (angle, 0 to 180). Spread pieces so lines of sight are broken up, with some open ground and some
+                         cover near each deployment zone. Heights matter: low cover (up to 5 cm) is hopped over, high cover
+                         (5 to 10 cm) steps shots down, anything taller blocks sight.
+               a SPECIAL: {label, role ("objective", "marker" or "hazard"), ground (${grounds}), x, y, r, use (optional)}.
+                         For something that is not terrain they own: the thing being fought over, a marker's spot, a pool or
+                         a patch of bad ground (hazard, with r 4 to 22).
+             "use" (optional, at most three features): give it when a model can work the thing with Interact, as a single
+             word for what it is: door, gate, switch, lever, wheel, hatch. Leave it out otherwise.
+             The features are numbered in order, so refer to them in the text as "the bell tower (3)".
 
   objectives only from: ${objList.join(", ")}.
 ${(sc.victory.objectiveTypes || []).filter(o => objList.includes(o.id)).map(o => "             " + o.id + ": " + o.desc).join("\n")}
@@ -11266,11 +11356,12 @@ Reply with ONLY this JSON and nothing else:
 {"title":"...","premise":"...","briefing":"...","scenery":"...","deployment":"...","plane":"land",
 ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes":[{"trigger":"...","title":"...","text":"...","revealsObjectives":false}]},' : ""}
  "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
- "terrain":[{"name":"...","note":"...","role":"cover","ground":"even","size":"medium"}],
+ "terrain":[],
  "events":[{"round":3,"title":"...","text":"...","effect":{"type":"damage","amount":"1","where":"within 10 cm of the bell tower (3)","who":"every model"}}],
  "map":{"note":"one line on the table","zones":[{"label":"...","side":"a","x":5,"y":40,"w":18,"h":30}],
-        "features":[{"label":"...","role":"cover","ground":"rough","shape":"cluster","x":50,"y":50,"r":8},
-                    {"label":"...","role":"high","ground":"even","shape":"block","x":30,"y":40,"w":14,"h":10,"angle":20}]},
+        "features":[{"piece":"ruinwall","label":"the chapel's east wall","x":30,"y":40,"angle":20},
+                    {"piece":"crates","x":55,"y":62,"angle":0},
+                    {"label":"the bell","role":"objective","ground":"even","x":76,"y":42,"r":4,"use":"switch"}]},
  "objectives":[{"type":"allowed id","what":"what it is, in the fiction","vp":1}],
  "specialRules":["..."],"twist":"...",
  "woundFlavour":[{"cause":"...","text":"...","scar":"...","epithets":["...","...","..."],"epitaphs":["...","...","..."]}],
@@ -11350,15 +11441,6 @@ function legaliseScenario(raw, ctx){
     out.notes.push("this was meant to be sealed but no mystery came back");
   }
 
-  /* terrain to build */
-  (Array.isArray(raw.terrain) ? raw.terrain : []).slice(0, 8).forEach(t => {
-    if(!t || !t.name) return;
-    out.terrain.push({name: str(t.name, 50), note: str(t.note, 140),
-      role: ROLES.includes(t.role) ? t.role : "cover",
-      ground: GROUNDS.includes(t.ground) ? t.ground : "even",
-      size: TERRAIN_SIZES.some(sz => sz.id === t.size) ? t.size : "medium"});
-  });
-
   /* the map, clamped to the table */
   const m = raw.map || {};
   out.map.note = str(m.note, 140);
@@ -11368,15 +11450,43 @@ function legaliseScenario(raw, ctx){
       x: num(z.x, 0, 100, 0), y: num(z.y, 0, 100, 0),
       w: num(z.w, 4, 100, 20), h: num(z.h, 4, 100, 18)});
   });
-  (Array.isArray(m.features) ? m.features : []).slice(0, 10).forEach(f => {
-    out.map.features.push({label: str(f.label, 22),
-      role: ROLES.includes(f.role) ? f.role : "cover",
-      ground: GROUNDS.includes(f.ground) ? f.ground : "even",
-      shape: MAP_SHAPES.includes(f.shape) ? f.shape : "",
-      x: num(f.x, 0, 100, 50), y: num(f.y, 0, 100, 50), r: num(f.r, 3, 30, 7),
-      w: num(f.w, 0, 60, 0), h: num(f.h, 0, 40, 0), angle: num(f.angle, -180, 180, 0)});
-    const use = str(f.use, 16).trim().toLowerCase();
-    if(use && out.map.features.filter(x => x.use).length < 3) out.map.features[out.map.features.length - 1].use = use;
+  /* features: real pieces from the host's own list (their size and cover come from the list, never from the writer),
+     and specials (an objective, a marker, bad ground). No more of a piece than they own. */
+  const pieces = ctx.pieces || loadPieces(), used = {};
+  (Array.isArray(m.features) ? m.features : []).slice(0, 16).forEach(f => {
+    if(!f) return;
+    const p = f.piece ? pieces.find(q => q.id === f.piece) : null;
+    if(f.piece && !p){ out.notes.push("left out a piece that is not on the list (" + str(f.piece, 20) + ")"); return; }
+    if(p){
+      used[p.id] = (used[p.id] || 0) + 1;
+      if(used[p.id] > (+p.qty || 0)){ out.notes.push("left out a " + p.name.toLowerCase() + ": you own " + p.qty); return; }
+      const om = pieceOnMap(p), cls = coverClass(p.h);
+      const feat = {label: str(f.label, 22) || p.name, piece: p.id, cls,
+        cm: {l: p.l, w: p.w, h: p.h},
+        role: cls === "tall" ? "blocking" : "cover", ground: "even",
+        shape: om.shape, x: num(f.x, 3, 97, 50), y: num(f.y, 3, 97, 50), r: om.r || 7, w: om.w || 0, h: om.h || 0,
+        angle: num(f.angle, -180, 180, 0)};
+      const use = str(f.use, 16).trim().toLowerCase();
+      if(use && out.map.features.filter(x => x.use).length < 3) feat.use = use;
+      out.map.features.push(feat);
+    } else {
+      const role = ["objective", "marker", "hazard"].includes(f.role) ? f.role : "marker";
+      const feat = {label: str(f.label, 22) || role, role,
+        ground: GROUNDS.includes(f.ground) ? f.ground : (role === "hazard" ? "hazardous" : "even"),
+        shape: role === "hazard" ? "blob" : "marker", x: num(f.x, 3, 97, 50), y: num(f.y, 3, 97, 50), r: num(f.r, 3, 30, role === "hazard" ? 9 : 4),
+        w: 0, h: 0, angle: 0};
+      const use = str(f.use, 16).trim().toLowerCase();
+      if(use && out.map.features.filter(x => x.use).length < 3) feat.use = use;
+      out.map.features.push(feat);
+    }
+  });
+  /* what to build: counted from the map itself, so the list and the picture can never disagree */
+  const counts = {};
+  out.map.features.forEach(f => { if(f.piece) counts[f.piece] = (counts[f.piece] || 0) + 1; });
+  Object.keys(counts).forEach(id => {
+    const p = pieces.find(q => q.id === id); if(!p) return;
+    out.terrain.push({name: p.name + (counts[id] > 1 ? " \u00d7 " + counts[id] : ""), note: pieceDims(p) + " \u00b7 " + COVER_LABEL[coverClass(p.h)],
+      role: coverClass(p.h) === "tall" ? "blocking" : "cover", ground: "even", size: pieceSizeId(p)});
   });
   if(!out.map.features.length) out.notes.push("no map came back, so there is nothing to lay out");
 
