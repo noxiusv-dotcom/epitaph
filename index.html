@@ -468,6 +468,7 @@ button.bt-st{cursor:pointer}
 
 .bt-theme{flex:none;margin-left:auto}
 .bt-theme + .bt-go{margin-left:0}
+.bt-t1 > .chip.bt-go{padding:8px 10px;white-space:normal;text-align:center;line-height:1.25;max-width:118px}
 #questDock{position:fixed;left:0;right:0;bottom:0;z-index:47;display:grid;grid-template-columns:repeat(6,1fr);background:var(--stone-1);
   border-top:1px solid var(--gilt-deep);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -8px 20px rgba(0,0,0,.3)}
 #questDock button{background:none;border:0;color:var(--ash-dim);font:500 8px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;display:grid;justify-items:center;gap:3px;padding:6px 0;position:relative;cursor:pointer}
@@ -527,6 +528,46 @@ body:has(#rolePick){overflow:hidden}
 
 .goalline{display:flex;flex-direction:column;gap:3px;margin:0 0 13px;padding:10px 14px;border-left:2px solid var(--gilt);background:var(--gilt-glow)}
 .goalline b{font:600 15px "Spectral",Georgia,serif;color:var(--ash);line-height:1.4}
+/* ---- the wait: an honest estimate, not a measurement ---- */
+.aip{margin:14px 0 4px}
+.aip-bar{height:6px;background:var(--stone-3);border:1px solid var(--edge);position:relative;overflow:hidden}
+.aip-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gilt-deep),var(--gilt));transition:width .3s linear;position:relative}
+.aip-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,240,190,.55),transparent);transform:translateX(-100%);animation:aipShine 1.8s linear infinite}
+@keyframes aipShine{to{transform:translateX(100%)}}
+.aip-l{display:flex;justify-content:space-between;gap:12px;margin-top:7px;font:500 10px "Cinzel",serif;letter-spacing:.14em;text-transform:uppercase;color:var(--ash-mute)}
+.aip-l #aipStage{color:var(--gilt)}
+@media (prefers-reduced-motion:reduce){.aip-bar i::after{animation:none}}
+/* ---- the oath ---- */
+.oath{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:start;margin:0 0 14px;padding:12px 14px 17px;
+  border:1px solid var(--gilt);background:linear-gradient(90deg,var(--gilt-glow),transparent 85%);box-shadow:0 0 22px var(--gilt-glow)}
+.oath-ic svg{width:32px;height:32px}
+.oath-ic{width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--gilt-deep);color:var(--gilt);background:var(--stone-2)}
+.oath-main small{display:block;font:500 9px "Cinzel",serif;letter-spacing:.24em;text-transform:uppercase;color:var(--gilt-deep)}
+.oath-flavour{margin:3px 0 0;font:italic 15.5px/1.45 "Spectral",Georgia,serif;color:var(--ash)}
+.oath-do{grid-column:1 / -1;border-top:1px solid var(--line);padding-top:7px;font-size:12px;line-height:1.45;color:var(--ash-dim)}
+.oath-do b{font:500 9px "Cinzel",serif;letter-spacing:.2em;text-transform:uppercase;color:var(--gilt-deep);margin-right:6px}
+.oath-do span{color:var(--ash-mute)}
+.oath-main em{display:block;margin-top:4px;font-style:normal;font-size:12px;color:var(--rust)}
+.oath-n{text-align:right}.oath-n b{font:600 22px "Space Mono",monospace;color:var(--gilt)}.oath-n span{display:block;font:500 8px "Cinzel",serif;letter-spacing:.14em;color:var(--ash-mute);text-transform:uppercase}
+.oath-bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--stone-3)}.oath-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gilt-deep),var(--gilt))}
+.oath.frayed{border-color:var(--rust);box-shadow:0 0 22px rgba(181,80,60,.18)}.oath.frayed .oath-ic{color:var(--rust);border-color:var(--rust)}
+.oath.frayed .oath-n b{color:var(--rust)}.oath.frayed .oath-bar i{background:var(--rust)}
+.oath.done{opacity:.7;border-style:dashed}
+.oath-tg{grid-column:1 / -1;justify-self:end;background:none;border:0;padding:2px 0 0;color:var(--gilt-deep);cursor:pointer;
+  font:500 9px "Cinzel",serif;letter-spacing:.18em;text-transform:uppercase}
+.oath-tg:hover{color:var(--gilt)}
+.oath.min{grid-template-columns:auto 1fr auto auto;align-items:center;padding:7px 12px 11px;cursor:pointer;gap:10px}
+.oath.min .oath-ic{width:30px;height:30px}.oath.min .oath-ic svg{width:22px;height:22px}
+.oath.min .oath-main small{font-size:10px;color:var(--gilt)}
+.oath.min .oath-n{display:flex;align-items:baseline;gap:5px}.oath.min .oath-n b{font-size:16px}
+.oath.min .oath-tg{grid-column:auto;padding:0}
+.oath.done .oath-tg{display:none}
+.oath-snips{transform-box:fill-box;transform-origin:70% 50%}
+.oath.frayed .oath-snips{animation:oathSnip 2.6s ease-in-out infinite}
+@keyframes oathSnip{0%,70%,100%{transform:rotate(0)}78%{transform:rotate(-9deg)}86%{transform:rotate(7deg)}}
+@media (prefers-reduced-motion:reduce){.oath.frayed .oath-snips{animation:none}}
+.oath-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--gilt);color:var(--gilt);font:500 9px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;background:var(--gilt-glow)}
+.oath-chip.frayed{border-color:var(--rust);color:var(--rust);background:rgba(181,80,60,.1)}
 .ma-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:900px){
   #tableScreen{overflow:auto}
@@ -4912,6 +4953,11 @@ function handsOf(m){
    mystery), drawn around 0,0 in a box about 12 across. `c` is the colour. ---- */
 function planeGlyph(plane, c){
   const g = {
+    land:    `<path d="M-5.2 3.6 L0 -5.2 L5.2 3.6" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`,
+    water:   `<path d="M-5.2 0 q2.6 -5.2 5.2 0 t5.2 0" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`,
+    fire:    `<path d="M0 -5.2 C6.2 -.5 4.2 5.2 0 5.2 C-4.2 5.2 -5.7 0 0 -5.2Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
+    under:   `<path d="M0 -5.2 L4.2 0 L0 5.2 L-4.2 0Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
+    void:    `<path d="M-3.6 5.2 V-1.6 a3.6 3.6 0 0 1 7.2 0 V5.2Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
     space:   `<path d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
     sky:     `<path d="M-6 3.5 a3 3 0 0 1 1.2 -5.6 a4 4 0 0 1 7.4 -.6 a3 3 0 0 1 3.4 6.2Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
     dream:   `<path d="M3 -6 a6.2 6.2 0 1 0 3 10.6 a5 5 0 0 1 -3 -10.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`,
@@ -5080,6 +5126,112 @@ function activationsOf(u){
   return Math.max(a.minActivations, Math.min(a.maxActivations, n));
 }
 
+
+/* ---- scramble.js ---- */
+/* =====================================================================
+   KEEPING THE SECRETS OUT OF PLAIN SIGHT
+   A scenario carries things nobody at the table should read ahead: the names a place
+   can give, what its wounds are called, the truth behind a mystery. When a scenario is
+   kept on a device, those parts are tucked into one scrambled string, so they are not
+   readable at a glance in the saved data. It is not security (anyone determined can undo
+   it), only a lock on the door. Everything else in the app sees the plain scenario: it is
+   scrambled on the way into storage and unscrambled on the way out.
+   ===================================================================== */
+
+function scrambleText(t){
+  try{ return "~" + btoa(unescape(encodeURIComponent(t))).split("").reverse().join(""); }catch(e){ return t; }
+}
+function unscrambleText(t){
+  try{ return decodeURIComponent(escape(atob(String(t).slice(1).split("").reverse().join("")))); }catch(e){ return null; }
+}
+
+/* the parts of a scenario that are tucked away */
+function scrambleScenario(s){
+  if(!s || typeof s !== "object" || s._locked) return s;
+  const secret = {woundFlavour: s.woundFlavour || [], namings: s.namings || null,
+                  truth: s.mystery ? s.mystery.truth : "", finale: s.mystery ? s.mystery.finale : ""};
+  const out = Object.assign({}, s);
+  delete out.woundFlavour; delete out.namings;
+  if(s.mystery){ out.mystery = Object.assign({}, s.mystery); delete out.mystery.truth; delete out.mystery.finale; }
+  out._locked = scrambleText(JSON.stringify(secret));
+  return out;
+}
+function unscrambleScenario(s){
+  if(!s || typeof s !== "object" || !s._locked) return s;
+  const raw = unscrambleText(s._locked); if(raw === null) return s;
+  let secret = null; try{ secret = JSON.parse(raw); }catch(e){}
+  if(!secret) return s;
+  const out = Object.assign({}, s); delete out._locked;
+  out.woundFlavour = secret.woundFlavour || [];
+  out.namings = secret.namings || null;
+  if(out.mystery){ out.mystery = Object.assign({}, out.mystery, {truth: secret.truth || "", finale: secret.finale || ""}); }
+  return out;
+}
+
+/* ---- progress.js ---- */
+/* =====================================================================
+   HOW LONG WILL THIS TAKE?
+   The AI gives no word on how far along it is, so this is an honest estimate rather
+   than a measurement. The bar fills against how long the same job took the last few
+   times on this device (a first guess until then), slows as it nears the end, and
+   never claims to be finished until the answer has really arrived. The line under it
+   names the step the work is probably at, and says roughly how long is left.
+   ===================================================================== */
+
+const AIP_KEY = "ep_ai_times";
+let AIP = null;           // the job in progress: {kind, start, expected, stages, timer}
+
+function aipHistory(){ try{ return JSON.parse(localStorage.getItem(AIP_KEY) || "{}"); }catch(e){ return {}; } }
+function aipExpected(kind, dflt){
+  const h = (aipHistory()[kind] || []).filter(n => n > 3);
+  return h.length ? Math.max(8, h.reduce((s, n) => s + n, 0) / h.length) : dflt;
+}
+function aipRecord(kind, secs){
+  try{
+    const h = aipHistory(); h[kind] = (h[kind] || []).concat([Math.round(secs * 10) / 10]).slice(-5);
+    localStorage.setItem(AIP_KEY, JSON.stringify(h));
+  }catch(e){}
+}
+/* 0 to 1, honest about not knowing: quick at first, then easing toward 0.94 and no further */
+function aipFraction(elapsed, expected){
+  if(elapsed <= expected) return 0.85 * (1 - Math.pow(1 - elapsed / expected, 2));
+  return 0.85 + 0.09 * (1 - Math.exp(-(elapsed - expected) / expected));
+}
+function aipPaint(){
+  if(!AIP) return;
+  const fill = document.getElementById("aipFill"), st = document.getElementById("aipStage"), tm = document.getElementById("aipTime");
+  if(!fill) return;
+  const elapsed = (Date.now() - AIP.start) / 1000, f = aipFraction(elapsed, AIP.expected);
+  fill.style.width = (f * 100).toFixed(1) + "%";
+  if(st) st.textContent = AIP.stages[Math.min(AIP.stages.length - 1, Math.floor(f / 0.95 * AIP.stages.length))] + "…";
+  if(tm){
+    const left = AIP.expected - elapsed;
+    tm.textContent = left > 4 ? "about " + (left > 75 ? Math.round(left / 10) * 10 : Math.ceil(left / 5) * 5) + " s left"
+      : "nearly there, a little longer";
+  }
+}
+/* begin a job; the element it draws into is made by aipHTML() */
+function aipStart(kind, stages, dfltSecs){
+  aipStop();
+  AIP = {kind, start: Date.now(), expected: aipExpected(kind, dfltSecs), stages};
+  AIP.timer = setInterval(aipPaint, 250);
+}
+/* done: true if the answer came back (so it counts toward the next estimate) */
+function aipStop(ok){
+  if(!AIP) return;
+  clearInterval(AIP.timer);
+  if(ok) aipRecord(AIP.kind, (Date.now() - AIP.start) / 1000);
+  const fill = document.getElementById("aipFill"); if(fill && ok) fill.style.width = "100%";
+  AIP = null;
+}
+function aipHTML(){
+  if(!AIP) return "";
+  const elapsed = (Date.now() - AIP.start) / 1000, f = aipFraction(elapsed, AIP.expected);
+  return `<div class="aip" role="progressbar" aria-label="Working" aria-valuemin="0" aria-valuemax="100">
+    <div class="aip-bar"><i id="aipFill" style="width:${(f * 100).toFixed(1)}%"></i></div>
+    <div class="aip-l"><span id="aipStage">${esc(AIP.stages[0])}…</span><span id="aipTime"></span></div>
+  </div>`;
+}
 
 /* ---- app.js ---- */
 /* =====================================================================
@@ -5447,12 +5599,16 @@ function renderUnburied(b){
   const pct = b.budget > 0 ? Math.min(100, spent / b.budget * 100) : 0;
   const nField = b.members.filter(fielded).length;
 
-  $("#bandHead").innerHTML = `
+  const joinSlab = realmAvailable() && typeof getRole === "function" && getRole() === "barrow" && !questOn()
+    ? `<div class="slab" style="margin-bottom:12px;border-color:var(--gilt-deep)">
+         <div class="head"><span class="eyebrow">A table is waiting</span><span class="rule"></span></div>
+         <p class="lead" style="margin:0 0 10px">If someone is running a scenario, join their table with the number they give you.</p>
+         <div class="sheet-actions"><button class="btn primary" id="bandJoin" style="margin-left:0">Join a table</button></div>
+       </div>` : "";
+  $("#bandHead").innerHTML = joinSlab + `
     <div class="band">
       <input class="band-name" id="bandName" value="${esc(b.name)}" maxlength="42" spellcheck="false">
-      ${realmAvailable() ? `<button class="iconbtn" id="bandCarry" aria-label="Carry this band out or call one to the barrow" title="Carry out / call in">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16">
-          <path d="M12 3v11M8 10l4 4 4-4M4 17v3h16v-3"/></svg></button>`
+      ${realmAvailable() ? ``
       : `<button class="btn sm primary" id="bandCarry" title="Send this whole band to the Barrow, where it is played">${barrowIcon(15)} Send to the Barrow</button>
          <button class="btn sm ghost" id="bandSome" title="Send only some of them, together, in one code">Send some</button>`}
       ${realmAvailable() ? `<button class="iconbtn" id="bandCampMenu" aria-label="Camp menu" title="Camp menu">
@@ -5487,7 +5643,8 @@ function renderUnburied(b){
     renderUnburied(b);
   };
   $("#bandMenu").onclick = openBands;
-  $("#bandCarry").onclick = openCarry;
+  const bc = $("#bandCarry"); if(bc) bc.onclick = openCarry;
+  const bj = $("#bandJoin"); if(bj) bj.onclick = () => openJoinSheet();
   const bSome = $("#bandSome"); if(bSome) bSome.onclick = () => { groupPick = new Set(); openGroupSend(); };
   const bCM = $("#bandCampMenu"); if(bCM) bCM.onclick = openCampMenu;
   $$("[data-status]").forEach(x => x.onclick = () => { statusOpen = !statusOpen; renderUnburied(b); });
@@ -5536,7 +5693,7 @@ function renderUnburied(b){
       </div>
       <div class="m-gear"><b>${gear.length ? "Carries" : ""}</b>${gear.length ? esc(gear.join(" · ")) : `<span style="color:var(--ash-mute)">Unarmed</span>`}</div>
       <div class="m-foot">
-        ${(m.traits || []).includes("leader") ? `<span class="chip gilt">${esc(leaderTerm())}</span>` : ""}
+        ${(m.traits || []).includes("leader") ? `<span class="chip gilt">${esc(leaderTerm())}</span>${oathChipHTML(m)}` : ""}
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
         <span class="chip">${activationsOf(m)} act</span>
@@ -6156,10 +6313,17 @@ let Q = null;
 function questLoad(){
   if(Q !== null) return Q;
   try{ Q = JSON.parse(localStorage.getItem(QUEST_KEY) || "null"); }catch(e){ Q = null; }
+  if(Q){ if(Q.scenario) Q.scenario = unscrambleScenario(Q.scenario); if(Q.scenarioSource) Q.scenarioSource = unscrambleScenario(Q.scenarioSource); }
   return Q;
 }
 function questSave(){
-  try{ localStorage.setItem(QUEST_KEY, JSON.stringify(Q)); }catch(e){}
+  try{
+    /* what the place can give, and the truth behind it, is kept scrambled while it sits on the device */
+    const keep = Q && (Q.scenario || Q.scenarioSource) ? Object.assign({}, Q, {
+      scenario: Q.scenario ? scrambleScenario(Q.scenario) : Q.scenario,
+      scenarioSource: Q.scenarioSource ? scrambleScenario(Q.scenarioSource) : Q.scenarioSource}) : Q;
+    localStorage.setItem(QUEST_KEY, JSON.stringify(keep));
+  }catch(e){}
   /* A shared quest publishes what this device owns and nothing else:
      a player their own models, the host the table as well. */
   if(Q && Q.realm && typeof pushMyUnits === "function"){
@@ -6171,9 +6335,11 @@ function questOn(){ return !!questLoad(); }
 /* ---- what stays behind: a scenario ends, but the table remembers it ---- */
 const HISTORY_KEY = "ep_history_v1";
 function loadHistory(){
-  try{ return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){ return []; }
+  try{ return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]").map(r => r && r.scenario ? Object.assign({}, r, {scenario: unscrambleScenario(r.scenario)}) : r); }catch(e){ return []; }
 }
-function saveHistory(list){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }catch(e){} }
+function saveHistory(list){
+  try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(list.map(r => r && r.scenario ? Object.assign({}, r, {scenario: scrambleScenario(r.scenario)}) : r))); }catch(e){}
+}
 function sideCasualties(side){
   const units = Q.units.filter(u => u.side === side && !u.hidden);
   return {total: units.reduce((s, u) => s + u.models.length, 0),
@@ -6737,6 +6903,7 @@ function drawCard(){
         <span class="cardpts">${unitCost(m)} points</span></div>
     </div>
 
+    ${oathBannerHTML(m)}
     ${live ? questStripHTML(m, live) : (isHurt(m) ? hurtStripHTML(m) : "")}
 
     <div class="cstats">
@@ -7136,7 +7303,8 @@ async function openConjure(){
     const brief = $("#cjBrief").value.trim() || "whatever suits the Unburied";
     const tone = conjureTone;
     go.disabled = true; go.textContent = "Raising…";
-    out.innerHTML = `<p class="quiet">Digging… this takes a few seconds.</p>`;
+    aipStart("conjure", ["Digging them up", "Giving them a past", "Fitting out their gear", "Checking the points"], 18);
+    out.innerHTML = aipHTML();
     aiAbort = new AbortController();
     const prompt = `Invent 4 distinct concepts for a single model in ${RS.meta.name} — a tabletop skirmish
 wargame of the Unburied: dead mercenaries, tethered back to fight one more war, one more
@@ -7218,6 +7386,7 @@ No other text.`;
 
     try{
       const list = await ai.json(prompt, {modelTier:"default", cache:false, signal:aiAbort.signal});
+      aipStop(true);
       const made = (Array.isArray(list) ? list : []).map(x => {
         const m = aiLegalise(Object.assign({}, x.build, {
           name:x.name, epithet:x.epithet, epitaph:x.epitaph, role:x.role, story:x.story}), budget);
@@ -7251,7 +7420,7 @@ No other text.`;
       const msg = aiTrouble(e && e.code);
       out.innerHTML = msg ? `<p class="quiet">${esc(msg)}</p>` : "";
       go.textContent = "Raise four";
-    }finally{ go.disabled = false; aiAbort = null; }
+    }finally{ aipStop(false); go.disabled = false; aiAbort = null; }
   };
 }
 
@@ -7689,7 +7858,8 @@ function questBarHTML(){
         <b>${Q.scenario ? esc(Q.scenario.name) + " · " : ""}Round ${Q.round}${
           Q.scenario && Q.scenario.rounds ? " of " + Q.scenario.rounds : ""}</b>
       </div>
-      <button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">End turn ▸</button>
+      ${Q.realm && !Q.host ? `<span class="chip" style="margin-left:auto;flex:none" title="Only the host closes a round">The host ends the turn</span>`
+        : `<button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">End turn ▸</button>`}
     </div>
     <div class="qbar-r">
       <button class="chip gilt" data-q="nerve">◆ ${Q.nerve.us} Nerve</button>
@@ -7764,6 +7934,7 @@ function askEnd(){
    happened already filled in. */
 function finishEnd(){
   const b = band();
+  if(Q && Q.realm && typeof leaveRealm === "function") leaveRealm();
   const snap = typeof afterSnapshot === "function" && ruleOn("campaign", b) ? afterSnapshot() : null;
   questEnd(); closePicker(); render();
   if(snap) openAfter(snap); else toast("Quest ended");
@@ -8650,6 +8821,7 @@ function drawTable(){
 
 /* One press closes the round: the Acts step, then the End step (events, burning, strain), and the next round opens with its Tempo. */
 function tableEndTurn(){
+  if(Q.realm && !Q.host){ toast("The host ends the turn"); return; }
   if(Q.step === "tempo") questStep();
   if(Q.step === "acts") questStep();
   if(Q.step === "end") questStep();         // the round turns over; anything that sprang is in Q.pending
@@ -8856,6 +9028,7 @@ function btRow(u){
       <div class="bt-nm">
         <span class="bt-name">${m && isLeaderM(m) && typeof crownHTML === "function" ? crownHTML(14) : ""}${esc(u.name)}${u.models.length > 1 ? ` <small>×${u.models.length}</small>` : ""}</span>
         ${m && typeof styleBadge === "function" ? styleBadge(m, 13) : ""}
+        ${m && typeof oathChipHTML === "function" ? oathChipHTML(m) : ""}
       </div>
       <div class="bt-hp"><b>${now}/${max}</b><span>Health</span></div>
     </div>
@@ -8899,7 +9072,7 @@ function drawBattle(){
     <div class="bt-t1">
       <div class="bt-rd">Round ${Q.round}${s.rounds ? " of " + s.rounds : ""}<small>${esc(s.name || "The quest")}</small></div>
       <button class="iconbtn bt-theme" data-bt="theme" aria-label="Switch between light and dark" title="Light / dark">${(document.getElementById("btnTheme") || {}).innerHTML || "\u25d0"}</button>
-      ${isHost ? `<button class="btn primary bt-go" data-bt="step">End turn ▸</button>` : ""}
+      ${isHost ? `<button class="btn primary bt-go" data-bt="step">End turn ▸</button>` : `<span class="chip bt-go" title="Only the host closes a round">The host ends the turn</span>`}
     </div>
     <div class="bt-t2">
       <button class="bt-st" data-bt="nerve"><b>${Q.nerve.us}</b><span>Nerve</span></button>
@@ -8948,6 +9121,7 @@ function bindBattle(el){
 /* A phone opens straight onto its own battle screen the first time a quest is seen. */
 function maybeAutoBattle(){
   if(battleOpen || !questOn() || Q.battleSeen) return;
+  if(typeof getRole === "function" && getRole() === "realm") return;
   if(window.innerWidth > 700 || (typeof tableOpen !== "undefined" && tableOpen)) return;
   Q.battleSeen = true; questSave();
   openBattle();
@@ -8956,7 +9130,8 @@ function maybeAutoBattle(){
 /* The bar along the bottom. It belongs to the quest, not to one screen: it stays, in the same place, on
    the battle screen and on the band, until the quest is over. */
 function drawDock(){
-  const want = questOn() && (battleOpen || Q.dockOn || window.innerWidth <= 900) && !(typeof tableOpen !== "undefined" && tableOpen);
+  const runsTable = typeof getRole === "function" && getRole() === "realm";      // the table device has no band to track
+  const want = questOn() && !runsTable && (battleOpen || Q.dockOn || window.innerWidth <= 900) && !(typeof tableOpen !== "undefined" && tableOpen);
   let el = document.getElementById("questDock");
   if(!want){ if(el) el.remove(); document.body.classList.remove("has-dock"); return; }
   if(!el){ el = document.createElement("div"); el.id = "questDock"; document.body.appendChild(el); }
@@ -10057,6 +10232,59 @@ function mendTether(b, how){
 }
 
 /* ---- the band head's tether summary ---- */
+/* ---- the oath, where the Oathbearer cannot miss it ---- */
+const OATH_ICON = '<svg viewBox="0 0 48 48" width="26" height="26" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 2 C20.7 12 16.3 18 19 24 C21.7 30 18.1 38 22.5 46" stroke-width="2.1"/><path d="M19 23.2 l-2.6 -1 M19 24.8 l-2.6 1" stroke-width="1"/><g class="oath-snips" stroke-width="1.1"><path d="M12.7 17.2 L40.5 27.2 M12.7 30.8 L40.5 20.8"/><path d="M12.7 17.2 L30.1 23.5 L30.1 24.5 L13.4 18.5Z M12.7 30.8 L30.1 24.5 L30.1 23.5 L13.4 29.5Z" fill="currentColor" fill-opacity=".22" stroke-width=".7"/><ellipse cx="42.2" cy="28.6" rx="3.3" ry="2.3" transform="rotate(20 42.2 28.6)"/><ellipse cx="42.2" cy="19.4" rx="3.3" ry="2.3" transform="rotate(-20 42.2 19.4)"/><circle cx="30.5" cy="24" r="1.2" fill="currentColor" stroke="none"/></g></svg>';
+/* what the Oathbearer's tether stands at: the band's live count in camp, the full debt still to pay in the Reliquary */
+function oathState(m){
+  if(!m || !isLeaderM(m)) return null;
+  const k = tetherKind(m.tetherKind); if(!k) return null;
+  let t = null;
+  try{ const b = band(); if(b.tether && b.tether.leaderId === m.id && b.tether.kindId === k.id) t = b.tether; }catch(e){}
+  const debt = t ? t.debt : tetherDebtFor(k.id), kept = t ? t.kept : 0;
+  return {k, t, debt, kept, frayed: !!(t && t.frayed), done: !!(t && t.severed),
+          what: tetherObservance(m.tetherKind, m.tetherSworn)};
+}
+/* the banner can be folded down to one slim line; the choice is kept on this device */
+function oathMinimised(){ try{ return localStorage.getItem("ep_oath_min") === "1"; }catch(e){ return false; } }
+document.addEventListener("click", e => {
+  if(!e.target.closest || !e.target.closest("[data-oathtoggle]")) return;
+  try{ localStorage.setItem("ep_oath_min", oathMinimised() ? "0" : "1"); }catch(x){}
+  if(typeof cardId !== "undefined" && cardId && typeof drawCard === "function") drawCard();
+  if(typeof render === "function") render();
+});
+/* the banner: first thing under the Oathbearer's name, on every tab. The oath itself is the headline, in the voice of the
+   story; the count sits to the right; what they actually have to do is underneath, small. */
+function oathBannerHTML(m){
+  const o = oathState(m); if(!o) return "";
+  const pct = Math.min(100, Math.round(o.kept / o.debt * 100));
+  const cap = t => String(t || "").charAt(0).toUpperCase() + String(t || "").slice(1);
+  const rule = o.k.id === "quarry" && m.tetherSworn ? "Each " + m.tetherSworn + " a member takes Down counts." : cap(o.k.counts) + " counts.";
+  if(oathMinimised()) return `<div class="oath min ${o.frayed ? "frayed" : ""} ${o.done ? "done" : ""}" data-oathtoggle role="button" tabindex="0" aria-label="Show the oath">
+    <div class="oath-ic">${OATH_ICON}</div>
+    <div class="oath-main"><small>${o.done ? "The oath is paid" : "The oath \u00b7 " + esc(o.k.name)}</small></div>
+    <div class="oath-n"><b>${o.kept}</b><span>of ${o.debt}</span></div>
+    <span class="oath-tg">Show \u25be</span>
+    <div class="oath-bar"><i style="width:${pct}%"></i></div>
+  </div>`;
+  return `<div class="oath ${o.frayed ? "frayed" : ""} ${o.done ? "done" : ""}">
+    <div class="oath-ic">${OATH_ICON}</div>
+    <div class="oath-main">
+      <small>${o.done ? "The oath is paid" : "The oath · " + esc(o.k.name)}</small>
+      <p class="oath-flavour">${esc(o.done ? "The grave has what it was owed. The tether is cut." : o.k.why)}</p>
+      ${o.frayed ? `<em>Forsaken once already. If it happens again, the tether snaps.</em>` : ""}
+    </div>
+    <div class="oath-n"><b>${o.kept}</b><span>of ${o.debt}</span></div>
+    ${o.done ? "" : `<div class="oath-do"><b>To pay it</b> ${esc(cap(o.what))}. <span>${esc(rule)}</span></div>`}
+    <button class="oath-tg" data-oathtoggle type="button" aria-label="Minimise the oath">Minimise \u25b4</button>
+    <div class="oath-bar"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+/* the same, in a line: for a roster tile or a battle row */
+function oathChipHTML(m){
+  const o = oathState(m); if(!o) return "";
+  return `<span class="oath-chip ${o.frayed ? "frayed" : ""}" title="${esc("They must " + o.what)}">${OATH_ICON.replace(/width="26" height="26"/, 'width="13" height="13"')}${o.done ? "Oath paid" : esc(o.k.name) + " " + o.kept + "/" + o.debt}</span>`;
+}
+
 function tetherHTML(b){
   const t = b.tether;
   if(!t) return "";
@@ -10569,6 +10797,7 @@ function openCampMenu(){
   }
   if(ruleOn("narrative", b))
     items.push(["The Cenotaph", (b.wall || []).length + " remembered", "openWall"]);
+  items.push(["Back up or move this band", "Save it as a code or a file, or hand it to another phone", "openCarry"]);
   items.push(["Rules", "Which rule categories this band plays", "openRules"]);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
@@ -11081,6 +11310,7 @@ function drawGenerate(ai){
       <button class="btn primary" id="gGo" ${S.busy ? "disabled" : ""} style="margin-left:0">
         ${S.busy ? "Writing\u2026" : "Write it"}</button>
     </div>
+    ${S.busy ? aipHTML() : ""}
     <div id="gOut" style="margin-top:14px">${S.out ? `<div class="sheet-actions" style="margin:0 0 12px"><button class="btn sm ${S.showAll ? "primary" : ""}" id="gAll" style="margin-left:0">${S.showAll ? "Hide the hidden parts" : "Show everything"}</button>
       <button class="btn sm" id="gEdit">Edit the words</button></div>` + scenarioHTML(S.out, S.showAll) + addTerrainHTML(S) + `
       <p class="quiet" style="margin:11px 0 0">Kept in the Reliquary already — write another to
@@ -11181,6 +11411,7 @@ Reply with ONLY JSON: {"enemy":[{"name":"exact name as above","count":N}]}. List
 
 async function runGenerate(ai){
   const S = genState, sc = RS.scenario;
+  aipStart("scenario", ["Imagining the place", "Laying out the table", "Choosing the enemy", "Checking the points"], 50);
   S.busy = true; drawGenerate(ai);
 
   const size = S.players * S.perBand;
@@ -11439,6 +11670,7 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
     S.out = legaliseScenario(raw, {size, enemy, objList, objCount, markers, diff, len, type, theme, mode,
                                    players: S.players, perBand: S.perBand,
                                    chose: {type: !S.type, theme: !S.theme}});
+    aipStop(true);
     /* Saved the moment it exists, not on a later tap — stepping away to do
        something else (make a leader, check a card) must never lose a
        scenario that only ever lived in memory until now. Re-rolling with
@@ -11451,6 +11683,7 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
     S.out = null;
     toast(aiTrouble(e && e.code) || "That did not work");
   }finally{
+    aipStop(false);
     S.busy = false; drawGenerate(ai);
   }
 }
@@ -11965,9 +12198,11 @@ function bindScenario(){
 /* ---- the library: written, not yet played ---- */
 const LIBRARY_KEY = "ep_library_v1";
 function loadLibrary(){
-  try{ return JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]"); }catch(e){ return []; }
+  try{ return JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]").map(r => r && r.out ? Object.assign({}, r, {out: unscrambleScenario(r.out)}) : r); }catch(e){ return []; }
 }
-function saveLibrary(list){ try{ localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); }catch(e){} }
+function saveLibrary(list){
+  try{ localStorage.setItem(LIBRARY_KEY, JSON.stringify(list.map(r => r && r.out ? Object.assign({}, r, {out: scrambleScenario(r.out)}) : r))); }catch(e){}
+}
 function addToLibrary(s){
   const list = loadLibrary();
   const id = uid();
@@ -12317,6 +12552,8 @@ function startFromScenario(s, campDone){
     Q.units.push(f);
   });
   questSave();
+  /* the Realm device runs the table: once it has entered a realm, the quest is open to players with its number */
+  if(typeof getRole === "function" && getRole() === "realm" && typeof realmKey !== "undefined" && realmKey && typeof hostCurrentQuest === "function") hostCurrentQuest();
   genState = null;
   closePicker(); render();
   toast(s.title + " — begins");
@@ -12462,15 +12699,18 @@ function applyEvent(id, ev){
 }
 
 /* ---- hosting ---- */
-async function hostQuest(size){
-  if(!questBegin(size)) return false;
+function hostCurrentQuest(){
   Q.realm = uid();
   Q.host = true;
   Q.joinCode = Q.realm.slice(0, 5).toUpperCase();
   questSave();
-  tryWrite("quests/" + Q.realm + "/meta", {code: Q.joinCode, host: meId(), size, at: Date.now()});
+  tryWrite("quests/" + Q.realm + "/meta", {code: Q.joinCode, host: meId(), size: Q.size, at: Date.now()});
   pushTable(); pushMyUnits();
   listenAsHost();
+}
+async function hostQuest(size){
+  if(!questBegin(size)) return false;
+  hostCurrentQuest();
   return true;
 }
 function listenAsHost(){
@@ -12623,6 +12863,43 @@ function bindTable(el){
   if(typeof bindRealmKnown === "function" && realmAvailable()) bindRealmKnown(el);
 }
 
+/* The controls for the shared table. On the Realm device they sit at the very top: enter the realm, then the number
+   to give your players. (A Barrow phone reaches the same steps from "Join a table".) */
+function enterSlabHTML(why){
+  return `<div class="slab" style="border-color:var(--gilt-deep)">
+    <div class="head"><span class="eyebrow">${why}</span><span class="rule"></span>${realmKey ? `<span class="chip good">entered</span>` : ""}</div>
+    <p class="lead" style="margin:0">Everyone who types the same realm name plays in the same one. Share it only with them: it is never stored, only its fingerprint.</p>
+    <div class="field" style="margin:13px 0"><label>Realm name</label>
+      <input class="input" id="rmName" value="${esc(savedRealm())}" placeholder="rusted-cathedral" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="sheet-actions"><button class="btn primary" id="rmEnter" style="margin-left:0">Enter</button></div>
+  </div>`;
+}
+function tableTopHTML(role){
+  const inQuest = questOn() && Q.realm;
+  if(inQuest) return `<div class="slab" style="border-color:var(--gilt)">
+      <div class="head"><span class="eyebrow">${Q.host ? "You are hosting" : "You have joined"}</span><span class="rule"></span></div>
+      <p class="lead" style="margin:0">The number for this table is</p>
+      <div class="mono" style="font-size:38px;letter-spacing:.3em;color:var(--gilt);margin:6px 0 4px">${esc(Q.joinCode)}</div>
+      <p class="quiet" style="margin:0">${Q.host
+        ? "Players enter the realm, then this number. Their models appear on the table as they join."
+        : "Your models are yours to run. The round, the markers and anything the scenario does to you arrive from the host."}</p>
+      <div class="sheet-actions">
+        ${Q.host && typeof openTable === "function" ? `<button class="btn primary" id="rmTable" style="margin-left:0">Table screen</button>` : ""}
+        <button class="btn ghost" id="rmLeave" ${Q.host && typeof openTable === "function" ? "" : `style="margin-left:0"`}>${Q.host ? "Stop hosting" : "Leave the table"}</button>
+      </div>
+    </div>`;
+  if(!realmKey) return enterSlabHTML(role === "realm" ? "Open a table for your players" : "A shared table");
+  if(role !== "realm") return "";
+  return `<div class="slab" style="border-color:var(--gilt-deep)">
+      <div class="head"><span class="eyebrow">The table is open</span><span class="rule"></span><span class="chip good">entered</span></div>
+      <p class="lead" style="margin:0">Choose a place on the map below and take them out: the number for your players appears here. Or open a plain table with no scenario.</p>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px">
+        <div class="field" style="margin:0"><label>Game size in points</label>
+          <input class="input mono" id="rmSize" inputmode="numeric" style="width:120px" value="${band().budget * 2}"></div>
+        <button class="btn" id="rmHost">Host a plain table</button></div>
+    </div>`;
+}
+
 function renderRealm(){
   const el = $("#viewRealm");
   if(!realmAvailable()){
@@ -12636,69 +12913,56 @@ function renderRealm(){
     bindTable(el);
     return;
   }
-  const inQuest = questOn() && Q.realm;
-  el.innerHTML = tableHTML() + `
-    <div class="slab">
-      <div class="head"><span class="eyebrow">A shared table</span><span class="rule"></span>
-        ${realmKey ? `<span class="chip good">entered</span>` : ""}</div>
-      <p class="lead">Everyone who types the same realm name plays in the same one.
-        Share it only with them — it is never stored, only its fingerprint.</p>
-      <div class="field" style="margin:13px 0">
-        <label>Realm name</label>
-        <input class="input" id="rmName" value="${esc(savedRealm())}" placeholder="rusted-cathedral"
-          autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-      <div class="sheet-actions"><button class="btn primary" id="rmEnter" style="margin-left:0">Enter</button></div>
-    </div>
+  const role = typeof getRole === "function" ? getRole() : "";
+  el.innerHTML = tableTopHTML(role) + tableHTML();
+  bindTable(el);
+  bindShare(el);
+}
+/* the buttons of the shared-table controls, wherever they are drawn */
+function bindShare(el, after){
+  const done = after || (() => { renderRealm(); render(); });
+  const enter = el.querySelector("#rmEnter");
+  if(enter) enter.onclick = async () => {
+    const v = el.querySelector("#rmName").value.trim();
+    if(!v){ toast("Name the realm"); return; }
+    if(await enterRealm(v)){ toast("Entered"); done(); }
+    else toast("Could not reach the realm");
+  };
+  const host = el.querySelector("#rmHost");
+  if(host) host.onclick = async () => {
+    const n = Math.max(100, parseInt((el.querySelector("#rmSize").value || "").replace(/\D/g, ""), 10) || 500);
+    if(await hostQuest(n)){ toast("Hosting — give them the number"); done(); if(typeof openTable === "function") openTable(); }
+  };
+  const tb = el.querySelector("#rmTable"); if(tb) tb.onclick = () => openTable();
+  const leave = el.querySelector("#rmLeave");
+  if(leave) leave.onclick = () => { leaveRealm(); toast("Left the table"); done(); };
+}
 
-    ${!realmKey ? "" : inQuest ? `
-    <div class="slab">
-      <div class="head"><span class="eyebrow">${Q.host ? "You are hosting" : "You have joined"}</span><span class="rule"></span></div>
-      <p class="lead">The number for this table is <b class="mono" style="font-size:19px;color:var(--gilt)">${esc(Q.joinCode)}</b></p>
-      <p class="quiet" style="margin-top:8px">${Q.host
-        ? "Players enter the realm, then this number. Their models appear here as they join."
-        : "Your models are yours to run. The round, the markers and anything the scenario does to you arrive from the host."}</p>
-      <div class="sheet-actions">
-        <button class="btn ghost" id="rmLeave" style="margin-left:0">${Q.host ? "Stop hosting" : "Leave the table"}</button>
-      </div>
-    </div>` : `
-    <div class="slab">
-      <div class="head"><span class="eyebrow">Host a table</span><span class="rule"></span></div>
-      <p class="lead">You keep the scenario, the markers and the enemy. Everyone else brings
-        their own Unburied.</p>
-      <div class="field" style="margin:13px 0"><label>Game size in points</label>
-        <input class="input mono" id="rmSize" inputmode="numeric" value="${band().budget * 2}"></div>
-      <div class="sheet-actions"><button class="btn primary" id="rmHost" style="margin-left:0">Host it</button></div>
-    </div>
-    <div class="slab">
-      <div class="head"><span class="eyebrow">Join a table</span><span class="rule"></span></div>
-      <p class="lead">Whoever is hosting will read you the number.</p>
+/* A Barrow phone joins a table: the realm name once, then the number the host reads out. */
+function openJoinSheet(){
+  const step = realmKey ? 2 : 1;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="jnX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <div class="eyebrow">Join a table</div></div>
+    ${step === 1 ? enterSlabHTML("First, the realm") : `
+    <div class="slab" style="border-color:var(--gilt-deep)">
+      <div class="head"><span class="eyebrow">Then, the number</span><span class="rule"></span><span class="chip good">realm entered</span></div>
+      <p class="lead" style="margin:0">Whoever is hosting will read you the number. The Unburied you have fielded go with you.</p>
       <div class="field" style="margin:13px 0"><label>The number</label>
-        <input class="input mono" id="rmCode" maxlength="5" placeholder="A1B2C"
-          style="text-transform:uppercase"></div>
+        <input class="input mono" id="rmCode" maxlength="5" placeholder="A1B2C" style="text-transform:uppercase;font-size:22px;letter-spacing:.3em"></div>
       <div class="sheet-actions"><button class="btn primary" id="rmJoin" style="margin-left:0">Join</button></div>
       <p class="quiet" id="rmMsg" style="margin:9px 0 0"></p>
     </div>`}`;
-
-  bindTable(el);
-  const enter = $("#rmEnter");
-  if(enter) enter.onclick = async () => {
-    const v = $("#rmName").value.trim();
-    if(!v){ toast("Name the realm"); return; }
-    if(await enterRealm(v)){ toast("Entered"); renderRealm(); }
-    else toast("Could not reach the realm");
-  };
-  const host = $("#rmHost");
-  if(host) host.onclick = async () => {
-    const n = Math.max(100, parseInt(($("#rmSize").value || "").replace(/\D/g, ""), 10) || 500);
-    if(await hostQuest(n)){ render(); renderRealm(); toast("Hosting — give them the number"); }
-  };
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#jnX").onclick = () => { closePicker(); render(); };
+  bindShare($("#sheet2In"), () => openJoinSheet());
   const join = $("#rmJoin");
   if(join) join.onclick = async () => {
-    try{ await joinQuest($("#rmCode").value); render(); renderRealm(); toast("Joined"); }
+    try{ await joinQuest($("#rmCode").value); closePicker(); render(); toast("Joined"); }
     catch(e){ const m = $("#rmMsg"); m.textContent = e.message; m.style.color = "var(--rust)"; }
   };
-  const leave = $("#rmLeave");
-  if(leave) leave.onclick = () => { leaveRealm(); renderRealm(); render(); toast("Left the table"); };
 }
 
 /* ---- role.js ---- */
@@ -12932,17 +13196,8 @@ let rmView = "map";
 try{ rmView = localStorage.getItem("ep_realm_view") || "map"; }catch(e){}
 
 function rmIcon(plane, x, y, c){
-  if(planeGlyph(plane, c)) return `<g transform="translate(${x} ${y})">${planeGlyph(plane, c)}</g>`;
-  const s = 5.2;
-  if(plane === "water")
-    return `<path d="M${x - s} ${y} q${s / 2} ${-s} ${s} 0 t${s} 0" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`;
-  if(plane === "fire")
-    return `<path d="M${x} ${y - s} C${x + s * 1.2} ${y - s * .1} ${x + s * .8} ${y + s} ${x} ${y + s} C${x - s * .8} ${y + s} ${x - s * 1.1} ${y} ${x} ${y - s}Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`;
-  if(plane === "under")
-    return `<path d="M${x} ${y - s} L${x + s * .8} ${y} L${x} ${y + s} L${x - s * .8} ${y}Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`;
-  if(plane === "void")
-    return `<path d="M${x - s * .7} ${y + s} V${y - s * .3} a${s * .7} ${s * .7} 0 0 1 ${s * 1.4} 0 V${y + s}Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>`;
-  return `<path d="M${x - s} ${y + s * .7} L${x} ${y - s} L${x + s} ${y + s * .7}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const g = planeGlyph(plane, c) || planeGlyph("land", c);
+  return `<g transform="translate(${x} ${y})">${g}</g>`;
 }
 
 /* ---- what the table knows ---- */
