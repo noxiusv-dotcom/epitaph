@@ -5737,7 +5737,7 @@ function renderUnburied(b){
   if(realmAvailable()){
     const bring = document.createElement("button");
     bring.className = "marker add";
-    bring.innerHTML = `<div class="plus">↓</div><span>Call one to the barrow</span>`;
+    bring.innerHTML = `<div class="plus">↓</div><span>Call them to the barrow</span>`;
     bring.onclick = openMemberBring;
     list.appendChild(bring);
   }
@@ -7565,7 +7565,7 @@ async function openCarry(){
     </div>
 
     <p class="lead">${sendOnly
-      ? "Your Unburied are raised here in the Reliquary and nowhere else. This is how they leave for the Barrow \u2014 copy the code or save the file, then use Call a band to the barrow there to take them into a game."
+      ? "Your Unburied are raised here in the Reliquary and nowhere else. This is how they leave for the Barrow \u2014 copy the code or save the file, then use Call them to the barrow there to take them into a game."
       : "Your Unburied live on this phone and nowhere else. This is how they leave it \u2014 to keep somewhere safe, to move to another phone, or to hand to whoever is running a game."}</p>
 
     <div class="slab" style="margin-top:14px">
@@ -7665,7 +7665,7 @@ async function openMemberSend(m){
       </button><div class="eyebrow">Send to the Barrow</div></div>
     <p class="lead">${esc(fullName(m))} leaves the Reliquary alone \u2014 to join a band
       already at the Barrow, ${/^[aeiou]/i.test(leaderTerm()) ? "an" : "a"} ${esc(leaderTerm())} raised to replace one who did not come back, or
-      anyone else. Use Call one to the barrow on the roster there, and paste this in.</p>
+      anyone else. Use Call them to the barrow on the roster there, and paste this in.</p>
     <div class="slab" style="margin-top:14px">
       <div class="head"><span class="eyebrow">${esc(fullName(m))}</span><span class="rule"></span></div>
       <textarea class="input mono" id="msCode" rows="4" readonly
@@ -7743,7 +7743,7 @@ function openGroupSend(){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
         </button><div class="eyebrow">Send some to the Barrow</div></div>
       <p class="lead">${chosen.length} of the Unburied leave together: ${esc(chosen.map(m => fullName(m) || "Unnamed").join(", "))}.
-        Copy the code or save the file, then use Call one to the barrow there and paste this in.</p>
+        Copy the code or save the file, then use Call them to the barrow there and paste this in.</p>
       <div class="slab" style="margin-top:14px">
         <textarea class="input mono" id="gcCode" rows="4" readonly style="font-size:11px;line-height:1.4">${esc(code)}</textarea>
         <div class="sheet-actions" style="margin-top:10px">
@@ -7784,11 +7784,11 @@ function openMemberBring(){
     <div class="sheet-head">
       <button class="iconbtn" id="mbX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button><div class="eyebrow">Call one to the barrow</div></div>
-    <p class="lead">Paste a code for one of the Unburied, or for several sent together, from the Reliquary
-      \u2014 a new ${esc(leaderTerm())}, or anyone else \u2014 and they join ${esc(band().name)}.</p>
+      </button><div class="eyebrow">Call them to the barrow</div></div>
+    <p class="lead">Paste a code from the Reliquary for <b>one</b> of the Unburied, for <b>several</b> sent together, or for a <b>whole band</b>.
+      They join ${esc(band().name)}. If the camp is empty, the band you bring in becomes this one.</p>
     <div class="slab" style="margin-top:14px">
-      <textarea class="input mono" id="mbIn" rows="3" placeholder="EPITAPHM1\u2026 or EPITAPHG1\u2026"
+      <textarea class="input mono" id="mbIn" rows="3" placeholder="EPITAPH1\u2026 (a band), EPITAPHG1\u2026 (several) or EPITAPHM1\u2026 (one)"
         style="font-size:11px;line-height:1.4"></textarea>
       <div class="sheet-actions" style="margin-top:10px">
         <label class="btn sm ghost" style="cursor:pointer">Open a file
@@ -7806,12 +7806,18 @@ function openMemberBring(){
       const t = String(text || "").trim();
       if(t.startsWith("{")) obj = JSON.parse(t);
       else obj = await unpackCode(t);
-      if(obj.t !== MEMBER_CARRY_TAG && obj.t !== GROUP_CARRY_TAG) throw new Error("That is not one of the Unburied.");
-      const arriving = obj.t === GROUP_CARRY_TAG
+      if(obj.t !== MEMBER_CARRY_TAG && obj.t !== GROUP_CARRY_TAG && obj.t !== CARRY_TAG) throw new Error("That is not one of the Unburied.");
+      const b = band();
+      let arriving;
+      if(obj.t === CARRY_TAG){
+        /* a whole band: its people join this camp; an empty camp takes on the band's name and size too */
+        const nb = adoptBand(obj);
+        arriving = nb.members;
+        if(!b.members.length){ b.name = nb.name; b.budget = nb.budget; }
+      } else arriving = obj.t === GROUP_CARRY_TAG
         ? (obj.members || []).map(x => Object.assign(newMember(), x, {id: uid()}))
         : [adoptMember(obj)];
       if(!arriving.length) throw new Error("There was nobody in that code.");
-      const b = band();
       /* Only one Leader at a time — an arriving one takes the trait cleanly
          rather than sitting alongside whoever already holds it. */
       if(arriving.some(m => (m.traits || []).includes("leader")) && leaderOf(b))
