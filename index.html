@@ -221,6 +221,15 @@ main{max-width:860px;margin:0 auto;padding:18px 16px 90px}
 .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ash-mute);margin-bottom:5px;font-family:"Cinzel",Georgia,serif}
 
+button[hidden],.btn[hidden]{display:none!important}
+/* ---- the fallen: a quiet line under the roster, into the Cenotaph ---- */
+.fallen{display:flex;align-items:center;gap:12px;padding:13px 16px;margin-top:6px;background:transparent;
+  border:1px solid var(--edge);border-top-color:var(--gilt-deep);color:var(--ash-dim);cursor:pointer;text-align:left;font:inherit}
+.fallen:hover{border-color:var(--gilt-deep);background:rgba(201,162,39,.05)}
+.fl-dag{color:var(--gilt);font-size:16px}
+.fl-t{font:600 11px Cinzel,serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gilt)}
+.fl-n{flex:1;font:italic 14px Spectral,Georgia,serif;color:var(--ash-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-go{color:var(--ash-mute);font-size:18px}
 /* ---- the roster: each of the Unburied on their own marker ---- */
 .markers{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
 .marker{
@@ -568,6 +577,13 @@ body:has(#rolePick){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.oath.frayed .oath-snips{animation:none}}
 .oath-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--gilt);color:var(--gilt);font:500 9px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;background:var(--gilt-glow)}
 .oath-chip.frayed{border-color:var(--rust);color:var(--rust);background:rgba(181,80,60,.1)}
+/* ---- the rule cards ---- */
+.rc-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}.rc-chips .chip{cursor:pointer;font:inherit;font-size:12px}
+.rc-head{margin:0 0 10px;font:600 15px "Spectral",Georgia,serif;color:var(--ash);line-height:1.4}
+.rc-lines{display:grid;gap:0}
+.rc-l{display:grid;grid-template-columns:104px 1fr;gap:12px;padding:7px 0;border-top:1px solid var(--line-soft);font-size:13px;line-height:1.5;color:var(--ash-dim)}
+.rc-l b{font:500 10px "Cinzel",serif;letter-spacing:.14em;text-transform:uppercase;color:var(--gilt);padding-top:2px}
+@media (max-width:420px){.rc-l{grid-template-columns:88px 1fr;gap:10px}}
 .ma-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:900px){
   #tableScreen{overflow:auto}
@@ -5531,6 +5547,10 @@ function setSize(m, size){
 
 /* ---- what a model picked up ---- */
 function giveFound(m, what){
+  if(typeof realmAvailable === "function" && realmAvailable() && typeof stashOf === "function"){
+    /* finds go to the band's Armoury, to be handed out afterwards */
+    stashOf(band()).found.push(Object.assign({fid: uid(), by: m.name || ""}, what)); save(); return;
+  }
   m.found = (m.found || []).concat([Object.assign({fid: uid()}, what)]);
   save();
 }
@@ -5629,7 +5649,7 @@ function renderUnburied(b){
       <div class="gauge-line" style="margin-top:9px">
         <span class="chip">${nField} of ${b.members.length} fielded</span>
         <span class="chip">${bandActs(b)} activations a round</span>
-        ${b.cash ? `<span class="chip gilt">${b.cash} Cash</span>` : ""}
+        ${b.cash || realmAvailable() ? `<span class="chip gilt">${b.cash || 0} Cash</span>` : ""}
         ${(b.reputation || 0) !== 0 ? `<span class="chip ${b.reputation > 0 ? "good" : "bad"}">${esc((repLevel(b) || {}).name || "")} ${signed(b.reputation)}</span>` : ""}
 
       </div>
@@ -5673,6 +5693,7 @@ function renderUnburied(b){
     const ic = (svg, txt, tone, title) => `<span class="m-ic ${tone || ""}" title="${esc(title)}">${svg}${txt !== "" ? esc(txt) : ""}</span>`;
     const I = p => `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
     const icons = [
+      realmAvailable() && typeof needsOf === "function" && needsOf(m, b).length ? ic(I('<path d="M12 4v10M12 18v2"/>'), "", "gilt", needsOf(m, b).map(x => x.text).join(" ")) : "",
       nScars ? ic(I('<path d="M12 4v16M4 12h16"/>'), nScars, "bad", nScars + " scar" + (nScars > 1 ? "s" : "")) : "",
       isHurt(m) ? ic(I('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'), healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + m.wounds * n, "bad", "Health left") : "",
       m.xp ? ic(I('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), m.xp, "gilt", m.xp + " XP to spend") : "",
@@ -5732,6 +5753,24 @@ function renderUnburied(b){
   /* Camp is where the Unburied live, not where they are made: raising and
      calling up happen in the Reliquary and arrive here by code or file. */
   if(!realmAvailable()){ list.appendChild(add); list.appendChild(conj); }
+  /* the fallen are kept in the Cenotaph; this is the way in, only once someone is gone */
+  if(realmAvailable() && typeof armouryCount === "function"){
+    const ar = document.createElement("button");
+    ar.className = "fallen"; ar.style.gridColumn = "1/-1";
+    ar.innerHTML = `<span class="fl-dag">\u2694</span><span class="fl-t">The Armoury \u00b7 ${armouryCount(b)}</span>
+      <span class="fl-n">${armouryCount(b) ? "gear and finds nobody is holding" : "nothing kept yet"}</span><span class="fl-go">\u203a</span>`;
+    ar.onclick = openArmoury;
+    list.appendChild(ar);
+  }
+  if(realmAvailable() && ruleOn("narrative", b) && (b.wall || []).length){
+    const fl = document.createElement("button");
+    fl.className = "fallen"; fl.style.gridColumn = "1/-1";
+    const names = b.wall.slice(0, 3).map(s => esc(s.name)).join(" · ");
+    fl.innerHTML = `<span class="fl-dag">†</span><span class="fl-t">The fallen · ${b.wall.length}</span>
+      <span class="fl-n">${names}${b.wall.length > 3 ? " …" : ""}</span><span class="fl-go">›</span>`;
+    fl.onclick = openWall;
+    list.appendChild(fl);
+  }
   /* A Leader raised in the Reliquary to replace one who did not come back
      — or anyone else sent alone — arrives here, never the other way. */
   if(realmAvailable()){
@@ -6854,7 +6893,20 @@ function storyTabHTML(m){
 }
 function trainTabHTML(m){
   const locked = memberLocked(m), camp = realmAvailable();
-  return `<div class="slab">
+  const b = band(), laid = camp && laidUpRec(m), mortal = camp && mortalRec(m);
+  const need = camp ? `${mortal ? `<div class="slab" style="border-color:var(--rust)">
+      <div class="head"><span class="eyebrow" style="color:var(--rust)">Mortal wound</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 10px">They die unless surgery is paid before camp breaks.</p>
+      <div class="sheet-actions" style="flex-wrap:wrap;gap:8px;margin:0">
+        <button class="btn primary" id="ctLife" style="margin-left:0" ${(b.cash || 0) < surgeryCost(m) ? "disabled" : ""}>Life-saving surgery: ${surgeryCost(m)} Cash</button>
+        <button class="btn danger ghost" id="ctLetGo">Let go</button></div></div>` : ""}
+    ${laid ? `<div class="slab" style="border-color:var(--rust)">
+      <div class="head"><span class="eyebrow" style="color:var(--rust)">Laid up</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 10px">They cannot be fielded until they have rested.</p>
+      <div class="sheet-actions" style="margin:0"><button class="btn" id="ctRest" style="margin-left:0">Rest: end Laid up</button></div></div>` : ""}
+    ${needsOf(m, b).filter(x => x.kind === "quit").map(x => `<p class="quiet" style="margin:0 0 10px;color:var(--rust)">${esc(x.text)}</p>`).join("")}
+    ${momentsHTML(b, m.id)}` : "";
+  return need + `<div class="slab">
     <div class="head"><span class="eyebrow">Advancement</span><span class="rule"></span>${m.xp ? `<span class="chip gilt">${m.xp} XP</span>` : ""}</div>
     <p class="quiet" style="margin:0 0 10px">${m.xp
       ? "XP buys anything at its points price, surcharge and all."
@@ -6948,6 +7000,11 @@ function drawCard(){
   const tr = root.querySelector("#ctTrain"); if(tr) tr.onclick = () => openAdvance(m.id);
   const ge = root.querySelector("#ctGear"); if(ge) ge.onclick = () => openBuy(m.id);
   const su = root.querySelector("#ctSurg"); if(su) su.onclick = () => openTreat(m.id);
+  const redo = () => { render(); drawCard(); };
+  const rb = root.querySelector("#ctRest"); if(rb) rb.onclick = () => campRest(m.id, redo);
+  const lf = root.querySelector("#ctLife"); if(lf) lf.onclick = () => campSurgery(m.id, redo);
+  const lg = root.querySelector("#ctLetGo"); if(lg) lg.onclick = () => campLetGo(m.id, redo);
+  if(typeof bindMoments === "function") bindMoments(root, redo);
   const ed = root.querySelector("#ctEdit"); if(ed) ed.onclick = () => openMember(m.id);
   root.querySelector("#cBack").onclick = closeSheet;
   root.querySelector("#cDone").onclick = closeSheet;
@@ -9728,9 +9785,9 @@ function addMoment(b, mid, name, hooks, effect, options){
 }
 function resolveMoment(id){ const b = band(); b.moments = (b.moments || []).filter(x => x.id !== id); save(); }
 /* things that have happened which may earn a new name, waiting to be settled */
-function momentsHTML(b){
+function momentsHTML(b, onlyMid){
   if(!ruleOn("narrative", b)) return "";
-  const list = (b.moments || []).filter(x => b.members.some(m => m.id === x.mid));
+  const list = (b.moments || []).filter(x => b.members.some(m => m.id === x.mid) && (!onlyMid || x.mid === onlyMid));
   if(!list.length) return "";
   return `<div class="slab" style="border-color:var(--gilt-deep)">
     <div class="head"><span class="eyebrow">A new name?</span><span class="rule"></span><span class="quiet">something happened to them</span></div>
@@ -10383,14 +10440,14 @@ function addStone(b, m, how, gilded, epitaph, options){
     titles: (m.titles || []).slice(),
     role: m.role || "", battles: m.battles || 0,
     how: how || "", gilded: !!gilded, epitaph: epitaph !== undefined ? epitaph : (m.epitaph || ""),
-    options: (options || []).slice(0, 3)});
+    options: (epitaph !== undefined ? epitaph : m.epitaph) ? [] : (options || []).slice(0, 3)});
   b.wall = b.wall.slice(0, 200);
   qlogBand(b, (m.name || "Someone") + " — " + (how || "gone"));
 }
 /* The band's stash: what the fallen carried. Anyone can take it up again, free. */
 function stashOf(b){
   b.stash = b.stash || {};
-  ["weapons", "armour", "items"].forEach(k => { b.stash[k] = b.stash[k] || []; });
+  ["weapons", "armour", "items", "found"].forEach(k => { b.stash[k] = b.stash[k] || []; });
   return b.stash;
 }
 function stashGear(b, m){
@@ -10413,6 +10470,8 @@ function layToGrave(b, m, how, gilded, epitaph, options){
   save();
 }
 
+let wallEdit = null;   // the stone being reworded
+function stoneSet(s, edit){ return !!s.epitaph && !(s.options || []).length && wallEdit !== s.sid; }
 function openWall(){
   const b = band(), list = b.wall || [];
   $("#sheet2In").innerHTML = `
@@ -10424,31 +10483,37 @@ function openWall(){
     <p class="lead">${"A resting place for every one of the Unburied who is gone."}
       ${(RS.epitaphWall || {}).gilded ? " Gilded stones: laid to rest with honour." : ""}</p>
     ${list.length ? list.map(s => `
-      <div class="slab" style="margin-top:12px;border-color:${s.gilded ? "var(--gilt)" : "var(--line)"}">
+      <div class="slab" style="margin-top:12px;border-color:${s.gilded || stoneSet(s) ? "var(--gilt)" : "var(--line)"}">
         <div class="head"><span class="eyebrow" style="${s.gilded ? "color:var(--gilt)" : ""}">${s.gilded ? "✦ " : ""}${esc(s.name)}</span><span class="rule"></span>
           <button class="tiny" data-wdel="${esc(s.sid)}" aria-label="Remove the stone">×</button></div>
         ${(s.epithets && s.epithets.length ? s.epithets : s.epithet ? [s.epithet] : []).length ? `<div class="cardepi" style="margin:0 0 4px">${esc((s.epithets && s.epithets.length ? s.epithets : [s.epithet]).join(" \u2192 "))}</div>` : ""}
         <div class="quiet" style="margin-bottom:8px">
           ${esc([s.role, s.how, s.battles ? s.battles + " battle" + (s.battles === 1 ? "" : "s") : "", (s.titles || []).join(", ")].filter(Boolean).join(" · "))}
           · ${esc(new Date(s.at).toLocaleDateString())}</div>
+        ${stoneSet(s) ? `<p class="serif" style="margin:2px 0 0;font-style:italic;font-size:16px;line-height:1.5;color:var(--gilt)">“${esc(s.epitaph)}”</p>
+          <div class="sheet-actions" style="margin-top:8px"><button class="btn sm ghost" data-wre="${esc(s.sid)}" style="margin-left:0">Reword</button></div>` : `
         <input class="input serif" data-wep="${esc(s.sid)}" maxlength="140" value="${esc(s.epitaph)}"
-          placeholder="what the stone says">
-        ${(s.options || []).length ? `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${(s.options || []).map((o, i) =>
+          placeholder="what the stone says">`}
+        ${stoneSet(s) ? "" : (s.options || []).length ? `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${(s.options || []).map((o, i) =>
           `<button class="pick" type="button" data-wo="${esc(s.sid)}|${i}" style="padding:8px 10px"><div class="pick-main"><div class="pick-name" style="font-family:Spectral,Georgia,serif;font-style:italic;font-size:13.5px;font-weight:500">${esc(o)}</div></div></button>`).join("")}</div>` : ""}
-        <div class="sheet-actions" style="margin-top:8px">
+        ${stoneSet(s) ? "" : `<div class="sheet-actions" style="margin-top:8px">
+          <button class="btn sm primary" data-wok="${esc(s.sid)}" style="margin-left:0">Set in stone</button>
           <button class="btn sm ghost" data-wai="${esc(s.sid)}" style="margin-left:0" hidden>Write one from their deeds</button>
-        </div>
+        </div>`}
       </div>`).join("") : `<div class="empty"><div class="big">The Cenotaph is empty</div>
         <div class="quiet">Nobody has been lost yet.</div></div>`}`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#wlX").onclick = closePicker;
+  $("#wlX").onclick = () => { wallEdit = null; closePicker(); };
   $("#sheet2In").querySelectorAll("[data-wep]").forEach(inp => inp.oninput = () => {
     const s = list.find(x => x.sid === inp.dataset.wep); if(s){ s.epitaph = inp.value; save(); }
   });
+  $("#sheet2In").querySelectorAll("[data-wre]").forEach(btn => btn.onclick = () => { wallEdit = btn.dataset.wre; openWall(); });
+  $("#sheet2In").querySelectorAll("[data-wok]").forEach(btn => btn.onclick = () => {
+    const s = list.find(x => x.sid === btn.dataset.wok); if(s && s.epitaph.trim()){ s.options = []; wallEdit = null; save(); openWall(); } });
   $("#sheet2In").querySelectorAll("[data-wo]").forEach(btn => btn.onclick = () => {
     const [sid, i] = btn.dataset.wo.split("|");
     const s = list.find(x => x.sid === sid); if(!s) return;
-    s.epitaph = (s.options || [])[+i] || s.epitaph; save(); openWall();
+    s.epitaph = (s.options || [])[+i] || s.epitaph; s.options = []; wallEdit = null; save(); openWall();
   });
   $("#sheet2In").querySelectorAll("[data-wdel]").forEach(btn => btn.onclick = () => {
     b.wall = list.filter(x => x.sid !== btn.dataset.wdel); save(); openWall();
@@ -10557,34 +10622,57 @@ function openCamp(){
   each("[data-train]", btn => openAdvance(btn.dataset.train));
   each("[data-gear]", btn => openBuy(btn.dataset.gear));
   each("[data-treat]", btn => openTreat(btn.dataset.treat));
-  each("[data-rest]", btn => {
-    const m = b.members.find(x => x.id === btn.dataset.rest); if(!m) return;
-    const rec = laidUpRec(m); if(rec) m.scars = m.scars.filter(s => s !== rec);
-    m.fielded = true; save(); toast(m.name + " is back on their feet"); openCamp(); render();
-  });
-  each("[data-surg]", btn => {
-    const m = b.members.find(x => x.id === btn.dataset.surg); if(!m) return;
-    const rec = mortalRec(m), cost = surgeryCost(m);
-    if(!rec || (b.cash || 0) < cost) return;
-    b.cash -= cost; rec.surgery = true;
-    rec.name = "Mortal wound, treated"; rec.effect = "Surgery was paid. They live.";
-    save(); render();
-    if(ruleOn("narrative", b)){
-      const mom = addMoment(b, m.id, "Came back from the edge of death", ["twice-born", "cheat-death", "the Stitched"], "Surgery was paid; they live.",
-        (b.lastNamings && b.lastNamings.survived) || []);
-      toast(m.name + " lives");
-      openEpithet(m, mom, {back: () => { openCamp(); render(); }, moment: mom.id,
-        lead: m.name + " was dying, and lived. People will call them something for it; it replaces the name they had."});
-    } else { toast(m.name + " lives"); openCamp(); }
-  });
-  each("[data-letgo]", btn => {
-    const m = b.members.find(x => x.id === btn.dataset.letgo); if(!m) return;
-    const rec = mortalRec(m) || {};
-    const how = rec.flavourCause ? "Mortal wound from " + rec.flavourCause + ", no surgery" : "Mortal wound, no surgery";
-    openEpitaph(m, {reason: rec.flavourCause ? "a mortal wound from " + rec.flavourCause : "a mortal wound they could not pay to mend",
-      options: rec.epitaphOptions, back: openCamp,
-      done: ep => { layToGrave(b, m, how, false, ep, rec.epitaphOptions); toast(m.name + " is gone"); openCamp(); render(); }});
-  });
+  each("[data-rest]", btn => campRest(btn.dataset.rest, openCamp));
+  each("[data-surg]", btn => campSurgery(btn.dataset.surg, openCamp));
+  each("[data-letgo]", btn => campLetGo(btn.dataset.letgo, openCamp));
+}
+
+/* What each of these does is the same whether it is asked for from the Camp sheet
+   or from the member's own card; redraw says where to land afterwards. */
+function campRest(mid, redraw){
+  const b = band(), m = b.members.find(x => x.id === mid); if(!m) return;
+  const rec = laidUpRec(m); if(rec) m.scars = m.scars.filter(s => s !== rec);
+  m.fielded = true; save(); toast(m.name + " is back on their feet"); redraw(); render();
+}
+function campSurgery(mid, redraw){
+  const b = band(), m = b.members.find(x => x.id === mid); if(!m) return;
+  const rec = mortalRec(m), cost = surgeryCost(m);
+  if(!rec || (b.cash || 0) < cost) return;
+  b.cash -= cost; rec.surgery = true;
+  rec.name = "Mortal wound, treated"; rec.effect = "Surgery was paid. They live.";
+  save(); render();
+  if(ruleOn("narrative", b)){
+    const mom = addMoment(b, m.id, "Came back from the edge of death", ["twice-born", "cheat-death", "the Stitched"], "Surgery was paid; they live.",
+      (b.lastNamings && b.lastNamings.survived) || []);
+    toast(m.name + " lives");
+    openEpithet(m, mom, {back: () => { redraw(); render(); }, moment: mom.id,
+      lead: m.name + " was dying, and lived. People will call them something for it; it replaces the name they had."});
+  } else { toast(m.name + " lives"); redraw(); }
+}
+function campLetGo(mid, redraw){
+  const b = band(), m = b.members.find(x => x.id === mid); if(!m) return;
+  const rec = mortalRec(m) || {};
+  const how = rec.flavourCause ? "Mortal wound from " + rec.flavourCause + ", no surgery" : "Mortal wound, no surgery";
+  openEpitaph(m, {reason: rec.flavourCause ? "a mortal wound from " + rec.flavourCause : "a mortal wound they could not pay to mend",
+    options: rec.epitaphOptions, back: redraw,
+    done: ep => { const fromCard = $("#sheet").classList.contains("show");
+      layToGrave(b, m, how, false, ep, rec.epitaphOptions); toast(m.name + " is gone");
+      if(fromCard){ closePicker(); closeSheet(); } else openCamp();
+      render(); }});
+}
+/* where a Barrow sheet goes back to: the card it was opened from, else the Camp sheet */
+function campBack(){
+  closePicker(); render();
+  if($("#sheet").classList.contains("show") && typeof carded === "function" && carded()) drawCard(); else openCamp();
+}
+/* what wants doing for this member before the band sets out: shown on the roster tile and the card */
+function needsOf(m, b){
+  const out = [];
+  if(mortalRec(m)) out.push({kind: "mortal", text: "Mortal wound: dies unless surgery is paid before camp breaks."});
+  if(laidUpRec(m)) out.push({kind: "laid", text: "Laid up: cannot be fielded until they rest."});
+  if(ruleOn("narrative", b) && (b.moments || []).some(x => x.mid === m.id)) out.push({kind: "name", text: "Something happened to them that may earn a new name."});
+  campRisks(b).filter(r => r.m === m && r.kind === "quit").forEach(r => out.push({kind: "quit", text: r.text}));
+  return out;
 }
 
 /* ---- buying and selling gear with Cash: 1 Cash buys 1 point, sell for half ---- */
@@ -10597,7 +10685,10 @@ function openBuy(mid){
   const mine = owned.map(e => {
     const o = cat[e.id]; if(!o) return "";
     return `<div class="grow"><div class="grow-main"><div class="grow-name">${esc(skinOf(m, e.id, o.name))}${k.qty && (e.qty || 1) > 1 ? " ×" + e.qty : ""}</div></div>
-      <div class="grow-r"><button class="btn sm ghost" data-sell="${esc(e.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div></div>`;
+      <div class="grow-r" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        ${buyKind !== "items" ? `<button class="btn sm ghost" data-swap="${esc(e.id)}">Swap</button>` : ""}
+        <button class="btn sm ghost" data-put="${esc(e.id)}">To the Armoury</button>
+        <button class="btn sm ghost" data-sell="${esc(e.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div></div>`;
   }).join("");
   const st = stashOf(b);
   const stashRows = (buyKind === "armour" ? st.armour.map(id => ({id, qty: 1})) : st[buyKind]).map(e => {
@@ -10628,7 +10719,7 @@ function openBuy(mid){
           <div class="pick-cost mono">${o.cost} Cash</div></button>`).join("")}
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#byX").onclick = () => { openCamp(); render(); };
+  $("#byX").onclick = campBack;
   $("#sheet2In").querySelectorAll("[data-bk]").forEach(btn => btn.onclick = () => { buyKind = btn.dataset.bk; openBuy(mid); });
   $("#sheet2In").querySelectorAll("[data-buy]").forEach(btn => btn.onclick = () => {
     const o = cat[btn.dataset.buy]; if(!o || (b.cash || 0) < o.cost) return;
@@ -10648,22 +10739,11 @@ function openBuy(mid){
   });
   $("#sheet2In").querySelectorAll("[data-take]").forEach(btn => btn.onclick = () => {
     const id = btn.dataset.take, o = cat[id]; if(!o) return;
-    const arr = m[buyKind] = m[buyKind] || [];
-    if(buyKind === "armour"){
-      const uses = armourUsesHand(id);
-      const oldId = arr.map(a => a.id || a).find(x => armourUsesHand(x) === uses);
-      m.armour = arr.filter(x => armourUsesHand(x.id || x) !== uses);
-      m.armour.push(id);
-      const i = st.armour.indexOf(id); if(i >= 0) st.armour.splice(i, 1);
-      if(oldId) st.armour.push(oldId);   /* what they set down goes back to the stash */
-    } else {
-      const s = st[buyKind].find(x => x.id === id); if(!s) return;
-      const e = arr.find(x => x.id === id);
-      if(e) e.qty = (e.qty || 1) + 1; else arr.push({id, qty: 1, mods: (s.mods || []).slice()});
-      if((s.qty || 1) > 1) s.qty--; else st[buyKind] = st[buyKind].filter(x => x !== s);
-    }
-    save(); toast(o.name + " taken up"); openBuy(mid); render();
+    takeFromStash(b, m, buyKind, id); save(); toast(o.name + " taken up"); openBuy(mid); render();
   });
+  $("#sheet2In").querySelectorAll("[data-swap]").forEach(btn => btn.onclick = () => openSwap(mid, buyKind, btn.dataset.swap));
+  $("#sheet2In").querySelectorAll("[data-put]").forEach(btn => btn.onclick = () => {
+    putInStash(b, m, buyKind, btn.dataset.put); save(); toast("Put in the Armoury"); openBuy(mid); render(); });
   $("#sheet2In").querySelectorAll("[data-sell]").forEach(btn => btn.onclick = () => {
     const id = btn.dataset.sell, o = cat[id]; if(!o) return;
     if(k.qty){
@@ -10717,7 +10797,7 @@ function openTreat(mid){
     <p class="lead">Mend a scar for less, or replace the lost limb or eye outright with something mechanical or arcane. As many as you can pay for.</p>
     <div class="slab" style="margin-top:12px">${rows || `<p class="quiet" style="margin:0">No scars to treat.</p>`}</div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#trX").onclick = () => { openCamp(); render(); };
+  $("#trX").onclick = campBack;
   $("#sheet2In").querySelectorAll("[data-tr]").forEach(btn => btn.onclick = () => {
     const [iid, k] = btn.dataset.tr.split("|");
     const s = m.scars.find(x => x.iid === iid); if(!s) return;
@@ -10798,13 +10878,11 @@ function openCampMenu(){
   const b = band();
   const items = [];
   if(ruleOn("campaign", b)){
-    items.push(["After the battle", "Fate rolls, XP, Cash and Reputation", "openAfter"]);
-    items.push(["Camp", "Train, buy gear, have scars operated on", "openCamp"]);
+    /* the sheet opens by itself when a battle ends; this is only the way back to one left half-finished */
+    if(b.pendingAfter) items.push(["Finish the after-battle sheet", "Fate rolls, XP, Cash and Reputation still waiting", "openAfter"]);
   }
-  if(ruleOn("narrative", b))
-    items.push(["The Cenotaph", (b.wall || []).length + " remembered", "openWall"]);
   items.push(["Back up or move this band", "Save it as a code or a file, or hand it to another phone", "openCarry"]);
-  items.push(["Rules", "Which rule categories this band plays", "openRules"]);
+  items.push(["Rules, on cards", "Quick reference: the roll, a round, combat, conditions, Fate", "openRuleCards"]);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="cmX" aria-label="Close">
@@ -10817,6 +10895,190 @@ function openCampMenu(){
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#cmX").onclick = closePicker;
   $("#sheet2In").querySelectorAll("[data-cm]").forEach(btn => btn.onclick = () => window[items[+btn.dataset.cm][2]]());
+}
+
+/* =====================================================================
+   THE ARMOURY
+   Everything the band owns that nobody is holding: what the fallen left, what was set
+   down, and what was found in the field. Weapons, armour and carried gear can be handed
+   to anyone who can bear them (or swapped for something they already carry), or sold
+   for half their points. Finds are free-text, so they are only handed out or thrown away.
+   ===================================================================== */
+const ARM_KINDS = [["weapons", "Weapons"], ["armour", "Armour"], ["items", "Carried"]];
+
+/* the stash as a flat list: {kind, id, qty, mods} */
+function armouryList(b){
+  const st = stashOf(b), out = [];
+  st.weapons.forEach(e => out.push({kind: "weapons", id: e.id, qty: e.qty || 1, mods: e.mods || []}));
+  const seen = {};
+  st.armour.forEach(id => { seen[id] = (seen[id] || 0) + 1; });
+  Object.keys(seen).forEach(id => out.push({kind: "armour", id, qty: seen[id], mods: []}));
+  st.items.forEach(e => out.push({kind: "items", id: e.id, qty: e.qty || 1, mods: e.mods || []}));
+  return out;
+}
+function armouryCount(b){ return stashCount(b) + (stashOf(b).found || []).length; }
+
+/* why this piece cannot be carried by m once `outId` (one of their weapons) is set down; null if it can */
+function bearBlock(m, kind, id, outId){
+  if(!outId || kind !== "weapons") return handsBlock(m, kind, id);
+  const saved = m.weapons; let done = false; const next = [];
+  (m.weapons || []).forEach(e => {
+    if(outId === "*") return;
+    if(!done && e.id === outId){ done = true; if((e.qty || 1) > 1) next.push(Object.assign({}, e, {qty: e.qty - 1})); }
+    else next.push(e);
+  });
+  m.weapons = next;
+  try{ return handsBlock(m, kind, id); } finally { m.weapons = saved; }
+}
+/* one piece out of the stash and into a member's hands; outId, if given, is the weapon they set down for it */
+function takeFromStash(b, m, kind, id, outId){
+  const st = stashOf(b), arr = m[kind] = m[kind] || [];
+  if(kind === "armour"){
+    const uses = armourUsesHand(id);
+    const oldId = arr.map(a => a.id || a).find(x => armourUsesHand(x) === uses);
+    m.armour = arr.filter(x => armourUsesHand(x.id || x) !== uses);
+    m.armour.push(id);
+    const i = st.armour.indexOf(id); if(i >= 0) st.armour.splice(i, 1);
+    if(oldId) st.armour.push(oldId);
+    return;
+  }
+  const s = st[kind].find(x => x.id === id); if(!s) return;
+  const mods = (s.mods || []).slice();
+  if((s.qty || 1) > 1) s.qty--; else st[kind] = st[kind].filter(x => x !== s);
+  if(outId === "*") (m.weapons || []).slice().forEach(e => { for(let n = e.qty || 1; n > 0; n--) putInStash(b, m, "weapons", e.id); });
+  else if(outId) putInStash(b, m, kind, outId);
+  const e = m[kind].find(x => x.id === id);
+  if(e) e.qty = (e.qty || 1) + 1; else m[kind].push({id, qty: 1, mods});
+}
+/* one piece from a member back into the stash */
+function putInStash(b, m, kind, id){
+  const st = stashOf(b);
+  if(kind === "armour"){
+    m.armour = (m.armour || []).filter(x => (x.id || x) !== id); st.armour.push(id);
+  } else {
+    const e = (m[kind] || []).find(x => x.id === id); if(!e) return;
+    const mods = (e.mods || []).slice();
+    if((e.qty || 1) > 1) e.qty--; else m[kind] = m[kind].filter(x => x !== e);
+    if(!(m[kind] || []).some(x => x.id === id) && m.skins) delete m.skins[id];
+    const have = st[kind].find(x => x.id === id);
+    if(have) have.qty = (have.qty || 1) + 1; else st[kind].push({id, qty: 1, mods});
+  }
+}
+
+function openArmoury(){
+  const b = band(), st = stashOf(b), cat = k => catOf(k);
+  const rows = ARM_KINDS.map(([k, label]) => {
+    const list = armouryList(b).filter(x => x.kind === k && cat(k)[x.id]);
+    if(!list.length) return "";
+    return `<div class="slab"><div class="head"><span class="eyebrow">${label}</span><span class="rule"></span></div>
+      ${list.map(x => { const o = cat(k)[x.id];
+        return `<div class="grow" style="flex-wrap:wrap"><div class="grow-main" style="min-width:140px">
+          <div class="grow-name">${esc(o.name)}${x.qty > 1 ? " ×" + x.qty : ""}</div>
+          <div class="grow-sub">${esc(o.desc || "")}</div></div>
+          <div class="grow-r" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn sm" data-ag="${k}|${esc(x.id)}">Give to…</button>
+            <button class="btn sm ghost" data-asell="${k}|${esc(x.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div></div>`; }).join("")}
+    </div>`; }).join("");
+  const found = (st.found || []).map(f => `<div class="grow" style="flex-wrap:wrap"><div class="grow-main" style="min-width:140px">
+      <div class="grow-name">${esc(f.name)}${f.roll ? ` <span class="chip mono">${esc(RS.dice.lootDie)} ${f.roll}</span>` : ""}</div>
+      ${f.note ? `<div class="grow-sub">${esc(f.note)}</div>` : ""}
+      <div class="grow-sub">${f.by ? esc(f.by) + " found it" : ""}${f.from ? (f.by ? " at " : "from ") + esc(f.from) : ""}</div></div>
+      <div class="grow-r" style="gap:6px">
+        <button class="btn sm" data-agf="${esc(f.fid)}">Give to…</button>
+        <button class="tiny" data-adf="${esc(f.fid)}" aria-label="Throw it away">×</button></div></div>`).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="axX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">The Armoury</div>${cashChip(b)}</div>
+    <p class="lead">What the band owns that nobody is holding: the gear of the fallen, what was set down, and what was found.
+      Hand it to anyone who can bear it, or sell it for half its points.</p>
+    ${rows}
+    ${found ? `<div class="slab" style="border-color:var(--gilt-deep)"><div class="head"><span class="eyebrow">Found in the field</span><span class="rule"></span><span class="quiet">free, give each to someone</span></div>${found}</div>` : ""}
+    ${rows || found ? "" : `<div class="empty"><div class="big">The Armoury is empty</div>
+      <div class="quiet">Gear the band sets down, finds, or inherits from the fallen is kept here.</div></div>`}`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#axX").onclick = closePicker;
+  const q = sel => $("#sheet2In").querySelectorAll(sel);
+  q("[data-ag]").forEach(btn => btn.onclick = () => { const [k, id] = btn.dataset.ag.split("|"); openArmouryGive(k, id); });
+  q("[data-agf]").forEach(btn => btn.onclick = () => openArmouryGive("found", btn.dataset.agf));
+  q("[data-adf]").forEach(btn => btn.onclick = () => { st.found = st.found.filter(f => f.fid !== btn.dataset.adf); save(); openArmoury(); render(); });
+  q("[data-asell]").forEach(btn => btn.onclick = () => {
+    const [k, id] = btn.dataset.asell.split("|"), o = cat(k)[id]; if(!o) return;
+    if(k === "armour"){ const i = st.armour.indexOf(id); if(i >= 0) st.armour.splice(i, 1); }
+    else { const s = st[k].find(x => x.id === id); if(!s) return; if((s.qty || 1) > 1) s.qty--; else st[k] = st[k].filter(x => x !== s); }
+    b.cash = (b.cash || 0) + Math.floor(o.cost / 2); save(); toast(o.name + " sold"); openArmoury(); render();
+  });
+}
+
+/* who can have this piece: everyone who can bear it, plus a swap for any weapon that would make room */
+function openArmouryGive(kind, id){
+  const b = band(), st = stashOf(b);
+  const isFound = kind === "found", f = isFound ? (st.found || []).find(x => x.fid === id) : null;
+  const o = isFound ? null : catOf(kind)[id]; if(!f && !o) return openArmoury();
+  const rows = b.members.map(m => {
+    let act = "";
+    if(isFound) act = `<button class="btn sm" data-go="${esc(m.id)}|">Give</button>`;
+    else {
+      const why = bearBlock(m, kind, id);
+      if(!why) act = `<button class="btn sm" data-go="${esc(m.id)}|">${kind === "armour" && (m.armour || []).length ? "Wear" : "Give"}</button>`;
+      else if(kind === "weapons"){
+        const swaps = (m.weapons || []).filter(e => !bearBlock(m, kind, id, e.id));
+        act = swaps.length ? swaps.map(e => `<button class="btn sm" data-go="${esc(m.id)}|${esc(e.id)}">Swap for ${esc(skinOf(m, e.id, (catOf("weapons")[e.id] || {}).name || e.id))}</button>`).join("")
+          : !bearBlock(m, kind, id, "*") ? `<button class="btn sm" data-go="${esc(m.id)}|*">Swap for all they carry</button>`
+          : `<span class="pick-no">${esc(why)}</span>`;
+      } else act = `<span class="pick-no">${esc(why)}</span>`;
+    }
+    return `<div class="grow" style="flex-wrap:wrap"><div class="grow-main" style="min-width:120px"><div class="grow-name">${isLeaderM(m) ? crownHTML(12) : ""}${esc(fullName(m)) || "Unnamed"}</div>
+      <div class="grow-sub">${esc((m.weapons || []).map(e => skinOf(m, e.id, (catOf("weapons")[e.id] || {}).name || e.id)).join(" · ") || "Unarmed")}</div></div>
+      <div class="grow-r" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">${act}</div></div>`;
+  }).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="agX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Give to…</div></div>
+    <div class="cardhead" style="padding-bottom:10px;margin-bottom:10px"><div class="cardname" style="font-size:21px">${esc(isFound ? f.name : o.name)}</div></div>
+    <div class="slab">${rows}</div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#agX").onclick = openArmoury;
+  $("#sheet2In").querySelectorAll("[data-go]").forEach(btn => btn.onclick = () => {
+    const [mid, out] = btn.dataset.go.split("|"), m = b.members.find(x => x.id === mid); if(!m) return;
+    if(isFound){
+      m.found = (m.found || []).concat([Object.assign({}, f)]); st.found = st.found.filter(x => x !== f);
+    } else takeFromStash(b, m, kind, id, out || null);
+    save(); toast((isFound ? f.name : o.name) + " → " + (m.name || "them")); openArmoury(); render();
+  });
+}
+
+/* a carried piece swapped for one from the Armoury that can take its place */
+function openSwap(mid, kind, oldId){
+  const b = band(), m = b.members.find(x => x.id === mid); if(!m) return;
+  const cat = catOf(kind), old = cat[oldId] || {name: oldId};
+  const opts = armouryList(b).filter(x => x.kind === kind && cat[x.id] && x.id !== oldId
+    && (kind !== "armour" || armourUsesHand(x.id) === armourUsesHand(oldId)));
+  const outFor = {};
+  const rows = opts.map(x => { const o = cat[x.id]; let out = kind === "weapons" ? oldId : null, why = bearBlock(m, kind, x.id, out), all = false;
+    if(why && kind === "weapons" && !bearBlock(m, kind, x.id, "*")){ out = "*"; why = null; all = true; }
+    outFor[x.id] = out;
+    return `<button class="pick ${why ? "no" : ""}" data-sw="${esc(x.id)}" ${why ? "disabled" : ""}><div class="pick-main">
+      <div class="pick-name">${esc(o.name)}${x.qty > 1 ? " ×" + x.qty : ""}</div><div class="pick-desc">${esc(o.desc || "")}</div>
+      ${all ? `<div class="pick-desc">Sets down everything they carry to make room.</div>` : ""}
+      ${why ? `<div class="pick-no">${esc(why)}</div>` : ""}</div></button>`; }).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="swX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg>
+      </button><div class="eyebrow">Swap</div></div>
+    <div class="cardhead" style="padding-bottom:10px;margin-bottom:10px"><div class="cardname" style="font-size:21px">${esc(fullName(m)) || "Unnamed"}</div></div>
+    <p class="lead">Set down ${esc(old.name)} for something from the Armoury. It goes back there.</p>
+    <div class="picks">${rows || `<p class="quiet">Nothing in the Armoury of that kind.</p>`}</div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#swX").onclick = () => openBuy(mid);
+  $("#sheet2In").querySelectorAll("[data-sw]").forEach(btn => btn.onclick = () => {
+    takeFromStash(b, m, kind, btn.dataset.sw, outFor[btn.dataset.sw] || null);
+    save(); toast("Swapped"); openBuy(mid); render();
+  });
 }
 
 /* ---- scnmap.js ---- */
@@ -11124,6 +11386,144 @@ function mapKeyHTML(map){
       </div>`;
     }).join("")}
   </div>`;
+}
+
+/* ---- rulecards.js ---- */
+/* =====================================================================
+   QUICK REFERENCE: THE RULES, ON CARDS
+   One screen to look something up in mid-game. Every number is read from the ruleset,
+   so a card can never disagree with the rules the app is built on. Written short, in
+   the order a game asks its questions: the roll, the round, your activation,
+   then what fighting does, then what it costs afterwards.
+   ===================================================================== */
+
+function ruleCards(){
+  const R = RS, d = R.dice || {}, mv = R.movement || {}, sh = R.shooting || {}, me = R.melee || {}, dm = R.damage || {};
+  const act = (R.actions || []), rx = R.reactions || {}, st = R.strain || {}, nv = R.nerve || {}, mo = R.morale || {}, cs = R.casting || {};
+  const by = (arr, id) => (arr || []).find(x => x.id === id) || {};
+  const cond = id => (by(R.conditions, id).desc || "");
+  const vic = (R.scenario || {}).victory || {};
+  const brk = (mo.break || {}), thr = (brk.thresholds || [.5, .75]).map(t => Math.round(t * 100) + "%");
+  const L = (a, b) => [a, b];
+  return [
+  {id: "roll", group: "Core", title: "The roll", head: `Roll the stat die. ${d.target || 4} or better succeeds. ${d.critical || 8} or better is a Critical.`, lines: [
+    L("Steps", "Modifiers step the die up or down the ladder " + (d.ladder || []).join(" → ") + ", never add numbers. An up-step and a down-step cancel."),
+    L("Off the ladder", "Below " + (d.ladder || ["d4"])[0] + " always fails. Above " + (d.ladder || []).slice(-1)[0] + ": roll two d12 and keep the higher."),
+    L("Opposed", "Both roll, higher wins, a tie is nothing."),
+    L("Other dice", "Risk die " + (d.riskDie || "d6") + " (rolled with a push or a power). Fate " + (d.fateDie || "d20") + ". Loot " + (d.lootDie || "d100") + ".")]},
+
+  {id: "round", group: "Turn", title: "A round", head: "Three steps: Tempo, Activations, End.", lines: [
+    L("Tempo", "Gain Nerve. Leaders roll opposed Wits; the winner chooses who activates first (no leader: d4)."),
+    L("Activations", "Sides alternate. The side with more activations acts several units a turn (the larger over the smaller, rounded up). Each unit's activations are spent one at a time."),
+    L("End", "Scenario events. Break tests if a threshold was crossed. Unused Ready is cleared. A model that did not push this round rests 1 Strain.")]},
+
+  {id: "activation", group: "Turn", title: "Your activation", head: "Spend your actions, in any order. One Attack and one Power per activation.", lines:
+    act.map(a => L(a.name, a.desc))},
+
+  {id: "reactions", group: "Turn", title: "Ready and reactions", head: "A Ready token lets a unit react once. Reacting costs only the token.", lines: [
+    L("Gain Ready", "End an activation without making an Attack. (Vigilant starts each round with one.) Lost at the End step."),
+    L("When", "An enemy in sight finishes a Move or Charge within " + (rx.range || 30) + " cm, or declares an attack against you."),
+    ...(rx.list || []).map(r => L(r.name, r.desc))]},
+
+  {id: "melee", group: "Combat", title: "Fighting up close", head: "Opposed Fight rolls. The higher roll hits only if it is also " + (d.target || 4) + " or better.", lines: [
+    L("Engaged", "Within " + (mv.engagedRange || 2) + " cm of an enemy. The defender hits back."),
+    L("Outnumbered", "Each extra model against you steps their roll up " + ((me.outnumber || {}).stepUpPerExtraModel || 1) + " (at most " + ((me.outnumber || {}).maxSteps || 2) + "). Each extra pair of arms cancels one."),
+    L("Charge", by(act, "charge").desc || ""),
+    L("Break off", mv.breakOff || "Leaving costs a free attack from each enemy left.")]},
+
+  {id: "shooting", group: "Combat", title: "Shooting and cover", head: "Aim rolls against the target. Cover steps the shot down " + (sh.coverStepDown || 1) + ".", lines: [
+    L("Cover", sh.coverRule || ""),
+    L("Long shots", "Beyond a weapon's range, up to " + ((sh.longShot || {}).maxMultiplier || 2) + "× it: the shot steps down " + ((sh.longShot || {}).stepDown || 1) + "."),
+    L("Obscuring", "Terrain at least " + (sh.obscuringDepth || 5) + " cm deep along the line hides the target."),
+    L("Into a fight", sh.intoMelee || ""),
+    L("Aim", by(act, "aim").desc || "")]},
+
+  {id: "movement", group: "Combat", title: "Moving and terrain", head: "Move is in cm. Rough ground and climbing cost double.", lines: [
+    L("Difficult", "Costs " + (mv.difficultMultiplier || 2) + "× the distance."),
+    L("Climbing", "Costs " + (mv.climbMultiplier || 2) + "×; anything above " + (mv.climbTestAbove || 10) + " cm needs a test."),
+    L("Jumping", "Up to " + (mv.freeJump || 5) + " cm free, never more than " + (mv.maxJump || 10) + " cm."),
+    L("Falling", "Up to " + ((mv.fall || {}).safe || 5) + " cm is safe. Beyond, 1 damage for every " + ((mv.fall || {}).damagePer || 10) + " cm, no save, then Pinned."),
+    L("Low and tall", "Up to 5 cm is low cover (hopped over), 5 to 10 cm is high cover, over 10 cm blocks sight and needs a climb.")]},
+
+  {id: "damage", group: "Body", title: "Damage and Down", head: "Armour saves cancel damage. At 0 Health a model is Down.", lines: [
+    L("Armour save", dm.armourSave || ""),
+    L("Critical", "A Critical ignores armour."),
+    L("Down", cond("down")),
+    ...(dm.aroundDown || []).map(a => L(a.id.charAt(0).toUpperCase() + a.id.slice(1), a.by + ": " + a.effect + ".")),
+    L("Healed from Down", "Stands with its Health restored, and is Pinned.")]},
+
+  {id: "conditions", group: "Body", title: "Conditions", head: "What each one does to a model.", lines:
+    ["shaken", "pinned", "burning", "tainted", "marked", "stabilised", "ready"].map(id => L(id.charAt(0).toUpperCase() + id.slice(1), cond(id)))},
+
+  {id: "strain", group: "Body", title: "Strain and pushing", head: "Pushing costs Strain. Push too far and the risk die burns you out.", lines: [
+    ...(st.pushes || []).map(p => L(p.name + " (" + p.strain + ")", p.desc)),
+    L("Burnout", "If the risk die rolls under your Strain after the push: 1 damage, no save, Strain back to 0. The action still happens. At " + (st.autoBurnoutAt || 6) + " Strain it happens on its own."),
+    L("Resting", "End step: a model that did not push removes " + ((st.restDecay || {}).amount || 1) + " Strain. Recover removes 1 at any time."),
+    L("Nerve", "Spend 1 Nerve to cancel a Burnout.")]},
+
+  {id: "nerve", group: "Mind", title: "Nerve", head: "A pool the whole side shares, gained every round.", lines: [
+    L("Gain", "+" + (nv.perRound || 2) + " at Tempo. +" + (nv.leaderStandingBonus || 1) + " while your Oathbearer stands. +" + (nv.underdogBonus || 1) + " if you have lost strictly more points of models than the enemy."),
+    L("Cap", "Never more than " + (nv.cap || 6) + "."),
+    ...(nv.spends || []).map(s => L("Spend " + s.cost, s.desc))]},
+
+  {id: "morale", group: "Mind", title: "Morale and breaking", head: "Will tests decide whether a side holds.", lines: [
+    L("Shaken", "A squad at half its models or fewer (once a battle); a lone model whose last friend within 10 cm goes Down. Will test."),
+    L("Break", "When " + thr.join(" and ") + " of starting points are Down, removed or fled, the Oathbearer (else your highest-cost standing model) tests Will."),
+    L("If it fails", "The side withdraws next round and the battle ends after it. The other side scores the rout bonus."),
+    L("Withdrawing", "A voluntary withdrawal counts as breaking.")]},
+
+  {id: "powers", group: "Mind", title: "Powers", head: "A Power action, once per activation.", lines: [
+    L("Knack", "One Power action, no roll. An unwilling target may resist with Will " + (d.target || 4) + " or better."),
+    L("Signature", "Throw Will and the risk die together. Will " + (d.target || 4) + "+ works; Will " + (d.critical || 8) + "+ also gives a listed bonus. Once a battle."),
+    L("Backlash", "If the risk die is no higher than the power's level."),
+    ...(cs.backlash || []).map(b => L("Risk " + b.risk + (b.condition && b.condition !== "otherwise" ? " (" + b.condition + ")" : ""), b.effect))]},
+
+  {id: "fate", group: "After", title: "After the battle: Fate", head: "Roll a " + (d.fateDie || "d20") + " for each model that is Down at the end, or was Marked at any point.", lines: [
+    L("Advantage", "Stabilised: roll two and keep the higher."),
+    L("Disadvantage", "Marked: roll two and keep the lower."),
+    ...(R.injuries || []).map(i => L(i.roll[0] === i.roll[1] ? String(i.roll[0]) : i.roll[0] + "–" + i.roll[1], i.name + ". " + i.effect))]},
+
+  {id: "win", group: "After", title: "How a battle is won", head: "The most victory points when the battle ends.", lines: [
+    L("Scoring", vic.scoring || "Points are scored every End step."),
+    L("Rout", "+" + (vic.routBonusVP || 1) + " VP, once, when the enemy side breaks."),
+    L("Wipe", "+" + (vic.wipeBonusVP || 1) + " VP when no enemy model is left standing."),
+    L("Tie", "More points of models standing; still level, a draw."),
+    L("Payout", vic.rewards || "")]},
+
+  {id: "oath", group: "After", title: "The oath", head: "The Oathbearer called the Unburied back, and the grave wants it paid.", lines: [
+    L("Observance", "Each Oathbearer has a tether with something they must do (take enemies Down, hold ground, and so on). It is on their card."),
+    L("Counting", "Honour it in a battle and one oath is paid. The debt is how many it takes to cut the tether."),
+    L("Forsaken", "Fail it once and it frays. Fail it again and it snaps. A frayed tether can be mended in camp."),
+    L("Paid", "When the debt is paid the tether is cut: stay Unbound, or lay the Oathbearer to rest.")]}
+  ];
+}
+
+let rcFilter = "All", rcQuery = "";
+function openRuleCards(){
+  const cards = ruleCards().filter(c => c.lines.some(l => l[1]) || c.head);
+  const groups = ["All"].concat([...new Set(cards.map(c => c.group))]);
+  const q = rcQuery.trim().toLowerCase();
+  const shown = cards.filter(c => (rcFilter === "All" || c.group === rcFilter)
+    && (!q || (c.title + " " + c.head + " " + c.lines.map(l => l[0] + " " + l[1]).join(" ")).toLowerCase().includes(q)));
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="rcX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button><div class="eyebrow">Rules, on cards</div><span class="chip">${shown.length} of ${cards.length}</span></div>
+    <input class="input" id="rcSearch" value="${esc(rcQuery)}" placeholder="Look something up: cover, Strain, Shaken…" autocomplete="off" style="margin-bottom:10px">
+    <div class="rc-chips">${groups.map(g => `<button class="chip ${rcFilter === g ? "gilt" : ""}" data-rcg="${esc(g)}">${esc(g)}</button>`).join("")}</div>
+    ${shown.map(c => `<div class="slab rc-card" style="margin-top:12px">
+      <div class="head"><span class="eyebrow">${esc(c.title)}</span><span class="rule"></span><span class="quiet">${esc(c.group)}</span></div>
+      <p class="rc-head">${esc(c.head)}</p>
+      <div class="rc-lines">${c.lines.filter(l => l[1]).map(l => `<div class="rc-l"><b>${esc(l[0])}</b><span>${esc(l[1])}</span></div>`).join("")}</div>
+    </div>`).join("") || `<p class="quiet" style="margin-top:14px">Nothing matches that.</p>`}
+    <div class="sheet-actions" style="margin-top:16px"><button class="btn sm ghost" id="rcRules" style="margin-left:0">Which rules this band plays</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#rcX").onclick = closePicker;
+  const search = $("#rcSearch");
+  search.oninput = () => { rcQuery = search.value; const pos = search.selectionStart; openRuleCards(); const s2 = $("#rcSearch"); s2.focus(); s2.setSelectionRange(pos, pos); };
+  $("#sheet2In").querySelectorAll("[data-rcg]").forEach(b => b.onclick = () => { rcFilter = b.dataset.rcg; openRuleCards(); });
+  const rr = $("#rcRules"); if(rr) rr.onclick = () => { if(typeof openRules === "function") openRules(); };
 }
 
 /* ---- terrain.js ---- */
