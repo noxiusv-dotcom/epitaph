@@ -915,8 +915,8 @@ body.has-qbar #toast{bottom:82px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.18",
-    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons)",
+    "version": "0.11.23",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -1159,15 +1159,15 @@ body.has-qbar #toast{bottom:82px}
           "max": 23
         }
       },
-      "costNote": "size cost now includes the change in starting Health (2 Health = one 22-point step): Small = -3 size and -2 Health (refund 18); Large = +8 size and +2 Health; Huge = +18 size and +4 Health. Provisional; simulator to test. 0.11.13: every size +2 Health; baseCost 38 now buys a Man with 7 Health (no price change), so all bodies are tougher relative to weapons"
+      "costNote": "size cost now includes the change in starting Health (2 Health = one 22-point step): Small = -3 size and -2 Health (refund 18); Large = +8 size and +2 Health; Huge = +18 size and +4 Health. Provisional; simulator to test. 0.11.13: every size +2 Health; baseCost 38 now buys a Man with 7 Health (no price change), so all bodies are tougher relative to weapons 0.11.20: models cannot cost less than minModelCost (35), so Small's -21 only pays for upgrades up to that floor: a Small man with a hand weapon costs 35, not 20."
     }
   ],
   "baseCost": 38,
   "startingHP": "by size: small 5, man 7, large 9, huge 11",
   "hpStep": 2,
   "hpCost": 22,
-  "minModelCost": 10,
-  "minModelCostRule": "about a quarter of baseCost",
+  "minModelCost": 35,
+  "minModelCostRule": "about nine-tenths of baseCost (35 of 38). round 13: at a floor of 10, a d4-all, Health 5, knife body cost 11 and 24 of them beat five rifle men every game at equal points; Small with a hand weapon (20) and d6 Health-4 knife bodies (17) did the same. At 35 the same fodder scores 16-53%. Refunds, step-downs and Small still cut what a model pays for its upgrades, but no model costs less than 35, so a body is never cheaper than the base man.",
   "surcharge": {
     "freeUpgrades": 3,
     "perPriorUpgrade": 1,
@@ -1515,6 +1515,8 @@ body.has-qbar #toast{bottom:82px}
     "voluntaryWithdraw": "counts as breaking; Down models in contact with a friend count as Stabilised"
   },
   "squads": {
+    "parked": true,
+    "parkedNote": "0.11.22: squads are switched off. The rules below are kept whole so they can come back: set parked to false, and the app and the scenario AI must then be taught squads again. While parked, every model fields alone, an enemy pack of N is N separate units, and squadOnly choices are unavailable.",
     "minSize": 3,
     "maxSize": 10,
     "coherency": 5,
@@ -2073,7 +2075,7 @@ body.has-qbar #toast{bottom:82px}
     {
       "id": "heavyGun",
       "name": "Heavy support weapon",
-      "cost": 22,
+      "cost": 40,
       "type": "ranged",
       "range": 60,
       "damage": 3,
@@ -2149,7 +2151,7 @@ body.has-qbar #toast{bottom:82px}
     {
       "id": "padded",
       "name": "Light armour",
-      "cost": 4,
+      "cost": 8,
       "save": "d4",
       "moveMod": 0,
       "examples": [
@@ -2161,7 +2163,7 @@ body.has-qbar #toast{bottom:82px}
     {
       "id": "plated",
       "name": "Medium armour",
-      "cost": 14,
+      "cost": 22,
       "save": "d6",
       "moveMod": -2,
       "examples": [
@@ -2174,7 +2176,7 @@ body.has-qbar #toast{bottom:82px}
     {
       "id": "heavyPlate",
       "name": "Heavy armour",
-      "cost": 18,
+      "cost": 28,
       "save": "d8",
       "moveMod": -4,
       "noSprint": true,
@@ -2762,17 +2764,36 @@ body.has-qbar #toast{bottom:82px}
     }
   ],
   "casting": {
-    "knack": "one Power action, no roll; unwilling target may resist with Will 4 or better",
+    "knack": "one Power action, rolled like a weapon: Will 4 or better works, Will 8 or better is a Critical. No Risk die and no limit on use. A failed roll does nothing. An unwilling target may still resist with Will 4 or better, and a resisted Murmur fails.",
     "signature": {
       "throw": [
         "will",
         "risk"
       ],
       "success": "will >= 4",
-      "bonus": "will >= 8: pick one listed bonus",
+      "bonus": "will >= 8: a Critical. Pick one of the listed bonuses (it also cancels any Backlash this cast)",
       "backlash": "risk <= level",
       "perBattle": 1,
-      "defaultRange": 45
+      "defaultRange": 45,
+      "criticalBonus": [
+        {
+          "id": "double",
+          "name": "Double",
+          "effect": "Double the damage, Health restored, number of models or area (round up)."
+        },
+        {
+          "id": "echo",
+          "name": "Echo",
+          "effect": "The Reckoning is not used up: it may be cast again this battle."
+        },
+        {
+          "id": "reach",
+          "name": "Reach",
+          "effect": "Range and area are doubled and the target cannot resist."
+        }
+      ],
+      "recharge": "a Reckoning that Downs or kills at least one enemy model is not used up: the caster may cast it again this battle (once per kill, at most once more per round)",
+      "note": "0.11.23: the reward was the missing half of 'high risk, high reward'. The risk side is unchanged: a Backlash happens when the Risk die is no higher than the power's level, so level 3 backfires half the time."
     },
     "backlash": [
       {
@@ -2785,7 +2806,7 @@ body.has-qbar #toast{bottom:82px}
         "risk": 1,
         "condition": "otherwise",
         "id": "overload",
-        "effect": "Caster takes damage = level, no save. Power works if Will succeeded."
+        "effect": "Caster takes damage = level, no save, and is Shaken. Power works if Will succeeded."
       },
       {
         "risk": 2,
@@ -2798,7 +2819,30 @@ body.has-qbar #toast{bottom:82px}
         "effect": "Caster gains 1 Strain. Power works if Will succeeded."
       }
     ],
-    "attackRule": "a power whose countsAsAttack is true uses up the activation's one Attack (for Upheaval, only at level 3)"
+    "attackRule": "a power whose countsAsAttack is true uses up the activation's one Attack (for Upheaval, only at level 3)",
+    "knackRoll": {
+      "stat": "will",
+      "success": "will >= 4",
+      "critical": "will >= 8: pick one",
+      "criticalBonus": [
+        {
+          "id": "might",
+          "name": "Might",
+          "effect": "+1 damage, or +1 Health restored, or +1 model affected, or +5 cm of distance."
+        },
+        {
+          "id": "reach",
+          "name": "Reach",
+          "effect": "Range and any area are doubled."
+        },
+        {
+          "id": "linger",
+          "name": "Linger",
+          "effect": "A lasting effect lasts one round longer."
+        }
+      ],
+      "note": "0.11.23: Murmurs used to need no roll. Prices are carried over unchanged and flagged for the simulator, since a roll makes each one less certain."
+    }
   },
   "bigModels": {
     "systemSchema": {
@@ -3420,7 +3464,8 @@ body.has-qbar #toast{bottom:82px}
       "laidUp": "a Laid up model can only take Rest",
       "scout": "only one Scout per band has an effect",
       "health": "after a battle every model returns to full Health for free; lasting harm comes only from the Fate roll",
-      "hardCampaignOption": "optional rule: damage carries over between battles until the model takes Rest or is Treated (see decisions)"
+      "hardCampaignOption": "optional rule: damage carries over between battles until the model takes Rest or is Treated (see decisions)",
+      "armoury": "the band keeps one Armoury: every weapon, shield, suit and carried item that nobody is holding. It receives the gear of a model who is gone, anything a model sets down, and anything found in the field (a find is not bought, and is free to give). Anything in it can be given, at no cost, to any model who can bear it; a weapon can also be swapped in for one that model carries, which goes back to the Armoury, and for a Two-handed weapon a model may set down everything it carries. Anything bought or kept in the Armoury can be sold for half its points in Cash. A model may not carry more than its hands allow, and the Armoury never changes a model's points."
     },
     "decisions": {
       "scarsNeverChangeCost": "confirmed: a scar changes what a model can do, never what it cost; band value is always the bought profile",
@@ -3978,10 +4023,12 @@ body.has-qbar #toast{bottom:82px}
       }
     },
     "bandSize": {
-      "suggested": 500,
-      "quick": 300,
-      "large": 750,
-      "note": "a suggestion, not a rule: 500 points is about 7-9 models, roughly a 2-hour game; confirm against the round-9 game-length results"
+      "suggested": 350,
+      "standardMin": 300,
+      "standardMax": 400,
+      "quick": 200,
+      "large": 500,
+      "note": "a suggestion, not a rule: the standard band is 300 to 400 points, which is about 3 strong models (about 95 points each) or 5 lighter ones (about 50 each); the app starts new bands at 350. 200 is a quick game, 500 a large one. The enemy has your points times the difficulty, so 300 to 400 on a 90 cm table keeps a fight to roughly 6 to 12 models in all. Confirm against a played game."
     }
   },
   "testLog": [
@@ -4115,6 +4162,68 @@ body.has-qbar #toast{bottom:82px}
         "melee crews that took Heavy armour (d8 save, Move -4) won 62% in long games; armour at 18 looks underpriced for longer games - reprice test next round",
         "the sim modelled \"ended its move in cover = no long shots\" as a board stand-in; it is not a rule"
       ]
+    },
+    {
+      "round": "0.11.20 (sim round 13)",
+      "date": "2026-10-06",
+      "harness": "engine13 = engine12 + size effects (Huge/Large/Small ranged modifiers, Large vs Small melee) + Ward/Knit fixed to the rules text (engine12 let Ward heal 1 Health per use without limit, so every search built a self-healing champion). Side-swapped duels, 1600-6400 games each, mirror control reads 49.4%.",
+      "result": "No cap on model cost is needed: once BOTH sides are optimised a single maxed model scores 37-52% at 150-250 points (champion band vs best-response spread band) and loses at 500 (15%). What is broken is the cheap end: a body with no real stats costs 10-20 points and buys a full activation. Heavy support weapon and armour were underpriced.",
+      "changes": [
+        {
+          "item": "heavyGun",
+          "old": 22,
+          "new": 40
+        },
+        {
+          "item": "padded",
+          "old": 4,
+          "new": 8
+        },
+        {
+          "item": "plated",
+          "old": 14,
+          "new": 22
+        },
+        {
+          "item": "heavyPlate",
+          "old": 18,
+          "new": 28
+        },
+        {
+          "item": "minModelCost",
+          "old": 10,
+          "new": 35
+        }
+      ],
+      "evidence": {
+        "superWarrior": "Test 1. Against the fixed 'balanced band' menu a searched single model won 70-90% at 100-250 points - but that yardstick was weak (the optimised model simply beat unoptimised ones). Co-evolving both sides (alternating best responses, champion vs best spread of 2-10 identical models): champion 41% at 150, 52% at 250, 15% at 500 (0.11.19); 37% / 44% under the 0.11.20 prices. The spread's best answers are cheap d10-d12 great-weapon glass cannons (49-83 pts each) at 150-250 and ten ~45-point bodies at 500. Search is noisy (cycles swing 15-52%), so read this as 'not dominant', not as '50%'.",
+        "components": "Test 2. Bradley-Terry regression on 900 random pairings of equal-cost 5-model packages (+19..+27 pts per model, 1600 games each; no-op parts Will d8 / Wits d8 / Move 12 fix the scale). Excess of measured worth over price, points per model: Heavy support weapon +23 (+-2), Heavy armour +12 (+-3), Medium armour +9 (+-2), Light armour +6.5 (+-1.2). After the 0.11.20 prices (same method): armour +2 to +3, Heavy gun 0 (+-8, rarely fits the price window; separate duels against six alternative spends of similar cost average 54%).",
+        "cheapBodies": "Test 6. Five rifle men (260) vs cheap bodies at equal points: floor 10 -> d4/H5 knife bodies x24 score 100%, Small hand-weapon x13 100%, d6/H4 knife x15 100%; floor 25 -> 83-98%; floor 30 -> 65-93%; floor 35 -> 16-19% (d4/d6 fodder) and 53% (Small). Calibration: adding one 11-point d4 knife body to a five-man band wins 75%; one 39-point body 87%; a 52-point rifle man 86% - a body is worth about the same whatever it carries.",
+        "ranges": "Test 3. move10_ranges.py reproduces the round-12 numbers exactly on 0.11.19 (Move 10, current ranges, board 60: shooters 41.4%, melee 56.6%; Sprint +5 43.9 / +6 41.4). On 0.11.20 the gap widens: shooters 37.1 / melee 61.3 (ranges x0.85: 37.3 / 58.5; zones 50 cm: 34.7 / 61.7; Move 12: 32.3 / 65.9; terrain 35%: 35.7 / 62.2) because the matched-points melee crew can no longer buy cheap Heavy armour and falls back to padded + 7 Health. Range and Move are unchanged; the conclusion (leave ranges and 60 cm zones alone) stands, but shooters sit about 37-41%, so watch them at the table.",
+        "squads": "Test 4. A squad vs the same models as individuals: ranged squads (rifle, carbine) score 18-31%, melee squads (hand+plated 83%, great weapon 75%) win. The 0/5/10% discount changes nothing in battle (it only buys points), so the discount cannot be priced here. Equal-points fixed squads lose to a Huge (1-34% for the squad) and score 16-46% against a Large, but the squads were not optimised (see Test 1), so no Size change is proposed.",
+        "campaign": "Test 5 (reduced: no Cash, Fate or Reputation). A veteran band carrying 10-40 XP of upgrades per model vs a fresh band of EQUAL POINTS scores 10-66% (mostly under 45%): XP upgrades are worth less than the extra bodies the same points buy, so there is no runaway drift if scenarios are matched on band value. Against the SAME five fresh models the veterans win 57-95%: drift is real only when players match on model count. XP is at most 5 per model per battle (participate 1 + takedowns 2 + objective 1 + win 1)."
+      },
+      "measuredNoChange": [
+        "Health step (22 for +2): worth about 11-19 in a five-model band (excess -3 to -11), but the best single-model builds still buy Health; leave until table play",
+        "Fight d10 / Aim d10 (14): excess -6 to -9, a single estimate near the floor; leave",
+        "Carbine, Bow, Sidearm, Scattergun vs Rifle: worth 12-25 less than a Rifle for a 1-7 point discount, but the board is 57 cm with no terrain, so range is worth almost nothing here and damage everything; leave until table play",
+        "Quick, Marksman, Fearsome, Unfeeling, Vigilant, Hardy: positional or unmodelled in the harness; no conclusion",
+        "Squad discount 5%: unmeasurable (see squads). Surcharge (+1 per upgrade after 3): steeper variants cut one-model dominance against the fixed menu, but that dominance is not real, so unchanged",
+        "Huge and Large size cost: Huge beats equal-points fixed squads, not optimised ones; leave"
+      ],
+      "notTestable": [
+        "Snuff, Glimpse (information)",
+        "Veil (line of sight)",
+        "Quicken, Step and every positional effect",
+        "terrain, scenario objectives beyond hold, enemy AI behaviour",
+        "Control powers read low partly as an artefact (one-dimensional board)"
+      ],
+      "limits": "Resolution: a single feature on one model is below the instrument (about 8 points at 600 games). The regression applies each part to five models and pools 900 pairings, so per-model standard errors are 1-3 points; anything quoted under about 4 points is noise. Melee swarms are favoured by the one-dimensional board (no kiting, no blocked sight). A fixed opposing menu overstates any optimised build; use co-evolved or equal-cost comparisons.",
+      "flags": [
+        "d6 attackers can never Critical (8 or better), so armour is absolute against them: a Huge or heavily armoured model is nearly immune to one-damage d6 models. Worth a table check, not a harness fix.",
+        "Bodies still beat gear: seven plain 39-point knife men (273 pts) beat five 52-point rifle men (260 pts) 82%. The 35 floor fixes the extreme fodder, not this; the one-dimensional board favours melee swarms, so check at the table before touching baseCost 38 or gear prices.",
+        "Squad vs individuals is lopsided by weapon type (ranged squads lose, melee squads win) and was not diagnosed; it may be how the engine resolves a squad's shared target and single reaction."
+      ]
     }
   ],
   "modelProfile": {
@@ -4215,14 +4324,14 @@ body.has-qbar #toast{bottom:82px}
       "id": "knack",
       "name": "Murmur",
       "short": "Minor",
-      "blurb": "One Power action. No roll, no risk, and you may use it every round.",
+      "blurb": "One Power action, rolled like a weapon: Will 4 or better works, 8 or better is a Critical. No risk, and you may use it every round.",
       "order": 1
     },
     {
       "id": "signature",
       "name": "Reckoning",
       "short": "Major",
-      "blurb": "Once a battle. Roll Will 4 or better to make it work, and the Risk die can backfire on you.",
+      "blurb": "Once a battle (again if it Downs an enemy). Roll Will 4 or better; 8 or better is a Critical with a big bonus. The Risk die can backfire on you.",
       "order": 2
     }
   ],
@@ -4633,7 +4742,13 @@ body.has-qbar #toast{bottom:82px}
     ]
   },
   "designNotes": {
-    "defenceDominance": "round 9-10: 22 points spent on armour/Move or +2 Health won 83-85%; Aim/Fight steps 66%; Tough+Quick+Sight 47% vs a 51% control. Part is the line board (it ignores position, which Quick and Sight pay for). Co-design view: Health steps and Medium armour are the likeliest underpricings. Next sim round: test Health step 26 and Medium armour 17, and give the harness a hold/position policy before repricing positional upgrades."
+    "defenceDominance": "round 9-10: 22 points spent on armour/Move or +2 Health won 83-85%; Aim/Fight steps 66%; Tough+Quick+Sight 47% vs a 51% control. Part is the line board (it ignores position, which Quick and Sight pay for). Co-design view: Health steps and Medium armour are the likeliest underpricings. Next sim round: test Health step 26 and Medium armour 17, and give the harness a hold/position policy before repricing positional upgrades.",
+    "round13": "0.11.20 - one-model dominance is not real once the opposition is optimised; the real hole was cheap bodies (floor 10 -> 35) plus two underpriced items (Heavy support weapon 22 -> 40, armour 4/14/18 -> 8/22/28). Method and limits are in testLog.",
+    "round17": {
+      "date": "2026-10-08",
+      "decision": "Murmur works like a weapon (a Will roll to work, Critical on 8+). Reckoning is worth taking: a Critical picks a big bonus and cancels Backlash, a kill recharges it, and an overload also Shakes the caster.",
+      "status": "design, untested. Murmur prices carried over; Reckoning prices unchanged. Needs the simulator and then a table test."
+    }
   },
   "tethers": {
     "desc": "The Oathbearer called the Unburied back from the grave, and they serve the Oathbearer, willing or not. The one who calls the dead owes the grave for it: a tether binds the Oathbearer to the living world, and the band is bound to them. The tether has an observance to be honoured until its debt of oaths is paid.",
@@ -5126,18 +5241,20 @@ function costBreakdown(p){
   }
   return {rows, total: modelCost(p)};
 }
+/* Squads are parked (ruleset 0.11.22): while RS.squads.parked is set, every model fields alone. */
+function squadsOn(){ return !(RS.squads && RS.squads.parked); }
 /* squads: per-model cost x size, less the discount; the floor applies per model first */
 function squadCost(p, size){
   const per = Math.max(RS.minModelCost, modelCost(p));
   return Math.round(per * size * (1 - (RS.squads.squadDiscount || 0)));
 }
 function unitCostOf(u){
-  return (u.size && u.size > 1) ? squadCost(u, u.size) : modelCost(u);
+  return (squadsOn() && u.size && u.size > 1) ? squadCost(u, u.size) : modelCost(u);
 }
 /* activations: 1 per full pointsPerActivation, capped; squads by size */
 function activationsOf(u){
   const a = RS.activation;
-  if(u.size && u.size >= RS.squads.minSize) return Math.max(1, Math.ceil(u.size / 3));
+  if(squadsOn() && u.size && u.size >= RS.squads.minSize) return Math.max(1, Math.ceil(u.size / 3));
   const n = Math.floor(unitCostOf(u) / a.pointsPerActivation);
   return Math.max(a.minActivations, Math.min(a.maxActivations, n));
 }
@@ -5378,7 +5495,7 @@ function statusStripHTML(b){
   return strip + (statusOpen ? lockNoteHTML(b) + (t ? tetherHTML(b) : "") : "");
 }
 function newBand(name){
-  return {id: uid(), name: name || "The Unburied", budget: 500, members: [], sealed: false};
+  return {id: uid(), name: name || "The Unburied", budget: ((RS.scenario || {}).bandSize || {}).suggested || 350, members: [], sealed: false};
 }
 function band(){ return store.bands.find(b => b.id === store.activeId) || store.bands[0]; }
 
@@ -5497,7 +5614,7 @@ function profileOf(m){
   return p;
 }
 function memberCost(m){ return modelCost(profileOf(m)); }
-function squadOf(m){ return Math.max(1, m.count || 1); }
+function squadOf(m){ return squadsOn() ? Math.max(1, m.count || 1) : 1; }
 function isSquad(m){ return squadOf(m) >= RS.squads.minSize; }
 function unitCost(m){ return isSquad(m) ? squadCost(profileOf(m), squadOf(m)) : memberCost(m); }
 function activationsOf(m){
@@ -5639,7 +5756,7 @@ function renderUnburied(b){
       <div class="gauge-line">
         <b class="${over ? "over" : ""}">${spent}</b>
         <span>of</span>
-        <input class="input mono" id="bandBudget" value="${b.budget}" inputmode="numeric"
+        <input class="input mono" id="bandBudget" value="${b.budget}" title="Standard is ${((RS.scenario || {}).bandSize || {}).standardMin || 300} to ${((RS.scenario || {}).bandSize || {}).standardMax || 400} points" inputmode="numeric"
                style="width:76px;padding:3px 7px;font-size:13px;text-align:center">
         <span>points fielded</span>
         <span class="rule"></span>
@@ -5896,7 +6013,7 @@ function drawMember(){
       hint: (sz.costs || {})[m.size] ? signed(sz.costs[m.size]) : "free"}) : "");
 
   const n = squadOf(m), sq = RS.squads;
-  const deploy = stepRow({key: "count", title: isSquad(m) ? "Squad" : "Alone",
+  const deploy = !squadsOn() ? "" : stepRow({key: "count", title: isSquad(m) ? "Squad" : "Alone",
     sub: isSquad(m) ? "one profile, " + n + " models · " + (sq.squadDiscount * 100) + "% together"
                     : "set " + sq.minSize + " or more to field a squad",
     value: n, down: n > 1, up: n < sq.maxSize, hint: n > 1 ? "×" + n : "—"});
@@ -5936,10 +6053,11 @@ function drawMember(){
     </div>
 
     <div class="slab">
-      <div class="head"><span class="eyebrow">How it deploys</span><span class="rule"></span>
+      <div class="head"><span class="eyebrow">${squadsOn() ? "How it deploys" : "Activations"}</span><span class="rule"></span>
         <span class="chip gilt">${activationsOf(m)} activation${activationsOf(m) === 1 ? "" : "s"}</span></div>
       ${deploy}
-      <p class="quiet" style="margin:9px 0 0">${isSquad(m)
+      ${squadsOn() ? "" : `<p class="quiet" style="margin:0">Fields alone: ${unitCost(m)} points.</p>`}
+      <p class="quiet" style="margin:9px 0 0" ${squadsOn() ? "" : "hidden"}>${isSquad(m)
         ? memberCost(m) + " each × " + n + ", less " + (sq.squadDiscount * 100) + "% — <b>" + unitCost(m) + " points</b>. Activates " +
           activationsOf(m) + " time" + (activationsOf(m) === 1 ? "" : "s") + " a round, up to three models each time. Coherency " + sq.coherency + "cm."
         : "One activation per " + RS.activation.pointsPerActivation + " points, up to " + RS.activation.maxActivations + "."}</p>
@@ -7290,10 +7408,19 @@ let conjureTone = CONJURE_TONES[0];
    camp is still the first thing built in an otherwise-empty Reliquary
    session. Defaults to Leader only the very first time it is asked. */
 let conjureLeader = null;
+const PHOTO_MINI = false;
+let conjureBrief = "";
+let conjurePhoto = null;     // a photo of the actual miniature, kept only until the sheet is closed
 let conjureTether = null, conjureTetherRerolled = false, conjureSworn = "";
 async function openConjure(){
   const ai = await getAI();
   const b = band();
+  /* a photo can only go where the AI can look at one */
+  const lim = ai && typeof ai.limits === "function" ? await ai.limits().catch(() => null) : null;
+  /* Photo of a miniature: built and working, but no viewer allows images yet (checked 2026-10-03).
+     Flip PHOTO_MINI to true to bring it back; the row then shows wherever images are allowed. */
+  const photoOK = PHOTO_MINI && !!(lim && lim.images);
+  if(!photoOK) conjurePhoto = null;
   if(conjureLeader === null) conjureLeader = b.members.length === 0;
   const leader = leaderOf(b);
   const leaderCost = conjureLeader ? ((catOf("traits").leader || {}).cost || 0) : 0;
@@ -7319,9 +7446,18 @@ async function openConjure(){
       : leader ? `Describe what you want and four of them will be raised as someone who fits alongside <b>${esc(fullName(leader))}</b>, built and costed against the ruleset.`
       : "Describe what you want and four of them will be raised, built and costed against the ruleset."}
       Nothing is added until you choose one.</p>
-    <div class="field" style="margin:14px 0 10px"><label>What is it</label>
+    ${photoOK ? `<div class="field" style="margin:14px 0 0"><label>A miniature to build around</label>
+      <div class="sheet-actions" style="gap:10px;align-items:center;margin:0">
+        ${conjurePhoto ? `<img id="cjThumb" alt="Your miniature" style="width:64px;height:64px;object-fit:cover;border:1px solid var(--gilt-deep)">
+          <button type="button" class="btn sm ghost" id="cjPhotoX" style="margin-left:0">Remove photo</button>`
+        : `<label class="btn sm" for="cjPhoto" style="margin-left:0;cursor:pointer">Photograph or choose one</label>`}
+        <input type="file" id="cjPhoto" accept="${esc(lim.images.mediaTypes.join(","))}" hidden>
+      </div>
+      <p class="quiet" style="margin:6px 0 0">${conjurePhoto ? "All four are raised to fit this miniature: its look, what it carries, how it stands. The photo is not kept."
+        : "Optional. Photograph the model you want to field and the four are built to fit it."}</p></div>` : ""}
+    <div class="field" style="margin:14px 0 10px"><label>${conjurePhoto ? "Anything to add" : "What is it"}</label>
       <input class="input" id="cjBrief" maxlength="160"
-        placeholder="a drowned bell-ringer, a thing made of doors, an old soldier who will not stop"></div>
+        placeholder="${conjurePhoto ? "its name, what it is to you, or leave blank" : "a drowned bell-ringer, a thing made of doors, an old soldier who will not stop"}"></div>
     <div class="field" style="margin-bottom:12px"><label>Tone — pick whatever this one actually is</label>
       <div class="sheet-actions" style="flex-wrap:wrap;gap:7px" id="cjTones">
         ${CONJURE_TONES.map(t => `<button type="button" class="chip ${t === conjureTone ? "gilt" : ""}" data-tone="${esc(t)}" style="cursor:pointer;font-size:13px;padding:7px 13px">${esc(t)}</button>`).join("")}
@@ -7332,8 +7468,13 @@ async function openConjure(){
     <div id="cjOut" style="margin-top:14px"></div>`}`;
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#cjX").onclick = () => { if(aiAbort) aiAbort.abort(); closePicker(); };
+  $("#cjX").onclick = () => { if(aiAbort) aiAbort.abort(); conjurePhoto = null; closePicker(); };
   if(!ai) return;
+  $("#cjBrief").value = conjureBrief; $("#cjBrief").oninput = e => { conjureBrief = e.target.value; };
+  const pf = $("#cjPhoto");
+  if(pf) pf.onchange = () => { if(pf.files && pf.files[0]){ conjurePhoto = pf.files[0]; openConjure(); } };
+  const pfx = $("#cjPhotoX"); if(pfx) pfx.onclick = () => { conjurePhoto = null; openConjure(); };
+  const th = $("#cjThumb"); if(th && conjurePhoto){ const u = URL.createObjectURL(conjurePhoto); th.src = u; th.onload = () => URL.revokeObjectURL(u); }
 
   $("#sheet2In").querySelectorAll("[data-who]").forEach(btn => btn.onclick = () => {
     conjureLeader = btn.dataset.who === "leader";
@@ -7357,12 +7498,21 @@ async function openConjure(){
     if(conjureLeader && !conjureTether) conjureTether = rollTetherKind();
     if(conjureLeader && conjureTether === "quarry" && !conjureSworn.trim()){ toast("Say what they hunt"); return; }
     const go = $("#cjGo"), out = $("#cjOut");
-    const brief = $("#cjBrief").value.trim() || "whatever suits the Unburied";
+    const brief = $("#cjBrief").value.trim() || (conjurePhoto ? "whatever the photographed miniature shows" : "whatever suits the Unburied");
     const tone = conjureTone;
     go.disabled = true; go.textContent = "Raising…";
     aipStart("conjure", ["Digging them up", "Giving them a past", "Fitting out their gear", "Checking the points"], 18);
     out.innerHTML = aipHTML();
     aiAbort = new AbortController();
+    const photoNote = conjurePhoto ? `
+A PHOTO OF THE ACTUAL MINIATURE IS ATTACHED. This is the model the player will put on the table, so all four
+concepts are different builds and backstories for THAT miniature, not four different models. Read it closely:
+what it is (person, beast, machine, something else), its size and build, what it holds or wears, its pose, its
+mood, its colours. Weapons, shields and armour must match what can be seen (named by what they do, from the
+list below); do not give it gear it plainly lacks, and do not give a creature without hands a weapon that
+needs hands. Take names and a role from how it looks, not from its paint scheme alone. Never say
+"photo", "miniature" or "model" in the story: write the character.
+` : "";
     const prompt = `Invent 4 distinct concepts for a single model in ${RS.meta.name} — a tabletop skirmish
 wargame of the Unburied: dead mercenaries, tethered back to fight one more war, one more
 contract, one more debt owed. A model can be anything (a person, a beast, a machine, an
@@ -7373,7 +7523,7 @@ sits with them, not a genre default of grief and horror.
 
 Tone: ${tone}.
 Brief: ${brief}.
-${conjureLeader && tetherKind(conjureTether) ? `
+${photoNote}${conjureLeader && tetherKind(conjureTether) ? `
 THE TETHER. Whoever calls the dead back is tied to the grave by something they did in life. For this
 one it is: ${tetherKind(conjureTether).why} They must ${tetherObservance(conjureTether, conjureSworn)}. Build
 their story on exactly that: what they did, why it holds them, what they are doing about it. Do not
@@ -7442,7 +7592,7 @@ Reply with ONLY a JSON array of 4 objects:
 No other text.`;
 
     try{
-      const list = await ai.json(prompt, {modelTier:"default", cache:false, signal:aiAbort.signal});
+      const list = await ai.json(prompt, Object.assign({modelTier:"default", cache:false, signal:aiAbort.signal}, conjurePhoto ? {images: conjurePhoto} : {}));
       aipStop(true);
       const made = (Array.isArray(list) ? list : []).map(x => {
         const m = aiLegalise(Object.assign({}, x.build, {
@@ -7586,7 +7736,7 @@ async function unpackCode(code){
    so a code written against an older ruleset still opens. */
 function adoptBand(obj){
   const b = newBand(obj.name || "The Unburied");
-  b.budget = Math.max(0, parseInt(obj.budget, 10) || 500);
+  b.budget = Math.max(0, parseInt(obj.budget, 10) || ((RS.scenario || {}).bandSize || {}).suggested || 350);
   b.members = (obj.members || []).map(m => Object.assign(newMember(), m, {id: uid()}));
   mendBand(b);
   return b;
@@ -11467,14 +11617,14 @@ function ruleCards(){
     ...(nv.spends || []).map(s => L("Spend " + s.cost, s.desc))]},
 
   {id: "morale", group: "Mind", title: "Morale and breaking", head: "Will tests decide whether a side holds.", lines: [
-    L("Shaken", "A squad at half its models or fewer (once a battle); a lone model whose last friend within 10 cm goes Down. Will test."),
+    L("Shaken", squadsOn() ? "A squad at half its models or fewer (once a battle); a lone model whose last friend within 10 cm goes Down. Will test." : "A model whose last friend within 10 cm goes Down. Will test."),
     L("Break", "When " + thr.join(" and ") + " of starting points are Down, removed or fled, the Oathbearer (else your highest-cost standing model) tests Will."),
     L("If it fails", "The side withdraws next round and the battle ends after it. The other side scores the rout bonus."),
     L("Withdrawing", "A voluntary withdrawal counts as breaking.")]},
 
   {id: "powers", group: "Mind", title: "Powers", head: "A Power action, once per activation.", lines: [
-    L("Knack", "One Power action, no roll. An unwilling target may resist with Will " + (d.target || 4) + " or better."),
-    L("Signature", "Throw Will and the risk die together. Will " + (d.target || 4) + "+ works; Will " + (d.critical || 8) + "+ also gives a listed bonus. Once a battle."),
+    L("Murmur", "One Power action, rolled like a weapon: Will " + (d.target || 4) + "+ works, Will " + (d.critical || 8) + "+ is a Critical and gives a bonus (Might, Reach or Linger). No risk, every round. An unwilling target may resist with Will " + (d.target || 4) + "+."),
+    L("Reckoning", "Throw Will and the risk die together. Will " + (d.target || 4) + "+ works; Will " + (d.critical || 8) + "+ is a Critical: pick Double, Echo or Reach, and no Backlash. Once a battle, and again if it Downs an enemy."),
     L("Backlash", "If the risk die is no higher than the power's level."),
     ...(cs.backlash || []).map(b => L("Risk " + b.risk + (b.condition && b.condition !== "otherwise" ? " (" + b.condition + ")" : ""), b.effect))]},
 
@@ -12946,16 +13096,21 @@ function startFromScenario(s, campDone){
   /* the generator's placements, over the app's own secret contents */
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g){ m.where = g.where; if(typeof g.x === "number"){ m.x = g.x; m.y = g.y; } } });
   s.enemy.forEach(u => {
-    const f = questFoe(u.name, u.count, u.built.wounds,
-      activationsOf(Object.assign({}, u.built, {count: u.count})), u.hidden);
-    f.profile = u.built;
-    f.protocol = u.protocol;
-    f.points = u.cost;
-    f.hint = u.hint;
-    f.rank = u.rank; f.sight = u.sight; f.known = u.known; f.lore = u.lore;
-    f.deploy = u.deploy;
-    f.boss = !!u.boss;
-    Q.units.push(f);
+    /* squads are parked: a pack of N is N separate units, each with its own activation */
+    const split = squadsOn() ? 1 : Math.max(1, u.count || 1);
+    for(let i = 0; i < split; i++){
+      const each = squadsOn() ? u.count : 1;
+      const f = questFoe(split > 1 ? u.name + " " + (i + 1) : u.name, each, u.built.wounds,
+        activationsOf(Object.assign({}, u.built, {count: each})), u.hidden);
+      f.profile = u.built;
+      f.protocol = u.protocol;
+      f.points = split > 1 ? Math.round(u.cost / split) : u.cost;
+      f.hint = u.hint;
+      f.rank = u.rank; f.sight = u.sight; f.known = u.known; f.lore = u.lore;
+      f.deploy = u.deploy;
+      f.boss = !!u.boss && i === 0;
+      Q.units.push(f);
+    }
   });
   questSave();
   /* the Realm device runs the table: once it has entered a realm, the quest is open to players with its number */
