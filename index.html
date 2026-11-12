@@ -4965,6 +4965,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
+<script>window.EP_BUILD = "12 Nov 21:15";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -5715,7 +5716,7 @@ function render(){
   else if(inQuest && store.way !== "unburied") store.way = "unburied";
   const ways = document.querySelector("nav.ways"); if(ways) ways.hidden = inQuest || !!role;
   if(!realmAvailable()) $("#rsVer").textContent = "The Reliquary";
-  else $("#rsVer").innerHTML = (role === "realm" ? "The Realm" : "Camp of the Unburied") + " \u00b7 ruleset " + RS.meta.version
+  else $("#rsVer").innerHTML = (role === "realm" ? "The Realm" : "Camp of the Unburied") + " \u00b7 ruleset " + RS.meta.version + (window.EP_BUILD ? " build " + window.EP_BUILD : "")
     + (role ? ` \u00b7 <a href="#" data-role-switch onclick="return false" style="color:inherit;text-decoration:underline">switch</a>` : "");
   $$(".way").forEach(w => w.classList.toggle("on", w.dataset.way === store.way));
   $("#viewUnburied").hidden = store.way !== "unburied";
@@ -5916,6 +5917,7 @@ function boot(){
   $("#scrim").onclick = closeSheet;
   $("#scrim2").onclick = closePicker;
   render();
+  if(typeof resumeRealm === "function") resumeRealm();
 }
 
 /* ---- member.js ---- */
@@ -13344,6 +13346,17 @@ function listenAsGuest(){
   });
 }
 
+/* A refresh, a lock screen or a dropped signal ends the live link, but the quest is still saved here.
+   On opening, pick the table up again: re-enter the realm and listen (and, for a guest, send its models). */
+async function resumeRealm(){
+  try{
+    if(!realmAvailable() || typeof questOn !== "function" || !questOn() || !Q.realm) return;
+    const name = savedRealm(); if(!name) return;
+    if(!(await enterRealm(name))) return;
+    if(Q.host){ listenAsHost(); pushTable(); } else { listenAsGuest(); pushMyUnits(); }
+    if(typeof toast === "function") toast("Back at the table");
+  }catch(e){}
+}
 function leaveRealm(){
   unwatchAll();
   if(Q && Q.realm && !Q.host){ const r = ref("quests/" + Q.realm + "/units/" + meId()); if(r) try{ r.remove(); }catch(e){} }
