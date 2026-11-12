@@ -13306,18 +13306,38 @@ async function joinQuest(code){
   listenAsGuest();
   return true;
 }
+/* What the table says has changed. When it says a new round has begun, this phone's own models go through
+   the same End step and Tempo the host ran for everyone else: Burning and Tainted bite, Ready is cleared,
+   Strain rests, and every activation tick is wiped. (The host cannot do it for these models: their state
+   lives here, and is pushed up from here.) */
+function applyTable(t){
+  if(!t || !Q) return;
+  const prev = Q.round, known = Q.seenTable;
+  Q.round = t.round; Q.step = t.step; Q.size = t.size;
+  Q.vp = t.vp || Q.vp; Q.nerve = t.nerve || Q.nerve;
+  Q.markers = (t.markers || []).map(m => ({n: m.n, state: m.state, kind: "unknown"}));
+  Q.units = Q.units.filter(u => u.side === "us")
+    .concat((t.foes || []).map(f => Object.assign({}, f, {remote: true})));
+  Q.seenTable = true;
+  if(known && t.round > prev){
+    Q.units.filter(u => u.side === "us" && !u.remote).forEach(u => {
+      if((u.cond || []).includes("burning")) hurtUnit(u, 1, "burning");
+      if((u.cond || []).includes("tainted")) hurtUnit(u, 1, "tainted");
+      u.ready = false;
+      if(!u.pushed && u.strain > 0) u.strain = Math.max(0, u.strain - RS.strain.restDecay.amount);
+      u.pushed = false;
+      u.used = 0;
+    });
+    qlog("Round " + t.round + " begins: activations reset");
+    pushMyUnits();
+    if(typeof toast === "function") toast("Round " + t.round + ": your models are ready again");
+  }
+  questSave(); render();
+  if(cardId) drawCard();
+}
 function listenAsGuest(){
   unwatchAll();
-  watch("quests/" + Q.realm + "/table", t => {
-    if(!t) return;
-    Q.round = t.round; Q.step = t.step; Q.size = t.size;
-    Q.vp = t.vp || Q.vp; Q.nerve = t.nerve || Q.nerve;
-    Q.markers = (t.markers || []).map(m => ({n: m.n, state: m.state, kind: "unknown"}));
-    Q.units = Q.units.filter(u => u.side === "us")
-      .concat((t.foes || []).map(f => Object.assign({}, f, {remote: true})));
-    questSave(); render();
-    if(cardId) drawCard();
-  });
+  watch("quests/" + Q.realm + "/table", applyTable);
   watch("quests/" + Q.realm + "/events", all => {
     if(!all) return;
     Object.keys(all).forEach(id => applyEvent(id, all[id]));
@@ -13558,7 +13578,7 @@ function roleScene(){
   }).join("");
   const embers = Array.from({length: 14}, (_, i) => {
     const x = (130 + rnd() * 110).toFixed(0), d = (rnd() * 9).toFixed(1), t = (7 + rnd() * 6).toFixed(1);
-    return `<circle class="rp-ember" cx="${x}" cy="610" r="${(.7 + rnd() * .9).toFixed(1)}" style="animation-delay:-${d}s;animation-duration:${t}s"/>`;
+    return `<circle class="rp-ember" cx="${x}" cy="638" r="${(.7 + rnd() * .9).toFixed(1)}" style="animation-delay:-${d}s;animation-duration:${t}s"/>`;
   }).join("");
   return `
   <svg class="rp-sc" viewBox="0 0 375 760" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -13604,16 +13624,16 @@ function roleScene(){
     <path d="M30 640 Q110 538 178 534 Q250 540 330 640Z" fill="#0b0e13"/>
     <path d="M30 640 Q110 538 178 534 Q250 540 330 640" fill="none" stroke="#2b3748" stroke-width=".9"/>
     <path d="M70 628 Q110 560 160 548" fill="none" stroke="#1d2735" stroke-width="1"/>
-    <ellipse cx="178" cy="600" rx="46" ry="30" fill="url(#rpGlow)" class="rp-flicker"/>
-    <path d="M152 612 v-30 a26 26 0 0152 0 v30z" fill="#06070a" stroke="#8a6c1a" stroke-width="1.4"/>
-    <path d="M160 612 v-26 a18 18 0 0136 0 v26z" fill="url(#rpDoor)" class="rp-flicker" opacity=".9"/>
-    <path d="M168 612 v-18 a10 10 0 0120 0 v18z" fill="#fff0b8" opacity=".55" class="rp-flicker"/>
-    <path d="M150 614h56" stroke="#8a6c1a" stroke-width="1.2"/>
+    <ellipse cx="178" cy="628" rx="46" ry="30" fill="url(#rpGlow)" class="rp-flicker"/>
+    <path d="M152 640 v-30 a26 26 0 0152 0 v30z" fill="#06070a" stroke="#8a6c1a" stroke-width="1.4"/>
+    <path d="M160 640 v-26 a18 18 0 0136 0 v26z" fill="url(#rpDoor)" class="rp-flicker" opacity=".9"/>
+    <path d="M168 640 v-18 a10 10 0 0120 0 v18z" fill="#fff0b8" opacity=".55" class="rp-flicker"/>
+    <path d="M150 641h56" stroke="#8a6c1a" stroke-width="1.2"/>
     <g fill="#0a0c10" stroke="#27313f" stroke-width=".7"><path d="M92 628l-3-30 7-6 8 6-2 30z"/><path d="M104 630l1-22 6-4 6 5-1 21z"/><path d="M258 628l3-26 6-5 6 6-3 25z"/></g>
     <g fill="none" stroke="#06080b" stroke-width="2.4" stroke-linecap="round"><path d="M320 640V560M320 584l-16-14M320 572l14-16M320 600l-12-8M320 592l10-10"/></g>
     <g class="rp-grass" fill="none" stroke="#1b2430" stroke-width="1"><path d="M40 654l2-8M46 656l-1-9M300 656l2-8M308 658l-1-9M214 660l1-9"/></g>
     <g>${embers}</g>
-    <rect y="620" width="375" height="340" fill="#0d0f12" opacity=".55"/>
+    <rect y="642" width="375" height="318" fill="#0d0f12" opacity=".55"/>
     </g>
     <!-- the moon rides in front of the faded ridges, so they never dull it -->
     <circle cx="286" cy="262" r="120" fill="url(#rpMoon)"/>
