@@ -935,8 +935,8 @@ body.has-qbar #toast{bottom:82px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.26",
-    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung; 0.11.25: area effects (Blast, circles on the ground) hit every model in the area, friend or foe, the attacker included; 0.11.26: wording only. 'Activation' is now 'Turn' (a model's turn) and a side's turn is now its 'go'; no numbers changed",
+    "version": "0.11.27",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung; 0.11.25: area effects (Blast, circles on the ground) hit every model in the area, friend or foe, the attacker included; 0.11.26: wording only. 'Activation' is now 'Turn' (a model's turn) and a side's turn is now its 'go'; no numbers changed; 0.11.27 (co-design, proposed): the round's first step is Reveille (was Tempo; key round.reveille, step id 'reveille'); a miss into a fight is a Wits test (fail hits the shooter's own nearest fighter) instead of a random model; wording fixes: 'in an turn', squads.activations reference, terms.turn no longer uses 'go'; 0.11.27 clarifications: tread triggers on any move that ends there, whoever caused it; a reveal now says SAFE / TRAPPED / OCCUPIED; Trapwise wording fixed; Blast (and any area effect) needs no hit roll, armour save only, the attacker included; battle Cash (win/lose/draw) and mission Completed/Abandoned (finds kept or not) are explicitly two separate outcomes; a planted guaranteed find needs no dice and no Wits test",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -969,7 +969,7 @@ body.has-qbar #toast{bottom:82px}
       "obol": "Obol",
       "leader": "Oathbearer",
       "leaderNote": "display name only; the trait id stays \"leader\". Enemy sides without the narrative call theirs \"the leader\"",
-      "turn": "a model's turn: its go at spending its Actions. A model has 1 turn a round, one more for every full 70 points of cost (at most 4)",
+      "turn": "a model's turn: its chance to spend its Actions. A model has 1 turn a round, one more for every full 70 points of cost (at most 4)",
       "go": "a side's go: the side takes ceil(more/fewer) units' turns in a row (the larger side), then the other side takes its go"
     },
     "reskinNote": "A model may display its own name for any gear it carries; the stats and cost always come from the id. `examples` is fiction only and never affects play.",
@@ -1244,11 +1244,11 @@ body.has-qbar #toast{bottom:82px}
   },
   "round": {
     "steps": [
-      "tempo",
+      "reveille",
       "turns",
       "end"
     ],
-    "tempo": [
+    "reveille": [
       "gain nerve",
       "leaders roll opposed Wits; winner chooses who takes the first turn; leaderless rolls d4"
     ],
@@ -1263,7 +1263,7 @@ body.has-qbar #toast{bottom:82px}
     "perRound": 2,
     "leaderStandingBonus": 1,
     "underdogBonus": 1,
-    "underdogRule": "checked at Tempo: strictly more points of models lost than the enemy; a tie gives no bonus",
+    "underdogRule": "checked at Reveille: strictly more points of models lost than the enemy; a tie gives no bonus",
     "cap": 6,
     "spends": [
       {
@@ -1437,8 +1437,8 @@ body.has-qbar #toast{bottom:82px}
       "stepDown": 1
     },
     "obscuringDepth": 5,
-    "intoMelee": "on a miss, hits a random other model in that fight",
-    "areaEffects": "Anything that hits an area (a Blast weapon or power, a circle on the ground) affects EVERY model in that area, friend or foe, and the attacker too. Choose the target point with care."
+    "intoMelee": "on a miss, the shooter takes a Wits test (4 or better). Pass: the shot goes wide. Fail: it hits the shooter's own model Engaged with the target that is nearest the shooter (shooter's choice if tied), resolved as a normal hit with that weapon. If the shooter has no model in that fight, a miss is just a miss.",
+    "areaEffects": "Anything that hits an area (a Blast weapon or power, a circle on the ground) affects EVERY model in that area, friend or foe, and the attacker too. Choose the target point with care. No hit roll is needed against anyone in the area; only armour saves apply."
   },
   "melee": {
     "opposed": true,
@@ -1543,7 +1543,7 @@ body.has-qbar #toast{bottom:82px}
     "minSize": 3,
     "maxSize": 10,
     "coherency": 5,
-    "activations": "see turn.squads",
+    "activations": "see activation.squads",
     "overkillCarries": false,
     "blastHitsEachModel": true,
     "fateRollPerModelsLost": 2,
@@ -1596,7 +1596,7 @@ body.has-qbar #toast{bottom:82px}
     },
     {
       "id": "heavy",
-      "desc": "Can't shoot in an turn it Moved or Charged; no Snap shot."
+      "desc": "Can't shoot in a turn it Moved or Charged; no Snap shot."
     },
     {
       "id": "spread",
@@ -1604,7 +1604,7 @@ body.has-qbar #toast{bottom:82px}
     },
     {
       "id": "blast",
-      "desc": "Every model within X cm of the target point is attacked separately: friends and the attacker too.",
+      "desc": "Every model within X cm of the target point takes the attack's damage separately (its own armour save only — no roll is needed to hit; being in the area is enough), friends and the attacker too.",
       "param": "radius"
     },
     {
@@ -1634,7 +1634,7 @@ body.has-qbar #toast{bottom:82px}
       "id": "leader",
       "name": "Oathbearer",
       "cost": 6,
-      "desc": "The one who called the band back from the grave; the rest serve them. +1 Nerve each Tempo while standing. One per side. Rolls initiative and break tests.",
+      "desc": "The one who called the band back from the grave; the rest serve them. +1 Nerve each Reveille while standing. One per side. Rolls initiative and break tests.",
       "unique": true
     },
     {
@@ -1885,7 +1885,7 @@ body.has-qbar #toast{bottom:82px}
       "id": "trapwise",
       "name": "Trapwise",
       "cost": 3,
-      "desc": "Action: reveal every suspicion marker within 20 cm without triggering it; traps it reveals are disarmed on a Wits test step-up."
+      "desc": "Action: reveal every suspicion marker within 20 cm without triggering it; its disarm tests (secrets.disarm) step up."
     },
     {
       "id": "ambush",
@@ -3339,7 +3339,8 @@ body.has-qbar #toast{bottom:82px}
         "winPayoutPctOfGameSize": 0.06,
         "lossFactor": 0.5,
         "difficultyMultiplier": true,
-        "cacheRoll": "see loot"
+        "cacheRoll": "see loot",
+        "completedVsWon": "Two separate outcomes, not one: battle Cash still pays on won / lost / draw (victory points and the break test, unchanged). Completed / Abandoned is a different question — whether the mission's own goal was finished — and decides only whether anything found on this run is kept."
       }
     },
     "advancementCosts": {
@@ -4021,18 +4022,18 @@ body.has-qbar #toast{bottom:82px}
           "nothing"
         ]
       },
-      "trigger": "TREAD marker (ground, a doorway, a named patch of terrain): a model that ends a move within 5 cm of it, or on or against the named area, sets it off; passing by without stopping does not. TOUCH marker (a cupboard, chest, body, device): standing beside it is safe; it only goes off when a model spends Interact to search it. The app taps the marker number and reveals and applies the result",
+      "trigger": "TREAD marker (ground, a doorway, a named patch of terrain): a model that ends a move within 5 cm of it, or on or against the named area, sets it off; passing by without stopping does not. TOUCH marker (a cupboard, chest, body, device): standing beside it is safe; it only goes off when a model spends Interact to search it. The app taps the marker number and reveals and applies the result — ANY move that ends there sets it off, whoever or whatever caused it (Push, Force, Upheaval, a reaction's Dodge, a Drag, a withdrawal after breaking, all included); a model only avoids it by never ending a move within range.",
       "reveal": {
         "by": [
           "glimpse",
           "trapwise",
           "any ability or item that reveals"
         ],
-        "effect": "reveals each marker in range without triggering it, and says plainly whether it is SAFE or TRAPPED: decoys are removed, traps become visible (go round, or disarm; a trapped touch marker must be disarmed before it is opened), caches and objectives read safe, an ambush or hidden enemy is placed but stays unsprung and off the turn order until set off",
+        "effect": "reveals each marker in range without triggering it, and says plainly whether it is SAFE, TRAPPED, or OCCUPIED (an ambush or a hidden enemy): decoys are removed, traps become visible (go round, or disarm; a trapped touch marker must be disarmed before it is opened), caches and objectives read safe, an ambush or hidden enemy is placed but stays unsprung and off the turn order until set off",
         "input": "player tells the app who used it and which marker numbers are in range",
         "noticed": "an ambush that is revealed may see who looked. The scenario gives each tread marker an alertness: unaware (never), watchful (the model that looked makes a Wits test, and a fail means they noticed), alert (they notice). A noticed ambush is set off at once"
       },
-      "search": "TOUCH marker: Interact in contact and a Wits test. Pass: a cache pays out; a trap is revealed without going off; an objective is found; a decoy is removed. Fail: a trap goes off as if set off; otherwise nothing is found this time and another Interact may try again",
+      "search": "TOUCH marker: Interact in contact and a Wits test. Pass: a cache pays out; a trap is revealed without going off; an objective is found; a decoy is removed. Fail: a trap goes off as if set off; otherwise nothing is found this time and another Interact may try again — EXCEPT a marker the scenario planted a guaranteed find on: that one is simply opened, no dice and no Wits test, since the story needs it found.",
       "disarm": "a revealed trap in contact can be disarmed with Interact (Wits test; Tools or Trapwise step up). A failed disarm sets it off",
       "paperFallback": "without the app: shuffle face-down cards (Trap, Cache, Nothing, Ambush, ...) under the numbered markers and flip them in the same situations",
       "pvp": "markers are neutral; either side can trigger or reveal them",
@@ -4994,7 +4995,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 12:30";</script>
+<script>window.EP_BUILD = "13 Nov 18:35";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -6700,7 +6701,7 @@ function questBegin(size, opts){
        units: mine.map(questUnitFrom),
        markers: rollMarkers(size, opts),
        log: []};
-  questStep();           // the first round opens with its Tempo: Nerve gained, activations ready
+  questStep();           // the first round opens with its Reveille: Nerve gained, turns ready
   questSave();
   return true;
 }
@@ -7097,11 +7098,11 @@ function searchMarkerResult(num, uid, passed){
 /* ---- downflow.js ---- */
 /* =====================================================================
    WHAT HAPPENS WHEN SOMEONE GOES DOWN
-   and the other moments a table has to stop for: the Tempo roll, a side
+   and the other moments a table has to stop for: the Reveille roll, a side
    reaching its break line.
 
    The rule for who sees what (decided with the user, 2026-11-13):
-     - Step reminders (Tempo, the break test) pop up on the HOST tablet only.
+     - Step reminders (Reveille, the break test) pop up on the HOST tablet only.
      - What happens to a character pops up on THAT PLAYER'S phone only
        (they went Down, they were stabilised, a friend fell beside them).
      - Everyone can SEE on the table that someone is Down and how it stands
@@ -7340,13 +7341,13 @@ function breakSheet(p){
   };
 }
 
-/* ---- the Tempo roll: host only ---- */
+/* ---- the Reveille roll: host only ---- */
 function tempoSheet(p){
   const g = p.gain || {};
   const bands = unburiedBands();
   let roller = bands.length ? bands[0].key : null;
   $("#sheet2In").innerHTML = `
-    <div class="sheet-head"><div class="eyebrow">Round ${p.round}: roll Tempo</div></div>
+    <div class="sheet-head"><div class="eyebrow">Round ${p.round}: roll Reveille</div></div>
     <div class="slab">
       <p class="lead" style="margin:0 0 8px">Nerve gained: the Unburied +${g.us || 0}, the enemy +${g.them || 0}.</p>
       <p class="lead" style="margin:0 0 6px">Each side's leader rolls Wits against the other. The winner chooses who takes the first turn. A side with no leader rolls a d4. A tie is rolled again.</p>
@@ -7400,7 +7401,7 @@ function finishedSheet(p){
 }
 
 /* ---- several bands on the Unburied side ----
-   One leader rolls Tempo for the whole side (the players agree who). Inside the side the bands then
+   One leader rolls Reveille for the whole side (the players agree who). Inside the side the bands then
    take turns choosing the next unit; the tablet names whose turn it is. */
 function unburiedBands(){
   const out = [], seen = new Set();
@@ -8929,7 +8930,7 @@ function openNerve(){
       <button class="iconbtn" id="nvX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Nerve</div></div>
-    <p class="lead"><b>${Q.nerve.us}</b> in the pool, capped at ${RS.nerve.cap}. It refills at Tempo:
+    <p class="lead"><b>${Q.nerve.us}</b> in the pool, capped at ${RS.nerve.cap}. It refills at Reveille:
       ${RS.nerve.perRound} a round, +${RS.nerve.leaderStandingBonus} while your ${esc(leaderTerm())} stands,
       +${RS.nerve.underdogBonus} if you have lost more points than the enemy.</p>
     <div class="slab" style="margin-top:14px">
@@ -9522,7 +9523,7 @@ function openTable(){
   if(typeof battleOpen !== "undefined" && battleOpen) closeBattle();
   tableOpen = true;
   document.body.classList.add("table-on");
-  /* The table runs a round as one thing: Tempo (Nerve, activations reset) happens as the round opens. */
+  /* The table runs a round as one thing: Reveille (Nerve, turns reset) happens as the round opens. */
   if(Q.step === "tempo") questStep();
   drawTable();
 }
@@ -9533,7 +9534,7 @@ function closeTable(){
 }
 
 /* Activations still to come for a side, and the turns they make up: the side that won
-   Tempo goes first, sides alternate, and the side with more activations takes
+   Reveille goes first, sides alternate, and the side with more turns takes
    several units a turn (groups). */
 function tableTurns(){
   const g = questGroups(), left = {};
@@ -9734,7 +9735,7 @@ function drawTable(){
       <div class="tb-panel tb-turn">
         <div class="tb-eb">Order of battle <i></i></div>
         <div class="tb-first">
-          <span>Won Tempo</span>
+          <span>Won Reveille</span>
           <button class="chip ${first === "us" ? "gilt" : ""}" data-tfirst="us">The Unburied</button>
           <button class="chip ${first === "them" ? "gilt" : ""}" data-tfirst="them">The enemy</button>
         </div>
@@ -9758,14 +9759,14 @@ function drawTable(){
   bindTableScreen(el);
 }
 
-/* One press closes the round: the Acts step, then the End step (events, burning, strain), and the next round opens with its Tempo. */
+/* One press closes the round: the Acts step, then the End step (events, burning, strain), and the next round opens with its Reveille. */
 function tableEndTurn(){
   if(Q.realm && !Q.host){ toast("The host ends the round"); return; }
   if(Q.step === "tempo") questStep();
   if(Q.step === "acts") questStep();
   if(Q.step === "end") questStep();         // the round turns over; anything that sprang is in Q.pending
   const pending = Q.pending; Q.pending = null;
-  if(Q.step === "tempo") questStep();       // the new round's Tempo
+  if(Q.step === "tempo") questStep();       // the new round's Reveille
   questSave();
   if(pending) showRoundPopup(pending); else render();
 }
@@ -12421,8 +12422,8 @@ function ruleCards(){
     L("Opposed", "Both roll, higher wins, a tie is nothing."),
     L("Other dice", "Risk die " + (d.riskDie || "d6") + " (rolled with a push or a power). Fate " + (d.fateDie || "d20") + ". Loot " + (d.lootDie || "d100") + ".")]},
 
-  {id: "round", group: "Turn", title: "A round", head: "Three steps: Tempo, Turns, End.", lines: [
-    L("Tempo", "Gain Nerve. Leaders roll opposed Wits; the winner chooses who takes the first turn (no leader: d4)."),
+  {id: "round", group: "Turn", title: "A round", head: "Three steps: Reveille, Turns, End.", lines: [
+    L("Reveille", "Gain Nerve. Leaders roll opposed Wits; the winner chooses who takes the first turn (no leader: d4)."),
     L("Turns", "Sides alternate their goes. The side with more turns takes several units' turns in its go (the larger over the smaller, rounded up). A unit's turns are spread across the round, not taken back to back."),
     L("End", "Scenario events. Break tests if a threshold was crossed. Unused Ready is cleared. A model that did not push this round rests 1 Strain.")]},
 
@@ -12471,7 +12472,7 @@ function ruleCards(){
     L("Nerve", "Spend 1 Nerve to cancel a Burnout.")]},
 
   {id: "nerve", group: "Mind", title: "Nerve", head: "A pool the whole side shares, gained every round.", lines: [
-    L("Gain", "+" + (nv.perRound || 2) + " at Tempo. +" + (nv.leaderStandingBonus || 1) + " while your Oathbearer stands. +" + (nv.underdogBonus || 1) + " if you have lost strictly more points of models than the enemy."),
+    L("Gain", "+" + (nv.perRound || 2) + " at Reveille. +" + (nv.leaderStandingBonus || 1) + " while your Oathbearer stands. +" + (nv.underdogBonus || 1) + " if you have lost strictly more points of models than the enemy."),
     L("Cap", "Never more than " + (nv.cap || 6) + "."),
     ...(nv.spends || []).map(s => L("Spend " + s.cost, s.desc))]},
 
@@ -14234,7 +14235,7 @@ async function joinQuest(code){
   return true;
 }
 /* What the table says has changed. When it says a new round has begun, this phone's own models go through
-   the same End step and Tempo the host ran for everyone else: Burning and Tainted bite, Ready is cleared,
+   the same End step and Reveille the host ran for everyone else: Burning and Tainted bite, Ready is cleared,
    Strain rests, and every activation tick is wiped. (The host cannot do it for these models: their state
    lives here, and is pushed up from here.) */
 function applyTable(t){
