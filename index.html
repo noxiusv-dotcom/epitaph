@@ -4986,7 +4986,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 09:54";</script>
+<script>window.EP_BUILD = "13 Nov 10:05";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -6930,7 +6930,7 @@ function resolveMarker(num, uid){
   }
   if(k.hurt && u && mk.kind === "trapVisible"){
     pending = {n: num, uid: u.uid};
-    extra = " " + u.name + " makes a Wits test; on a fail, tap it below.";
+    extra = " " + u.name + " makes a Wits test. Roll it, then say how it went.";
   } else if(k.hurt && u){
     extra = " " + trapHit(u, k.hurt, "marker " + num, true);
   }
@@ -6956,7 +6956,15 @@ function trapFailed(num, uid){
   const u = Q.units.find(x => x.uid === uid); if(!u) return null;
   const t = trapHit(u, 2, "marker " + num, false);
   qlog("Marker " + num + " — " + u.name + " failed the Wits test");
-  return {label: "Trap", text: t, hurt: u.name};
+  return {label: "Trap", text: u.name + " is a moment too slow. " + t, hurt: u.name};
+}
+/* The Wits test was passed: the trap springs on nothing. */
+function trapPassed(num, uid){
+  const u = Q.units.find(x => x.uid === uid);
+  const who = u ? u.name : "Whoever it was";
+  qlog("Marker " + num + " \u2014 " + who + " passed the Wits test");
+  questSave();
+  return {label: "Avoided", text: who + " sees the trigger in time and throws themselves clear. The trap goes off on empty ground. No damage.", hurt: null};
 }
 /* Looking (a spell or ability) reveals without setting anything off, and says so
    plainly: safe, trapped or ambush. An ambush may see who looked: unaware never,
@@ -8638,6 +8646,11 @@ function openMarkers(result){
     openMarkers(r ? [Object.assign({n: +b2.dataset.mfail}, r)] : null);
     render();
   });
+  $("#sheet2In").querySelectorAll("[data-mpass]").forEach(b2 => b2.onclick = () => {
+    const r = trapPassed(+b2.dataset.mpass, b2.dataset.mpasswho);
+    openMarkers(r ? [Object.assign({n: +b2.dataset.mpass}, r)] : null);
+    render();
+  });
   $("#sheet2In").querySelectorAll("[data-mnotice]").forEach(b2 => b2.onclick = () => {
     const r = lookNoticed(+b2.dataset.mnotice, b2.dataset.mnwho);
     openMarkers(r ? [Object.assign({n: +b2.dataset.mnotice}, r)] : null);
@@ -9413,7 +9426,9 @@ function markerRevealers(){
 function markerResultHTML(rows){
   return (rows || []).map(r => `<div class="mkres"><b>${esc(r.label || "")}</b><span>${esc(r.text || "")}</span>
     ${r.sprung ? `<span style="margin-top:6px">${esc(r.sprung.text || "")}</span>` : ""}
-    ${r.pending ? `<button class="btn sm" data-mfail="${r.pending.n}" data-mfailwho="${esc(r.pending.uid)}" style="margin:6px 0 0">Failed the Wits test</button>` : ""}
+    ${r.pending ? `<div class="ma-acts" style="margin-top:8px">
+        <button class="btn sm primary" data-mpass="${r.pending.n}" data-mpasswho="${esc(r.pending.uid)}" style="margin-left:0">Passed the Wits test</button>
+        <button class="btn sm" data-mfail="${r.pending.n}" data-mfailwho="${esc(r.pending.uid)}">Failed the Wits test</button></div>` : ""}
     ${r.notice ? `<div class="ma-acts" style="margin-top:8px">
         <button class="btn sm" data-mnotice="${r.notice.n}" data-mnwho="${esc(r.notice.uid)}" style="margin-left:0">Failed the Wits test: they saw</button>
         <button class="btn sm" data-munseen="${r.notice.n}">Passed: unseen</button></div>` : ""}</div>`).join("");
@@ -9502,6 +9517,7 @@ function openMarkerAct(n, result){
     show(revealMarkers([n], who())[0]);
   });
   $("#sheet2In").querySelectorAll("[data-mfail]").forEach(b => b.onclick = () => show(trapFailed(+b.dataset.mfail, b.dataset.mfailwho)));
+  $("#sheet2In").querySelectorAll("[data-mpass]").forEach(b => b.onclick = () => show(trapPassed(+b.dataset.mpass, b.dataset.mpasswho)));
   $("#sheet2In").querySelectorAll("[data-mnotice]").forEach(b => b.onclick = () => {
     const r = lookNoticed(+b.dataset.mnotice, b.dataset.mnwho);
     out(r ? [Object.assign({n: +b.dataset.mnotice}, r)] : null);
