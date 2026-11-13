@@ -4994,7 +4994,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 12:24";</script>
+<script>window.EP_BUILD = "13 Nov 12:30";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -5696,10 +5696,28 @@ function setSize(m, size){
 function giveFound(m, what){
   if(typeof realmAvailable === "function" && realmAvailable() && typeof stashOf === "function"){
     /* finds go to the band's Armoury, to be handed out afterwards */
-    stashOf(band()).found.push(Object.assign({fid: uid(), by: m.name || "", holder: m.id}, what)); save(); return;
+    stashOf(band()).found.push(Object.assign({fid: uid(), by: m.name || "", holder: m.id, qid: (typeof Q !== "undefined" && Q && Q.qid) || null}, what)); save(); return;
   }
-  m.found = (m.found || []).concat([Object.assign({fid: uid()}, what)]);
+  m.found = (m.found || []).concat([Object.assign({fid: uid(), qid: (typeof Q !== "undefined" && Q && Q.qid) || null}, what)]);
   save();
+}
+/* The mission was not completed: anything found on this run is not fairly kept.
+   Clears it from wherever it ended up — the band's Armoury, or straight on
+   whoever carried it — and leaves everything the band already owned untouched. */
+function stripQuestFinds(qid){
+  if(!qid) return 0;
+  const b = band(); let n = 0;
+  const st = stashOf(b);
+  const before = (st.found || []).length;
+  st.found = (st.found || []).filter(f => f.qid !== qid);
+  n += before - st.found.length;
+  b.members.forEach(m => {
+    const bef = (m.found || []).length;
+    m.found = (m.found || []).filter(f => f.qid !== qid);
+    n += bef - m.found.length;
+  });
+  if(n) save();
+  return n;
 }
 /* What a model is carrying that it found: in camp that sits in the Armoury, tagged with who picked it up. */
 function heldFinds(m){
@@ -6677,7 +6695,7 @@ function questBegin(size, opts){
   /* the tether is normally rolled already, back at the barrow; this catches a band
      with none (a severed one, or narrative switched on late) */
   if(!tableOnly && ruleOn("narrative", b) && leaderOf(b) && !b.tether){ bindTether(b); save(); }
-  Q = {round: 1, step: "tempo", size,
+  Q = {round: 1, step: "tempo", size, qid: uid() + Date.now().toString(36),
        nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
        units: mine.map(questUnitFrom),
        markers: rollMarkers(size, opts),
@@ -8738,31 +8756,52 @@ function showRoundPopup(pending){
   $("#rpOK").onclick = () => { closePicker(); render(); };
 }
 function askEnd(){
+  const isTable = typeof getRole === "function" && getRole() === "realm";
+  const known = !isTable && Q.realm && Q.tableOutcome;     // the host already called it
+  if(known){
+    const done = Q.tableOutcome === "completed";
+    $("#sheet2In").innerHTML = `
+      <div class="sheet-head"><div class="eyebrow">End the quest</div></div>
+      <p class="lead">The host marked this quest <b>${done ? "Completed" : "Abandoned"}</b>.
+        ${done ? "Anything found on this run is yours to keep."
+               : "The mission was not finished, so anything found on this run is left behind. Whatever the band already owned stays theirs."}</p>
+      <div class="sheet-actions"><button class="btn primary" id="qeCont" style="margin-left:auto">Continue</button></div>`;
+    $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+    $("#qeCont").onclick = () => proceedEnd(Q.tableOutcome);
+    return;
+  }
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">End the quest</div></div>
-    ${typeof getRole === "function" && getRole() === "realm"
+    ${isTable
       ? `<p class="lead">Was the scenario completed? Completed marks the place as claimed on the map. Abandoned leaves it there to try again. Each player settles their own band afterwards.</p>`
-      : `<p class="lead">The tracker is cleared. What your Unburied lost, they keep — anyone
-      hurt in this scenario is still hurt, and you can patch them up from their card.</p>`}
+      : `<p class="lead">Did the band complete the mission? Completed keeps anything found on this run.
+          Abandoned leaves it behind \u2014 Cash and gear the band already had are untouched, and anyone
+          hurt in this scenario is still hurt. You can patch them up from their card.</p>`}
     <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn ghost" id="qeX">Keep going</button>
-      ${typeof getRole === "function" && getRole() === "realm"
-        ? `<button class="btn" id="qeAban" style="margin-left:auto">Abandoned</button>
-           <button class="btn primary" id="qeDone">Completed</button>`
-        : `<button class="btn danger" id="qeGo" style="margin-left:auto">End it</button>`}
+      <button class="btn" id="qeAban" style="margin-left:auto">Abandoned</button>
+      <button class="btn primary" id="qeDone">Completed</button>
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#qeX").onclick = closePicker;
-  const qd = $("#qeDone"), qa = $("#qeAban");
-  if(qd) qd.onclick = () => { Q.outcome = "completed"; finishEnd(); };
-  if(qa) qa.onclick = () => { Q.outcome = "abandoned"; finishEnd(); };
-  if($("#qeGo")) $("#qeGo").onclick = () => {
-    const b = band();
-    if(b.tether && !b.tether.severed && ruleOn("narrative", b)){
-      if(tetherUnchecked(b)){ toast("No one who can call a Reckoning took the field, so the tether is not checked"); finishEnd(); }
-      else askTether(b);
-    } else finishEnd();
-  };
+  $("#qeDone").onclick = () => { Q.outcome = "completed"; if(isTable && typeof pushTable === "function") pushTable(); proceedEnd("completed"); };
+  $("#qeAban").onclick = () => { Q.outcome = "abandoned"; if(isTable && typeof pushTable === "function") pushTable(); proceedEnd("abandoned"); };
+}
+/* Completed or abandoned is now known. Strip this run's finds if it was not
+   completed, then carry on to the tether check and the after-battle report
+   (the table tablet has no band, so it has neither). */
+function proceedEnd(outcome){
+  const isTable = typeof getRole === "function" && getRole() === "realm";
+  if(!isTable && outcome === "abandoned" && typeof stripQuestFinds === "function"){
+    const n = stripQuestFinds(Q.qid);
+    if(n) toast("Left " + n + " find" + (n === 1 ? "" : "s") + " behind \u2014 the mission wasn't completed");
+  }
+  if(isTable){ finishEnd(); return; }
+  const b = band();
+  if(b.tether && !b.tether.severed && ruleOn("narrative", b)){
+    if(tetherUnchecked(b)){ toast("No one who can call a Reckoning took the field, so the tether is not checked"); finishEnd(); }
+    else askTether(b);
+  } else finishEnd();
 }
 /* Ending a quest hands straight on to the after-battle sheet, with what just
    happened already filled in. */
@@ -14100,6 +14139,7 @@ function pushTable(){
   if(!Q || !Q.realm || !Q.host) return;
   tryWrite("quests/" + Q.realm + "/table", {
     round: Q.round, step: Q.step, size: Q.size,
+    outcome: Q.outcome || null,
     vp: Q.vp, nerve: Q.nerve,
     markers: Q.markers.map(m => ({n: m.n, state: m.state, look: m.look || ""})),   // never the kind
     foes: Q.units.filter(u => u.side === "them").map(shareUnit),
@@ -14184,7 +14224,7 @@ async function joinQuest(code){
   const b = band();
   const mine = b.members.filter(fielded);
   if(!mine.length) throw new Error("Field someone first.");
-  Q = {round: 1, step: "tempo", size: (all[id].meta || {}).size || 0,
+  Q = {round: 1, step: "tempo", size: (all[id].meta || {}).size || 0, qid: uid() + Date.now().toString(36),
        nerve: {us: 0, them: 0}, vp: {us: 0, them: 0},
        units: mine.map(questUnitFrom), markers: [], log: [],
        realm: id, host: false, joinCode: String(code).trim().toUpperCase(), seen: {}};
@@ -14206,6 +14246,9 @@ function applyTable(t){
   Q.units = Q.units.filter(u => u.side === "us")
     .concat((t.foes || []).map(f => Object.assign({}, f, {remote: true})));
   Q.roster = t.roster || [];
+  /* the host's Completed / Abandoned call, once made, is kept — later table
+     pushes after the host has left no longer carry it */
+  if(t.outcome) Q.tableOutcome = t.outcome;
   Q.seenTable = true;
   if(known && t.round > prev){
     Q.units.filter(u => u.side === "us" && !u.remote).forEach(u => {
