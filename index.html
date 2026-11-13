@@ -4993,7 +4993,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 11:32";</script>
+<script>window.EP_BUILD = "13 Nov 11:43";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -14926,13 +14926,23 @@ function bindRealmKnown(el){
     card.innerHTML = rmCardHTML(pl);
     const ob = card.querySelector("[data-rmopen]"); if(ob) ob.onclick = () => open(pl);
     const db = card.querySelector("[data-rmdel]");
-    if(db) db.onclick = () => askDelete("Forget " + pl.name + "?",
-      "The place fades from the map and its scenario is gone" + (pl.kind === "history" ? ", along with the record of how it went" : "")
-        + ". Other places stay where they are. This cannot be undone.",
-      () => {
-        if(pl.kind === "library") deleteFromLibrary(pl.id); else deleteHistory(pl.id);
-        closePicker(); renderRealm(); toast("Forgotten");
-      }, closePicker, "Forget it");
+    if(db) db.onclick = () => {
+      /* One place can have several records: each time it was brought in, and each time it was played. Forgetting it removes them all. */
+      const norm = t => String(t || "").trim().toLowerCase();
+      const same = t => norm(t) === norm(pl.name);
+      const libs = loadLibrary().filter(r => same(r.out && r.out.title));
+      const hist = loadHistory().filter(r => same(r.title || (r.scenario && r.scenario.title)));
+      const total = libs.length + hist.length;
+      askDelete("Forget " + pl.name + "?",
+        "The place fades from the map and its scenario is gone" + (hist.length ? ", along with " + (hist.length === 1 ? "the record" : "the " + hist.length + " records") + " of how it went" : "")
+          + (total > 1 ? " (" + total + " records in all)" : "") + ". Other places stay where they are. This cannot be undone.",
+        () => {
+          libs.forEach(r => deleteFromLibrary(r.id));
+          hist.forEach(r => deleteHistory(r.id));
+          if(!total){ if(pl.kind === "library") deleteFromLibrary(pl.id); else deleteHistory(pl.id); }
+          closePicker(); renderRealm(); toast("Forgotten");
+        }, closePicker, "Forget it");
+    };
     card.scrollIntoView({block: "nearest", behavior: "smooth"});
   };
   el.querySelectorAll(".rmPlace").forEach(g => {
