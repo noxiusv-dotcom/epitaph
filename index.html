@@ -4982,7 +4982,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 08:07";</script>
+<script>window.EP_BUILD = "13 Nov 08:15";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -12644,6 +12644,7 @@ function legaliseScenario(raw, ctx){
       look: mk ? str(mk.look, 90) : "", how,
       area: how === "tread" && !!(mk && mk.area),
       alert: how === "tread" && mk && ["unaware", "watchful", "alert"].includes(mk.alert) ? mk.alert : "watchful"},
+      mk && mk.kind ? {kind: str(mk.kind, 20)} : {},
       isFinite(px) && isFinite(py) && mk.x !== null && mk.y !== null ? {x: num(px, 4, 96, 50), y: num(py, 4, 96, 50)} : {}));
   }
 
@@ -13353,6 +13354,14 @@ function startFromScenario(s, campDone){
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g){ m.where = g.where; if(typeof g.x === "number"){ m.x = g.x; m.y = g.y; } } });
   /* the kinds were rolled blind: deal them out to fit what each spot looks like */
   if(typeof dealMarkerKinds === "function") dealMarkerKinds(Q.markers, s.markers);
+  /* a hand-written test scenario may fix what lies under a marker ("kind"); the AI never does */
+  (s.markers || []).forEach((g, i) => {
+    const m = Q.markers[i], K = markerKinds();
+    if(!m || !g || !K[g.kind]) return;
+    m.kind = g.kind;
+    m.how = K[g.kind].how === "either" ? (g.how === "tread" ? "tread" : "touch") : K[g.kind].how;
+    m.look = g.look || m.look; m.area = m.how === "tread" && !!g.area; m.alert = g.alert || "watchful";
+  });
   s.enemy.forEach(u => {
     /* squads are parked: a pack of N is N separate units, each with its own activation */
     const split = squadsOn() ? 1 : Math.max(1, u.count || 1);
