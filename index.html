@@ -734,6 +734,9 @@ body:has(#rolePick){overflow:hidden}
 .says-n{font-size:14px;font-weight:600}
 .says-d{font-size:13px;color:var(--ash-dim);line-height:1.5;margin-top:2px;white-space:pre-line}
 .says.bad .says-n{color:var(--rust)}
+.says.tap{cursor:pointer}
+.says.tap:hover .says-n{color:var(--gilt)}
+.pinfo{color:var(--gilt);font-size:13px;margin-left:4px}
 
 .marker.add.conjure{border-color:var(--gilt-deep)}
 .marker.add.conjure .plus{color:var(--gilt)}
@@ -926,8 +929,8 @@ body.has-qbar #toast{bottom:82px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.24",
-    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung",
+    "version": "0.11.25",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung; 0.11.25: area effects (Blast, circles on the ground) hit every model in the area, friend or foe, the attacker included",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -1426,7 +1429,8 @@ body.has-qbar #toast{bottom:82px}
       "stepDown": 1
     },
     "obscuringDepth": 5,
-    "intoMelee": "on a miss, hits a random other model in that fight"
+    "intoMelee": "on a miss, hits a random other model in that fight",
+    "areaEffects": "Anything that hits an area (a Blast weapon or power, a circle on the ground) affects EVERY model in that area, friend or foe, and the attacker too. Choose the target point with care."
   },
   "melee": {
     "opposed": true,
@@ -1592,7 +1596,7 @@ body.has-qbar #toast{bottom:82px}
     },
     {
       "id": "blast",
-      "desc": "Every model within X cm of the target point is attacked separately.",
+      "desc": "Every model within X cm of the target point is attacked separately: friends and the attacker too.",
       "param": "radius"
     },
     {
@@ -4982,7 +4986,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 08:15";</script>
+<script>window.EP_BUILD = "13 Nov 09:27";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -5571,7 +5575,7 @@ function mendBand(b){
 let CAT = {};
 function catOf(kind){ return CAT[kind] || {}; }
 function buildCatalogues(){
-  const kw = ids => (ids || []).map(k => k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase())).join(" · ");
+  const kw = (ids, par) => (ids || []).map(k => k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()) + (par && par[k] != null ? " " + par[k] : "")).join(" \u00b7 ");
   const map = (list, shape) => {
     const o = {};
     (list || []).forEach(x => o[x.id] = Object.assign(
@@ -5596,7 +5600,7 @@ function buildCatalogues(){
     desc: [x.type === "melee" ? "Melee" : "Ranged",
            x.range ? x.range + "cm" : null,
            x.damage + " damage",
-           kw(x.keywords) || null].filter(Boolean).join(" · ")
+           kw(x.keywords, x.params) || null].filter(Boolean).join(" · ")
   }));
   CAT.powers    = map(RS.powers.slice().sort((a, b) =>
       (order(a.tier) - order(b.tier)) || (a.cost - b.cost) || a.name.localeCompare(b.name)),
@@ -7073,9 +7077,60 @@ function attackHTML(m, e){
       <span class="atk-roll">${esc(RSX.stat[stat].name)} <b>${esc(die)}</b> <small>4+</small></span>
     </div>
     <div class="atk-line">${esc(isAnimal(m) ? w.desc.replace(/ · Two Handed/i, "") : w.desc)}${shown !== w.name ? ` · <span class="quiet">${esc(w.name)}</span>` : ""}</div>
+    ${(((RS.weapons || []).find(x => x.id === e.id) || {}).keywords || []).includes("blast") ? `<div class="atk-mods"><span class="mod" style="border-color:var(--rust)"><b style="color:var(--rust)">\u26a0 Blast</b> ${esc(blastText(((RS.weapons.find(x => x.id === e.id) || {}).params || {}).blast || "X"))}</span></div>` : ""}
     ${mods.length ? `<div class="atk-mods">${mods.map(x =>
       `<span class="mod"><b>${esc(x.name)}</b> ${esc(x.desc)}</span>`).join("")}</div>` : ""}
   </div>`;
+}
+
+/* ---- plain words for numbers the ruleset only abbreviates ---- */
+function blastText(n){
+  const k = (RS.keywords || []).find(x => x.id === "blast");
+  return (k ? k.desc : "Every model within X cm of the target point is attacked separately.").replace(/\bX\b/, n);
+}
+/* "2 damage, Blast 5." -> says what Blast 5 means, including that it hurts friends */
+function explainDesc(text){
+  return String(text || "").replace(/Blast (\d+)/g, (m, n) => "Blast " + n + " \u2014 " + blastText(n).replace(/\.$/, "").replace(/^Every/, "every"));
+}
+function areaWarn(){
+  return (RS.shooting && RS.shooting.areaEffects) || "An area effect hits every model in it, friend or foe, the attacker too.";
+}
+function powerHitsArea(p){
+  return p.targets === "point" || (p.levels || []).some(l => l.blast || /\bcircle\b|Blast \d+/i.test(l.desc || ""));
+}
+/* Tap a power on a card: what each level does in plain words, what it risks, how it is cast. */
+function openPowerInfo(id){
+  const p = (RS.powers || []).find(x => x.id === id); if(!p) return;
+  const sig = p.tier === "signature";
+  const tier = (RS.powerTiers || []).find(t => t.id === p.tier) || {};
+  const rd = (RS.dice && RS.dice.riskDie) || "d6", rmax = dieNum(rd) || 6;
+  const cast = RS.casting || {}, sg = cast.signature || {}, kn = cast.knackRoll || {};
+  const bonuses = (sig ? sg.criticalBonus : kn.criticalBonus) || [];
+  const cancel = ((RS.nerve || {}).spends || []).find(x => x.id === "cancelBurnoutOrBacklash");
+  const lvls = (p.levels || []).map(l => `
+    <div class="says"><div class="says-n">Level ${l.level}${sig ? ` <span class="chip ${l.level >= 3 ? "bad" : ""}">Backlash if the ${rd} shows ${Array.from({length: l.level}, (_, i) => i + 1).join(", ").replace(/, (\d)$/, " or $1")} \u00b7 ${l.level} in ${rmax}</span>` : ""}</div>
+      <div class="says-d">${esc(explainDesc(l.desc))}</div></div>`).join("");
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="piX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <div class="eyebrow">${esc(p.name)} \u00b7 ${esc(tier.name || p.tier)}${p.range ? " \u00b7 " + p.range + " cm" : ""}</div></div>
+    ${tier.blurb ? `<p class="lead" style="margin:0 0 12px">${esc(tier.blurb)}</p>` : ""}
+    ${powerHitsArea(p) ? `<div class="mkres" style="border-color:var(--rust);margin-bottom:12px"><b style="color:var(--rust)">\u26a0 It can hurt your friends</b><span>${esc(areaWarn())}</span></div>` : ""}
+    ${lvls ? `<div class="slab"><div class="head"><span class="eyebrow">${sig ? "Choose a level when you cast it" : "What it does"}</span><span class="rule"></span></div>${lvls}</div>` : (p.desc ? `<div class="slab"><p class="says-d" style="margin:0">${esc(p.desc)}</p></div>` : "")}
+    <div class="slab"><div class="head"><span class="eyebrow">How it is cast</span><span class="rule"></span></div>
+      <div class="says-d">${sig
+        ? "Throw Will and the Risk die (" + esc(rd) + ") together. Will 4 or better and it works. Will 8 or better is a Critical: it cancels any Backlash and you pick a bonus below.\nA Backlash happens when the Risk die is no higher than the level you chose, so a higher level is stronger and riskier."
+          + (cancel ? "\nSpend " + cancel.cost + " Nerve to cancel a Backlash." : "")
+          + (sg.recharge ? "\n" + sg.recharge.charAt(0).toUpperCase() + sg.recharge.slice(1) + "." : "")
+          + "\nOnce per battle."
+        : "One Power action, rolled like a weapon: Will 4 or better works, Will 8 or better is a Critical. No Risk die, and you may use it every round."}</div>
+      ${bonuses.length ? `<div class="head" style="margin-top:10px"><span class="eyebrow">A Critical lets you pick one</span><span class="rule"></span></div>
+        ${bonuses.map(b => `<div class="says"><div class="says-n">${esc(b.name)}</div><div class="says-d">${esc(b.effect)}</div></div>`).join("")}` : ""}
+    </div>
+    <div class="sheet-actions"><button class="btn primary" id="piDone" style="margin-left:auto">Done</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#piX").onclick = $("#piDone").onclick = closePicker;
 }
 
 /* Some catalogue entries (Extra arms is the worst of them) pack several
@@ -7102,9 +7157,12 @@ function saysHTML(m, title, field, tone){
       const times = qty ? 1 : arr.filter(e => (e.id || e) === id).length;
       if(!qty){ if(seen.has(id)) return ""; seen.add(id); }
       const shown = GEAR_KIND[field].reskin ? skinOf(m, id, o.name) : o.name;
-      return `<div class="says ${tone || ""}">
+      const isPow = field === "powers";
+      const pw = isPow ? (RS.powers || []).find(x => x.id === id) : null;
+      return `<div class="says ${tone || ""} ${isPow ? "tap" : ""}" ${isPow ? `data-pinfo="${esc(id)}" role="button" tabindex="0"` : ""}>
         <div class="says-n">${esc(shown)}${qty && (entry.qty || 1) > 1 ? ` ×${entry.qty}` : ""}${times > 1 ? ` \u00d7${times}` : ""}
-          ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""}</div>
+          ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""}${isPow ? ` <span class="pinfo" aria-label="Tap for the full rules">\u24d8</span>` : ""}
+          ${pw && powerHitsArea(pw) ? ` <span class="chip bad" title="Hits every model in the area, friends too">hurts friends too</span>` : ""}</div>
         <div class="says-d">${esc(readableDesc(o.desc))}</div>
       </div>`;
     }).join("")}
@@ -7233,6 +7291,7 @@ function drawCard(){
     </div>`;
 
   const root = $("#sheetIn");
+  root.querySelectorAll("[data-pinfo]").forEach(b => { b.onclick = () => openPowerInfo(b.dataset.pinfo); b.onkeydown = ev => { if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openPowerInfo(b.dataset.pinfo); } }; });
   root.querySelectorAll("[data-drop-found]").forEach(btn => btn.onclick = () => {
     dropFound(m, btn.dataset.dropFound);
     drawCard(); renderUnburied(band());
