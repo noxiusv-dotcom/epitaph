@@ -4986,7 +4986,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 09:32";</script>
+<script>window.EP_BUILD = "13 Nov 09:54";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -6534,6 +6534,9 @@ function archiveQuest(){
   else if(themBroke && !usBroke) result = "Routed the enemy";
   else if(Q.vp.us > Q.vp.them) result = "Won on points";
   else if(Q.vp.them > Q.vp.us) result = "Lost on points";
+  /* the table tablet fields no band, so the host says whether the place was completed */
+  if(Q.outcome === "completed") result = "Completed";
+  else if(Q.outcome === "abandoned") result = "Abandoned";
   const rec = {
     id: uid(), at: Date.now(),
     title: (Q.scenario && Q.scenario.name) || "Took them out",
@@ -8367,15 +8370,23 @@ function showRoundPopup(pending){
 function askEnd(){
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">End the quest</div></div>
-    <p class="lead">The tracker is cleared. What your Unburied lost, they keep — anyone
-      hurt in this scenario is still hurt, and you can patch them up from their card.</p>
-    <div class="sheet-actions">
+    ${typeof getRole === "function" && getRole() === "realm"
+      ? `<p class="lead">Was the scenario completed? Completed marks the place as claimed on the map. Abandoned leaves it there to try again. Each player settles their own band afterwards.</p>`
+      : `<p class="lead">The tracker is cleared. What your Unburied lost, they keep — anyone
+      hurt in this scenario is still hurt, and you can patch them up from their card.</p>`}
+    <div class="sheet-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn ghost" id="qeX">Keep going</button>
-      <button class="btn danger" id="qeGo" style="margin-left:auto">End it</button>
+      ${typeof getRole === "function" && getRole() === "realm"
+        ? `<button class="btn" id="qeAban" style="margin-left:auto">Abandoned</button>
+           <button class="btn primary" id="qeDone">Completed</button>`
+        : `<button class="btn danger" id="qeGo" style="margin-left:auto">End it</button>`}
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#qeX").onclick = closePicker;
-  $("#qeGo").onclick = () => {
+  const qd = $("#qeDone"), qa = $("#qeAban");
+  if(qd) qd.onclick = () => { Q.outcome = "completed"; finishEnd(); };
+  if(qa) qa.onclick = () => { Q.outcome = "abandoned"; finishEnd(); };
+  if($("#qeGo")) $("#qeGo").onclick = () => {
     const b = band();
     if(b.tether && !b.tether.severed && ruleOn("narrative", b)){
       if(tetherUnchecked(b)){ toast("No one who can call a Reckoning took the field, so the tether is not checked"); finishEnd(); }
@@ -8388,7 +8399,9 @@ function askEnd(){
 function finishEnd(){
   const b = band();
   if(Q && Q.realm && typeof leaveRealm === "function") leaveRealm();
-  const snap = typeof afterSnapshot === "function" && ruleOn("campaign", b) ? afterSnapshot() : null;
+  /* the table tablet fields no band, so there is no after-battle report to fill in: that belongs to each player's own phone */
+  const tableOnly = typeof getRole === "function" && getRole() === "realm";
+  const snap = !tableOnly && typeof afterSnapshot === "function" && ruleOn("campaign", b) ? afterSnapshot() : null;
   questEnd(); closePicker(); render();
   if(snap) openAfter(snap); else toast("Quest ended");
 }
@@ -13802,7 +13815,7 @@ function historyHTML(){
   const list = loadHistory();
   if(!list.length) return "";
   const RESULT_CLASS = {Broken: "bad", "Lost on points": "bad",
-    "Routed the enemy": "good", "Won on points": "good"};
+    "Routed the enemy": "good", "Won on points": "good", "Completed": "good"};
   return `<div class="slab">
     <div class="head"><span class="eyebrow">Past scenarios</span><span class="rule"></span>
       <span class="quiet">${list.length}</span></div>
@@ -14177,7 +14190,7 @@ function rmIcon(plane, x, y, c){
 
 /* ---- what the table knows ---- */
 function rmState(result){
-  if(result === "Won on points" || result === "Routed the enemy") return "claimed";
+  if(result === "Won on points" || result === "Routed the enemy" || result === "Completed") return "claimed";
   if(result === "Broken" || result === "Lost on points") return "lost";
   return "waiting";                       // a draw leaves it to be tried again
 }
@@ -14203,7 +14216,7 @@ function rmPlaces(){
     const s = r.scenario;
     const st = rmState(r.result);
     out.push({key: "h" + r.id, kind: "history", doneAt: r.at, id: r.id, name: r.title || "A place", plane: planeOf(s), state: st,
-      sub: st === "claimed" ? "CLAIMED · ROUND " + r.round : st === "lost" ? "LOST · TRY AGAIN" : "UNSETTLED",
+      sub: st === "claimed" ? "CLAIMED · ROUND " + r.round : st === "lost" ? "LOST · TRY AGAIN" : r.result === "Abandoned" ? "ABANDONED · TRY AGAIN" : "UNSETTLED",
       found: (s && s.foundAt) || r.at, slot: s ? s.slot : null, size: s ? s.size : 0, openable: !!s, scn: s || null, r});
   });
   loadLibrary().forEach(r => {
