@@ -734,7 +734,7 @@ body:has(#rolePick){overflow:hidden}
 .says-n{font-size:14px;font-weight:600}
 .says-d{font-size:13px;color:var(--ash-dim);line-height:1.5;margin-top:2px;white-space:pre-line}
 .says.bad .says-n{color:var(--rust)}
-.says.tap{cursor:pointer}
+.says.tap,.atk.tap,.cstat.tap{cursor:pointer}
 .says.tap:hover .says-n{color:var(--gilt)}
 .pinfo{color:var(--gilt);font-size:13px;margin-left:4px}
 
@@ -4986,7 +4986,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 09:27";</script>
+<script>window.EP_BUILD = "13 Nov 09:32";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -7071,9 +7071,9 @@ function attackHTML(m, e){
   const shown = skinOf(m, e.id, w.name);
   const mods = (e.mods || []).map(x => catOf("mods")[x]).filter(Boolean);
   return `
-  <div class="atk">
+  <div class="atk tap" data-ginfo="weapons|${esc(e.id)}" role="button" tabindex="0">
     <div class="atk-top">
-      <span class="atk-name">${ranged ? "➤" : "⚔"} ${esc(shown)}</span>
+      <span class="atk-name">${ranged ? "➤" : "⚔"} ${esc(shown)} <span class="pinfo" aria-label="Tap for the full rules">\u24d8</span></span>
       <span class="atk-roll">${esc(RSX.stat[stat].name)} <b>${esc(die)}</b> <small>4+</small></span>
     </div>
     <div class="atk-line">${esc(isAnimal(m) ? w.desc.replace(/ · Two Handed/i, "") : w.desc)}${shown !== w.name ? ` · <span class="quiet">${esc(w.name)}</span>` : ""}</div>
@@ -7133,6 +7133,56 @@ function openPowerInfo(id){
   $("#piX").onclick = $("#piDone").onclick = closePicker;
 }
 
+/* Tap any weapon, armour, trait, ability, item or flaw on a card: what it is, in plain words. */
+function kwLine(id, par){
+  const k = (RS.keywords || []).find(x => x.id === id); if(!k) return null;
+  const val = par && par[id] != null ? par[id] : k.value;
+  const name = id.replace(/([A-Z])/g, " $1").replace(/^./, ch => ch.toUpperCase());
+  const text = String(k.desc || "").replace(/\bX\b/, val != null ? val : "X").replace(/\bN\b/, val != null ? val : "N").replace(/^1 uses\b/, "1 use");
+  return {name: name + (val != null ? " " + val : ""), text};
+}
+function openGearInfo(field, id){
+  const kind = GEAR_KIND[field]; if(!kind) return;
+  const o = catOf(kind.cat)[id]; if(!o) return;
+  const m = carded();
+  const entry = m ? (m[field] || []).find(e => (e.id || e) === id) : null;
+  const raw = Array.isArray(RS[field]) ? RS[field].find(x => x.id === id) : null;
+  const rows = [], warn = [];
+  let facts = "";
+  if(field === "weapons" && raw){
+    const ranged = raw.type === "ranged", stat = ranged ? "aim" : "fight";
+    const die = m ? effDie(m, stat) : null;
+    facts = (ranged ? "Ranged" : "Melee") + (raw.range ? ", range " + raw.range + " cm" : "") + ", " + raw.damage + " damage. Roll " + RSX.stat[stat].name + (die ? " (" + die + ")" : "") + ": 4 or better hits, 8 or better is a Critical.";
+    (raw.keywords || []).forEach(k => { const l = kwLine(k, raw.params); if(l) rows.push(l); });
+    if((raw.keywords || []).includes("blast")) warn.push(areaWarn());
+    const twoH = (raw.keywords || []).includes("twoHanded");
+    rows.push({name: "Hands", text: twoH ? "Two hands." : "One hand."});
+    ((entry && entry.mods) || []).map(x => catOf("mods")[x]).filter(Boolean).forEach(x => rows.push({name: x.name + " (effect)", text: x.desc}));
+  } else if(field === "armour" && raw){
+    facts = raw.save ? "Armour save " + raw.save + ". When you take damage that armour can stop, roll one " + raw.save + " for each point; each that shows 4 or better cancels 1 point." : (raw.desc || "A shield. It uses a hand; melee attacks against you step down.");
+    if(raw.moveMod) rows.push({name: "Move", text: raw.moveMod + " cm"});
+    Object.keys(raw).filter(k => !["id", "name", "cost", "save", "moveMod", "examples", "desc"].includes(k) && typeof raw[k] !== "object").forEach(k => rows.push({name: k, text: String(raw[k])}));
+  } else {
+    facts = readableDesc(o.desc || (raw && raw.desc) || "");
+    if(raw && raw.limited) rows.push({name: "Uses", text: raw.limited + " per battle"});
+  }
+  const ex = (raw && raw.examples) || o.examples;
+  const cost = o.cost != null ? o.cost : (raw && raw.cost);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="giX" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <div class="eyebrow">${esc(o.name)}${cost != null ? " \u00b7 " + (field === "weapons" || field === "armour" || field === "items" ? cost + " pts" : (cost > 0 ? "+" : "") + cost) : ""}</div></div>
+    ${warn.length ? `<div class="mkres" style="border-color:var(--rust);margin-bottom:12px"><b style="color:var(--rust)">\u26a0 It can hurt your friends</b><span>${esc(warn[0])}</span></div>` : ""}
+    <div class="slab"><p class="says-d" style="margin:0;color:var(--ash)">${esc(facts)}</p></div>
+    ${rows.length ? `<div class="slab"><div class="head"><span class="eyebrow">${field === "weapons" ? "What the words mean" : "Details"}</span><span class="rule"></span></div>
+      ${rows.map(x => `<div class="says"><div class="says-n">${esc(x.name)}</div>${x.text ? `<div class="says-d">${esc(x.text)}</div>` : ""}</div>`).join("")}</div>` : ""}
+    ${ex && ex.length ? `<p class="quiet" style="margin:0 0 10px">Could be: ${esc(ex.join(", "))}</p>` : ""}
+    <div class="sheet-actions"><button class="btn primary" id="giDone" style="margin-left:auto">Done</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#giX").onclick = $("#giDone").onclick = closePicker;
+}
+
 /* Some catalogue entries (Extra arms is the worst of them) pack several
    sentences of mechanics into one dense paragraph. Split those onto their
    own lines so a card reads at a glance instead of as a wall of text —
@@ -7159,9 +7209,9 @@ function saysHTML(m, title, field, tone){
       const shown = GEAR_KIND[field].reskin ? skinOf(m, id, o.name) : o.name;
       const isPow = field === "powers";
       const pw = isPow ? (RS.powers || []).find(x => x.id === id) : null;
-      return `<div class="says ${tone || ""} ${isPow ? "tap" : ""}" ${isPow ? `data-pinfo="${esc(id)}" role="button" tabindex="0"` : ""}>
+      return `<div class="says ${tone || ""} tap" ${isPow ? `data-pinfo="${esc(id)}"` : `data-ginfo="${esc(field)}|${esc(id)}"`} role="button" tabindex="0">
         <div class="says-n">${esc(shown)}${qty && (entry.qty || 1) > 1 ? ` ×${entry.qty}` : ""}${times > 1 ? ` \u00d7${times}` : ""}
-          ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""}${isPow ? ` <span class="pinfo" aria-label="Tap for the full rules">\u24d8</span>` : ""}
+          ${shown !== o.name ? `<span class="quiet"> · ${esc(o.name)}</span>` : ""} <span class="pinfo" aria-label="Tap for the full rules">\u24d8</span>
           ${pw && powerHitsArea(pw) ? ` <span class="chip bad" title="Hits every model in the area, friends too">hurts friends too</span>` : ""}</div>
         <div class="says-d">${esc(readableDesc(o.desc))}</div>
       </div>`;
@@ -7237,8 +7287,8 @@ function drawCard(){
   const armour = bodyArmourId(m) ? catOf("armour")[bodyArmourId(m)] : null;
   const shield = shieldId(m) ? catOf("armour")[shieldId(m)] : null;
 
-  const statCell = (label, value, note) => `
-    <div class="cstat"><b>${esc(value)}</b><span>${esc(label)}</span>${note ? `<small>${esc(note)}</small>` : ""}</div>`;
+  const statCell = (label, value, note, info) => `
+    <div class="cstat ${info ? "tap" : ""}" ${info ? `data-ginfo="armour|${esc(info)}" role="button" tabindex="0"` : ""}><b>${esc(value)}</b><span>${esc(label)}</span>${note ? `<small>${esc(note)}</small>` : ""}</div>`;
 
   $("#sheetIn").innerHTML = `
     <div class="sheet-head">
@@ -7273,8 +7323,8 @@ function drawCard(){
       ${statCell(RSX.stat.move.name, effectiveMove(m) + "cm", armour && armour.moveMod ? "with armour" : "")}
       ${statCell(RSX.stat.actions.name, m.actions, "an activation")}
       ${statCell("Activations", activationsOf(m), "a round")}
-      ${armour ? statCell("Armour", (RS.armour.find(a => a.id === bodyArmourId(m)) || {}).save || "—", skinOf(m, bodyArmourId(m), armour.name)) : ""}
-      ${shield ? statCell("Shield", "\u2713", "melee steps down") : ""}
+      ${armour ? statCell("Armour", (RS.armour.find(a => a.id === bodyArmourId(m)) || {}).save || "—", skinOf(m, bodyArmourId(m), armour.name), bodyArmourId(m)) : ""}
+      ${shield ? statCell("Shield", "\u2713", "melee steps down", shieldId(m)) : ""}
       ${m.size !== statDefault("size") ? statCell(RSX.stat.size.name, m.size.charAt(0).toUpperCase() + m.size.slice(1), "") : ""}
     </div>
 
@@ -7291,6 +7341,7 @@ function drawCard(){
     </div>`;
 
   const root = $("#sheetIn");
+  root.querySelectorAll("[data-ginfo]").forEach(b => { const go = () => { const [f, i] = b.dataset.ginfo.split("|"); openGearInfo(f, i); }; b.onclick = go; b.onkeydown = ev => { if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); go(); } }; });
   root.querySelectorAll("[data-pinfo]").forEach(b => { b.onclick = () => openPowerInfo(b.dataset.pinfo); b.onkeydown = ev => { if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openPowerInfo(b.dataset.pinfo); } }; });
   root.querySelectorAll("[data-drop-found]").forEach(btn => btn.onclick = () => {
     dropFound(m, btn.dataset.dropFound);
