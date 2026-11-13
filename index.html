@@ -595,6 +595,9 @@ body:has(#rolePick){overflow:hidden}
 .ma-card span{display:block;font-size:13px;line-height:1.45;color:var(--ash-dim)}
 .ma-card:hover:not(:disabled){border-color:var(--gilt);box-shadow:0 0 0 2px var(--gilt-glow)}
 .ma-card:disabled{opacity:.4;cursor:default}
+.ma-card.on{border-color:var(--gilt);background:var(--gilt-glow)}
+.ds-tick{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:14px;cursor:pointer}
+.ds-tick input{width:18px;height:18px;accent-color:var(--gilt)}
 .tb-pin.seen{border-color:var(--verdigris);color:var(--verdigris);border-style:dashed}
 @media (max-width:900px){
   #tableScreen{overflow:auto}
@@ -4986,7 +4989,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 10:05";</script>
+<script>window.EP_BUILD = "13 Nov 10:24";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -6497,6 +6500,7 @@ function questLoad(){
   return Q;
 }
 function questSave(){
+  try{ if(typeof watchDowns === "function") watchDowns(); }catch(e){ console.warn(e); }
   try{
     /* what the place can give, and the truth behind it, is kept scrambled while it sits on the device */
     const keep = Q && (Q.scenario || Q.scenarioSource) ? Object.assign({}, Q, {
@@ -6509,6 +6513,7 @@ function questSave(){
   if(Q && Q.realm && typeof pushMyUnits === "function"){
     try{ pushMyUnits(); if(Q.host) pushTable(); }catch(e){}
   }
+  try{ if(typeof checkBreaks === "function"){ checkBreaks(); checkTempo(); } }catch(e){ console.warn(e); }
 }
 function questOn(){ return !!questLoad(); }
 
@@ -6579,7 +6584,8 @@ function writeThrough(u){
 }
 /* The other way: a point given back (a slip of the thumb on the table, or a heal). It goes to the
    model that was hurt last, so it undoes a hurtUnit in reverse. */
-function healUnit(u, amount, why){
+function healUnit(u, amount, why, force){
+  if(!force && typeof finishedBlock === "function" && finishedBlock(u)){ askFinishedOverride(u, "heal", () => healUnit(u, amount, why, true)); return; }
   let left = amount;
   while(left > 0){
     let i = -1;
@@ -6723,6 +6729,7 @@ function questStep(){
         g += RS.nerve.leaderStandingBonus;
       return g;
     };
+    Q.tempoPending = {round: Q.round, gain: {us: gain("us"), them: gain("them")}};
     Q.nerve.us = Math.min(RS.nerve.cap, Q.nerve.us + gain("us"));
     Q.nerve.them = Math.min(RS.nerve.cap, Q.nerve.them + gain("them"));
     Q.units.forEach(u => u.used = 0);
@@ -6750,6 +6757,9 @@ function questStep(){
       sc2.objectivesKnown = true;
       qlog("The objectives are revealed");
       summary.push("The objectives are revealed");
+    }
+    if(Q.withdraw && endingRound >= Q.withdraw.endsRound){
+      summary.push((Q.withdraw.side === "us" ? "The Unburied" : "The enemy") + " withdrew: the battle ends here. Press End quest to settle it.");
     }
     Q.round++; Q.step = "tempo";
     qlog("End of round — Burning and Tainted bite, Ready cleared, Strain rested");
@@ -7046,6 +7056,303 @@ function searchMarkerResult(num, uid, passed){
     return {n: num, label: "Empty", text: "Safe. Nothing here. Take the marker off the table.", hurt: null};
   }
   return Object.assign({n: num}, resolveMarker(num, uid));
+}
+
+/* ---- downflow.js ---- */
+/* =====================================================================
+   WHAT HAPPENS WHEN SOMEONE GOES DOWN
+   and the other moments a table has to stop for: the Tempo roll, a side
+   reaching its break line.
+
+   The rule for who sees what (decided with the user, 2026-11-13):
+     - Step reminders (Tempo, the break test) pop up on the HOST tablet only.
+     - What happens to a character pops up on THAT PLAYER'S phone only
+       (they went Down, they were stabilised, a friend fell beside them).
+     - Everyone can SEE on the table that someone is Down and how it stands
+       (Down, stabilised, dragged, finished, back on their feet): as a chip
+       on the scenario screen and a line in its log.
+
+   The app cannot see where models stand, so it asks, and it never decides
+   for the table: a Wits or Will test is rolled by hand, the app records how
+   it went.
+   ===================================================================== */
+
+/* ---- a quiet queue, so a popup never lands on top of something the person is doing ---- */
+const POPQ = [];
+let popTimer = null;
+function queuePopup(p){
+  if(p.key && POPQ.some(x => x.key === p.key)) return;
+  POPQ.push(p);
+  if(popTimer) clearTimeout(popTimer);
+  popTimer = setTimeout(pumpPopups, 60);       // a beat, so anything already opening gets there first
+}
+function sheetBusy(){
+  const s = document.getElementById("sheet2");
+  return !!(s && s.classList.contains("show"));
+}
+function pumpPopups(){
+  if(popTimer){ clearTimeout(popTimer); popTimer = null; }
+  if(!POPQ.length) return;
+  if(typeof $ === "undefined" || !document.getElementById("sheet2In") || sheetBusy()){
+    popTimer = setTimeout(pumpPopups, 900);
+    return;
+  }
+  const p = POPQ.shift();
+  try{ showPopup(p); }catch(e){ console.warn(e); }
+  if(POPQ.length) popTimer = setTimeout(pumpPopups, 900);
+}
+function popDone(){
+  closePicker();
+  if(typeof render === "function") render();
+  if(typeof drawCard === "function" && typeof cardId !== "undefined" && cardId) try{ drawCard(); }catch(e){}
+  popTimer = setTimeout(pumpPopups, 300);
+}
+function showPopup(p){
+  if(p.kind === "down") return downSheet(p.uid, true);
+  if(p.kind === "shaken") return shakenSheet(p);
+  if(p.kind === "stands") return infoSheet("Back on their feet", p.text);
+  if(p.kind === "break") return breakSheet(p);
+  if(p.kind === "tempo") return tempoSheet(p);
+  if(p.kind === "finished") return finishedSheet(p);
+}
+function infoSheet(title, text){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${esc(title)}</div></div>
+    <div class="slab"><p class="lead" style="margin:0">${esc(text)}</p></div>
+    <div class="sheet-actions"><button class="btn primary" id="ifOK" style="margin-left:auto">Got it</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#ifOK").onclick = popDone;
+}
+
+/* ---- going Down ---- */
+const DOWN_WORDS = {
+  down: "Down",
+  stabilised: "Down · stabilised",
+  dragged: "Down · dragged",
+  finished: "Down · finished"
+};
+function downWord(u){ return u && u.down ? (DOWN_WORDS[u.down.status] || "Down") : ""; }
+
+/* Called on every save. Notices a unit of THIS device going Down, or getting up again. */
+function watchDowns(){
+  if(!Q || !Q.units) return;
+  Q.units.forEach(u => {
+    if(u.side !== "us" || u.remote || u.hidden) return;
+    const down = unitDown(u);
+    if(down && !u.down){
+      u.down = {status: "down", round: Q.round};
+      qlog(u.name + " is Down");
+      queuePopup({kind: "down", uid: u.uid, key: "down|" + u.uid + "|" + Q.round});
+    } else if(!down && u.down){
+      u.down = null;
+      u.cond = (u.cond || []).filter(c => c !== "stabilised");
+      if(!(u.cond || []).includes("pinned")) u.cond = (u.cond || []).concat(["pinned"]);
+      qlog(u.name + " is healed, stands up Pinned");
+      queuePopup({kind: "stands", text: u.name + " is on their feet again, with their Health back. They are Pinned: attacks against them step down, and they cannot Move until they Recover.", key: "stands|" + u.uid + "|" + Q.round + "|" + Date.now()});
+    }
+  });
+}
+
+function setDownStatus(u, status){
+  if(!u || !u.down) return;
+  if(u.down.status === "finished" && status !== "finished") u.cond = (u.cond || []).filter(c => c !== "marked");
+  u.down.status = status;
+  if(status === "finished") u.down.overridden = false;
+  u.cond = (u.cond || []).filter(c => c !== "stabilised");
+  if(status === "stabilised") u.cond.push("stabilised");
+  if(status === "finished"){ if(!u.cond.includes("marked")) u.cond.push("marked"); }
+  const words = {down: "is simply Down again (the finish was a mistake)", stabilised: "was stabilised by a friend", dragged: "was dragged clear by a friend", finished: "was finished by an enemy and is Marked", down: "is Down"};
+  qlog(u.name + " " + (words[status] || status));
+  questSave();
+}
+/* The Down sheet: opens by itself on the owner's phone, and again from their card. */
+function downSheet(uid, fromPopup){
+  const u = Q && Q.units.find(x => x.uid === uid);
+  if(!u || !u.down){ if(fromPopup) popDone(); return; }
+  const roster = (Q.roster || Q.units.filter(x => x.side === "us" && x.remote).map(x => ({uid: x.uid, name: x.name, band: x.band || "another band"}))).filter(r => r.uid !== uid);
+  const mine = Q.units.filter(x => x.side === "us" && !x.remote && x.uid !== uid).map(x => ({uid: x.uid, name: x.name, band: "you"}));
+  const near = new Set((u.down.near || []).concat(u.down.nearLocal || []));
+  const all = [...mine, ...roster.filter(r => !mine.some(m => m.uid === r.uid))];
+  const st = u.down.status;
+  const choice = (id, title, sub) => `<button class="ma-card ${st === id ? "on" : ""}" data-ds="${id}">
+      <b>${st === id ? "✓ " : ""}${title}</b><span>${sub}</span></button>`;
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${esc(u.name)} is Down</div></div>
+    <p class="lead" style="margin:0 0 12px">At 0 Health a model cannot act or react. At the end of the battle a Down model rolls Fate. What happens next changes how that roll goes. Tell the app as it happens.</p>
+    <div class="ma-cards">
+      ${choice("stabilised", "A friend stabilised them", "A friend in contact spent an Interact (a Medic can do it from 5 cm). Fate is rolled with advantage.")}
+      ${choice("dragged", "A friend dragged them", "A friend in contact spent an Interact and they moved together, up to half the friend's Move. A note only.")}
+      ${st !== "down" ? choice("down", "Back to simply Down", "Nothing has happened to them yet, or I chose the wrong one.") : ""}
+      ${choice("finished", "An enemy finished them", "An enemy in contact attacked with no roll. They become Marked and cannot be stabilised. Fate is rolled with disadvantage.")}
+    </div>
+    <div class="slab" style="margin-top:12px">
+      <div class="head"><span class="eyebrow">Who was within 10 cm?</span><span class="rule"></span></div>
+      <p class="quiet" style="margin:0 0 8px">Friends close to a fallen model are shaken by it. Tick everyone who was close and they are marked Shaken. They can still pass a Will test to shake it off.</p>
+      ${all.length ? all.map(r => `<label class="ds-tick"><input type="checkbox" data-near="${esc(r.uid)}" ${near.has(r.uid) ? "checked disabled" : ""}> ${esc(r.name)}${r.band && r.band !== "you" ? ` <span class="quiet">· ${esc(r.band)}</span>` : ""}</label>`).join("")
+                  : `<p class="quiet" style="margin:0">No friends on the table to tick.</p>`}
+    </div>
+    <div class="sheet-actions"><button class="btn primary" id="dsOK" style="margin-left:auto">Done</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#sheet2In").querySelectorAll("[data-ds]").forEach(b => b.onclick = () => {
+    const want = b.dataset.ds;
+    if(want === "stabilised" && finishedBlock(u)){ finishedSheet({uid, what: "stabilise", then: () => { setDownStatus(u, "stabilised"); }}); return; }
+    setDownStatus(u, want); downSheet(uid, fromPopup);
+  });
+  $("#dsOK").onclick = () => {
+    const ticked = [...$("#sheet2In").querySelectorAll("[data-near]:checked:not(:disabled)")].map(c => c.dataset.near);
+    if(ticked.length) shakeFriends(u, ticked);
+    questSave();
+    if(fromPopup) popDone(); else { closePicker(); render(); if(typeof drawCard === "function" && typeof cardId !== "undefined" && cardId) try{ drawCard(); }catch(e){} }
+  };
+}
+/* Friends within 10 cm. Their own phone applies it: this device only asks. */
+function shakeFriends(from, uids){
+  u_near: for(const id of uids){
+    const own = Q.units.find(x => x.uid === id && x.side === "us" && !x.remote);
+    if(own){
+      if(!(own.cond || []).includes("shaken")) own.cond = (own.cond || []).concat(["shaken"]);
+      from.down.nearLocal = (from.down.nearLocal || []).concat([id]);
+      qlog(own.name + " is Shaken: " + from.name + " fell beside them");
+      toast(own.name + " is Shaken");
+      continue u_near;
+    }
+    if(Q.host && typeof sendEvent === "function"){
+      sendEvent(id, {cond: "shaken", shakenBy: from.name, why: from.name + " fell beside them"});
+      from.down.nearLocal = (from.down.nearLocal || []).concat([id]);
+      qlog((Q.units.find(x => x.uid === id) || {name: "A friend"}).name + " is Shaken: " + from.name + " fell beside them");
+    } else {
+      from.down.near = (from.down.near || []).concat([id]);       // the host relays it
+    }
+  }
+}
+/* The host, seeing a player's Down model name its neighbours, sends each one the news. */
+function relayNear(){
+  if(!Q || !Q.host) return;
+  Q.relayed = Q.relayed || {};
+  Q.units.filter(u => u.remote && u.down && (u.down.near || []).length).forEach(u => {
+    u.down.near.forEach(id => {
+      const k = u.uid + "|" + id + "|" + u.down.round;
+      if(Q.relayed[k]) return;
+      Q.relayed[k] = 1;
+      const tgt = Q.units.find(x => x.uid === id);
+      if(tgt && !tgt.remote){
+        if(!(tgt.cond || []).includes("shaken")) tgt.cond = (tgt.cond || []).concat(["shaken"]);
+      } else sendEvent(id, {cond: "shaken", shakenBy: u.name, why: u.name + " fell beside them"});
+      qlog((tgt ? tgt.name : "A friend") + " is Shaken: " + u.name + " fell beside them");
+    });
+  });
+}
+/* The host logs what a player's Down model is doing, for the whole table to read. */
+function logRemoteDowns(prev){
+  if(!Q || !Q.host) return;
+  Q.units.filter(u => u.remote && u.side === "us").forEach(u => {
+    const before = (prev || {})[u.uid], now = u.down ? u.down.status : null;
+    if(before === now) return;
+    if(!before && now === "down") qlog(u.name + " is Down");
+    else if(now && now !== "down") qlog(u.name + " " + ({stabilised: "was stabilised by a friend", dragged: "was dragged clear by a friend", finished: "was finished by an enemy and is Marked"}[now] || now));
+    else if(before && !now) qlog(u.name + " is healed and stands up Pinned");
+  });
+}
+/* A friend fell beside you. Shaken is already on you; a Will test can shake it off. */
+function shakenSheet(p){
+  const u = Q && Q.units.find(x => x.uid === p.uid);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${esc(p.from || "A friend")} went Down beside you</div></div>
+    <div class="slab"><p class="lead" style="margin:0">${esc(u ? u.name : "You")} ${u ? "is" : "are"} <b>Shaken</b>: on the next activation only Move away or into cover, or Recover, and no reactions.
+      If your Will test goes well, you shake it off.</p></div>
+    <div class="sheet-actions" style="gap:8px;flex-wrap:wrap">
+      <button class="btn" id="shOK" style="margin-left:0">Stay Shaken</button>
+      <button class="btn primary" id="shPass" style="margin-left:auto">Passed the Will test: not Shaken</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#shOK").onclick = popDone;
+  $("#shPass").onclick = () => {
+    if(u){ u.cond = (u.cond || []).filter(c => c !== "shaken"); qlog(u.name + " passed the Will test and is not Shaken"); questSave(); }
+    popDone();
+  };
+}
+
+/* ---- the break test: host only ---- */
+function checkBreaks(){
+  if(!Q || (Q.realm && !Q.host)) return;
+  Q.breakAsked = Q.breakAsked || {us: [], them: []};
+  ["us", "them"].forEach(side => {
+    const f = lostFraction(side);
+    RS.morale.break.thresholds.slice().sort((a, b) => a - b).forEach(t => {
+      if(f >= t && !Q.breakAsked[side].includes(t)){
+        Q.breakAsked[side].push(t);
+        queuePopup({kind: "break", side, at: t, key: "break|" + side + "|" + t});
+      }
+    });
+  });
+}
+function breakSheet(p){
+  const mine = p.side === "us", pct = Math.round(p.at * 100);
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${mine ? "The Unburied" : "The enemy"}: ${pct}% lost</div></div>
+    <div class="slab"><p class="lead" style="margin:0 0 6px">${mine ? "The Unburied" : "The enemy"} have lost ${pct}% of their starting numbers (Down, removed or fled).</p>
+      <p class="lead" style="margin:0"><b>Break test:</b> ${mine ? "the Oathbearer, or the highest-cost model still standing," : "the enemy leader, or its highest-cost model still standing,"} tests Will.
+      On a fail the side withdraws next round and the battle ends after that round.</p></div>
+    <div class="sheet-actions" style="gap:8px;flex-wrap:wrap">
+      <button class="btn primary" id="bkOK" style="margin-left:0">Passed: they hold</button>
+      <button class="btn danger" id="bkNo" style="margin-left:auto">Failed: they withdraw</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#bkOK").onclick = () => { qlog((mine ? "The Unburied" : "The enemy") + " passed the break test at " + pct + "%"); questSave(); popDone(); };
+  $("#bkNo").onclick = () => {
+    Q.withdraw = {side: p.side, endsRound: Q.round + 1};
+    qlog((mine ? "The Unburied" : "The enemy") + " failed the break test at " + pct + "% and will withdraw: the battle ends after round " + (Q.round + 1));
+    questSave(); popDone();
+  };
+}
+
+/* ---- the Tempo roll: host only ---- */
+function tempoSheet(p){
+  const g = p.gain || {};
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">Round ${p.round}: roll Tempo</div></div>
+    <div class="slab">
+      <p class="lead" style="margin:0 0 8px">Nerve gained: the Unburied +${g.us || 0}, the enemy +${g.them || 0}.</p>
+      <p class="lead" style="margin:0 0 6px">Each side's leader rolls Wits against the other. The winner chooses who activates first. A side with no leader rolls a d4. A tie is rolled again.</p>
+      <p class="quiet" style="margin:0">Who won?</p>
+    </div>
+    <div class="sheet-actions" style="gap:8px;flex-wrap:wrap">
+      <button class="btn primary" id="tpUs" style="margin-left:0">The Unburied go first</button>
+      <button class="btn" id="tpThem">The enemy go first</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  const pick = side => { Q.first = side; Q.tempoPending = null; qlog("Round " + p.round + ": " + (side === "us" ? "the Unburied" : "the enemy") + " won Tempo"); questSave(); popDone(); };
+  $("#tpUs").onclick = () => pick("us");
+  $("#tpThem").onclick = () => pick("them");
+}
+function checkTempo(){
+  if(!Q || (Q.realm && !Q.host) || !Q.tempoPending) return;
+  queuePopup({kind: "tempo", round: Q.tempoPending.round, gain: Q.tempoPending.gain, key: "tempo|" + Q.tempoPending.round});
+}
+
+/* ---- a finished model cannot be stabilised or healed, unless the finish was a mistake ---- */
+function finishedBlock(u){ return !!(u && u.down && u.down.status === "finished" && !u.down.overridden); }
+function askFinishedOverride(u, what, then){
+  queuePopup({kind: "finished", uid: u.uid, what, then, key: "fin|" + u.uid + "|" + what + "|" + Date.now()});
+}
+function finishedSheet(p){
+  const u = Q && Q.units.find(x => x.uid === p.uid);
+  if(!u){ popDone(); return; }
+  const verb = p.what === "heal" ? "healed" : "stabilised";
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${esc(u.name)} was finished</div></div>
+    <div class="slab"><p class="lead" style="margin:0 0 6px">An enemy finished ${esc(u.name)}, so they cannot be ${verb}.</p>
+      <p class="quiet" style="margin:0">If the finish was a mistake, you can undo it. They go back to being simply Down, and the Marked it caused is removed.</p></div>
+    <div class="sheet-actions" style="gap:8px;flex-wrap:wrap">
+      <button class="btn primary" id="fnNo" style="margin-left:0">Leave them finished</button>
+      <button class="btn danger" id="fnYes" style="margin-left:auto">It was a mistake: undo the finish</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#fnNo").onclick = popDone;
+  $("#fnYes").onclick = () => {
+    u.cond = (u.cond || []).filter(c => c !== "marked");
+    u.down.status = "down"; u.down.overridden = true;
+    qlog(u.name + " was not finished after all (a mistake)");
+    questSave();
+    if(typeof p.then === "function") p.then();
+    popDone();
+  };
 }
 
 /* ---- card.js ---- */
@@ -8473,6 +8780,7 @@ function questStripHTML(m, u){
   const effects = (u.cond || []).map(id => byId[id]).filter(Boolean);
   return `
   <div class="qstrip ${down ? "down" : ""}">
+    ${down && u.down ? `<button class="btn sm primary" data-qp="downsheet" style="margin:0 0 8px">${esc(downWord(u))}: what happened to them?</button>` : ""}
     <div class="qs-top">
       <span class="qs-round">Round ${Q.round}</span>
       <span class="chip ${spent ? "" : "gilt"}">${u.used}/${u.acts} used</span>
@@ -8514,6 +8822,7 @@ function questBind(root, m){
   root.querySelectorAll("[data-qp]").forEach(b => b.onclick = e => {
     e.stopPropagation();
     const [what, a, c] = b.dataset.qp.split("|");
+    if(what === "downsheet"){ downSheet(u.uid, false); return; }
     questDo(u, what, a, c);
     questSave(); drawCard(); renderUnburied(band());
   });
@@ -9185,7 +9494,7 @@ function tableStyle(u){
 
 function tableUnitRow(u, mine){
   const h = tableHealth(u), acted = u.used >= u.acts, down = unitDown(u);
-  const conds = (u.cond || []).filter(c => c !== "leader").map(c => `<span class="tb-cd">${esc(c)}</span>`).join("");
+  const conds = (u.down ? `<span class="tb-cd bad">${esc(downWord(u))}</span>` : "") + (u.cond || []).filter(c => c !== "leader" && !(u.down && (c === "stabilised" || c === "marked"))).map(c => `<span class="tb-cd">${esc(c)}</span>`).join("");
   const foe = u.side === "them";
   const clickable = !u.hidden;
   const canAct = !u.remote;       // a phone's own models are ticked on that phone
@@ -9266,6 +9575,7 @@ function drawTable(){
     <div class="tb-st"><b>${Q.vp.us}–${Q.vp.them}</b><span>Victory</span></div>
     <button class="tb-st tb-btn" data-tq="nerve"><b>${Q.nerve.us}</b><span>Nerve</span></button>
     ${brk.at ? `<span class="chip bad">⚠ past ${Math.round(brk.at * 100)}%</span>` : ""}
+    ${Q.withdraw ? `<span class="chip bad" title="Failed the break test">${Q.withdraw.side === "us" ? "Unburied" : "Enemy"} withdraw · ends after round ${Q.withdraw.endsRound}</span>` : ""}
     <div style="flex:1"></div>
     <button class="iconbtn" data-tq="theme" aria-label="Switch between light and dark" title="Light / dark">${(document.getElementById("btnTheme") || {}).innerHTML || "◐"}</button>
     ${s.name ? `<button class="btn sm" data-tq="brief">The brief</button>` : ""}
@@ -9305,7 +9615,8 @@ function drawTable(){
           ${ranked(bands[k].units).map(u => tableUnitRow(u, !u.remote)).join("")}</div>`).join("") || `<p class="quiet">No one has joined.</p>`}
         <div class="tb-eb" style="margin-top:14px">The enemy <i></i><span>tap anyone to open their card</span></div>
         ${ranked(them).map(u => tableUnitRow(u, true)).join("") || `<p class="quiet" style="margin:0">Nothing against you yet.</p>`}
-        ${held ? `<p class="quiet" style="margin:8px 0 0">${held} more held back, not on the table yet.</p>` : ""}
+        ${held && (s.intel === "count") ? `<p class="quiet" style="margin:8px 0 0">${held} more held back, not on the table yet.</p>` : ""}
+        ${held && (s.intel === "hint") ? Q.units.filter(x => x.side === "them" && x.hidden && x.hint).map(x => `<p class="quiet" style="margin:8px 0 0">Expect: ${esc(x.hint)}.</p>`).join("") : ""}
       </div></div>
     </div>
   </div>`;
@@ -9370,6 +9681,7 @@ function bindTableScreen(el){
     ev.stopPropagation();
     const u = Q.units.find(x => x.uid === b.dataset.theal); if(!u) return;
     if(u.side === "us" && u.remote){
+      if(u.down && u.down.status === "finished" && !u.down.overridden){ toast(u.name + " was finished and cannot be healed. If that was a mistake, the player can undo it on their phone."); return; }
       if(typeof sendEvent === "function" && Q.host){ sendEvent(u.uid, {heal: 1, why: "set right on the table"}); toast(u.name + " gets 1 back"); }
       return;
     }
@@ -9583,6 +9895,10 @@ const btIcon = k => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"
 
 /* The one place a model's tracker buttons do their work, shared with the full card. */
 function questDo(u, what, a, c){
+  if(what === "hp" && +c > 0 && typeof finishedBlock === "function" && finishedBlock(u)){
+    askFinishedOverride(u, "heal", () => { questDo(u, what, a, c); questSave(); });
+    return;
+  }
   if(what === "hp"){ u.models[+a] = Math.max(0, Math.min(u.max, u.models[+a] + +c)); writeThrough(u); }
   else if(what === "ready") u.ready = !u.ready;
   else if(what === "act")   u.used = Math.min(u.acts, u.used + 1);
@@ -12560,6 +12876,11 @@ ${enemyPriceHints()}
              \u2014 until the moment that reveals it. An envelope that brings a hidden unit on
              should describe what happens, not name what did it.
 
+             "intel" (a top-level field, "none", "hint" or "count"): how much the players are told about
+             enemies that are held back. "none" is the default and almost always right: they do not
+             know how many are coming or what. Use "hint" only when the story gives them a warning
+             (a rumour, a sound, a map), and "count" only when they have been told a number.
+
              Mark at most one unit "boss": true \u2014 the named creature or leader the fight is about,
              the one worth a name for whoever brings it down. Leave it false on everything else.
 
@@ -12590,7 +12911,7 @@ GEAR IS NAMED BY WHAT IT DOES. Give every enemy weapon an "as" \u2014 a name tha
 creature. A drowned thing does not carry a "Melee weapon", it swings a "Rusted clapper".
 
 Reply with ONLY this JSON and nothing else:
-{"title":"...","premise":"...","goal":"Take the bell clapper and get out alive.","briefing":"...","scenery":"...","deployment":"...","plane":"land",
+{"title":"...","premise":"...","intel":"none","goal":"Take the bell clapper and get out alive.","briefing":"...","scenery":"...","deployment":"...","plane":"land",
 ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes":[{"trigger":"...","title":"...","text":"...","revealsObjectives":false}]},' : ""}
  "environment":${JSON.stringify((sc.environment || []).map(e => e.id))} pick one or null,
  "terrain":[],
@@ -12654,6 +12975,7 @@ function legaliseScenario(raw, ctx){
     scenery: str(raw.scenery, 400),
     deployment: str(raw.deployment, 300),
     plane: PLANE_IDS.includes(raw.plane) ? raw.plane : "",
+    intel: ["none", "hint", "count"].includes(raw.intel) ? raw.intel : "none",
     twist: str(raw.twist, 300),
     environment: (RS.scenario.environment || []).some(e => e.id === raw.environment) ? raw.environment : null,
     size: ctx.size, enemyBudget: ctx.enemy, difficulty: ctx.diff.id, reward: ctx.diff.reward,
@@ -13484,7 +13806,8 @@ function startFromScenario(s, campDone){
                 sealed: !!s.sealed, objectivesKnown: !s.sealed,
                 mystery: s.mystery ? Object.assign({}, s.mystery,
                   {envelopes: s.mystery.envelopes.map(e => Object.assign({}, e))}) : null,
-                woundFlavour: s.woundFlavour || [], namings: s.namings || null};
+                woundFlavour: s.woundFlavour || [], namings: s.namings || null,
+                intel: s.intel || "none"};
   /* kept whole and untouched by play, so the scenario can be shown again
      or started fresh later — Q.scenario above gets mutated as the quest
      runs (envelopes opened, events sprung), this does not. */
@@ -13612,7 +13935,7 @@ function savedRealm(){ try{ return localStorage.getItem(REALM_PASS) || ""; }catc
 function shareUnit(u){
   const out = {uid: u.uid, owner: meId(), band: (band().name || "The Unburied"), name: u.name, side: u.side,
           models: u.models, max: u.max, acts: u.acts, used: u.used,
-          strain: u.strain, ready: !!u.ready, cond: u.cond || [], lead: !!u.lead};
+          strain: u.strain, ready: !!u.ready, cond: u.cond || [], lead: !!u.lead, down: u.down || null};
   /* a glance at the model for the table: the numbers a neighbour would see across it, not the whole sheet */
   if(u.side === "us"){
     const m = band().members.find(x => x.id === u.uid);
@@ -13634,6 +13957,7 @@ function pushTable(){
     vp: Q.vp, nerve: Q.nerve,
     markers: Q.markers.map(m => ({n: m.n, state: m.state, look: m.look || ""})),   // never the kind
     foes: Q.units.filter(u => u.side === "them").map(shareUnit),
+    roster: Q.units.filter(u => u.side === "us").map(u => ({uid: u.uid, name: u.name, band: u.band || (u.remote ? "another band" : (band().name || "The Unburied"))})),
     at: Date.now()
   });
 }
@@ -13659,6 +13983,7 @@ function applyEvent(id, ev){
     if(m) giveFound(m, ev.found);
   }
   if(!ev.heal) qlog(u.name + " — " + (ev.why || "the scenario") + (ev.damage ? ", " + ev.damage + " damage" : ""));
+  if(ev.shakenBy && typeof queuePopup === "function") queuePopup({kind: "shaken", uid: u.uid, from: ev.shakenBy, key: "shaken|" + id});
   questSave();
   toast(u.name + ": " + (ev.why || "something happens") + (ev.damage ? " — " + ev.damage + " damage" : "") + (ev.heal ? " — " + ev.heal + " Health back" : ""));
   render();
@@ -13695,7 +14020,11 @@ function listenAsHost(){
       if(owner === meId()) return;
       Object.values(all[owner] || {}).forEach(u => others.push(Object.assign({}, u, {owner, remote: true})));
     });
+    const prevDown = {};
+    Q.units.filter(u => u.remote).forEach(u => { prevDown[u.uid] = u.down ? u.down.status : null; });
     Q.units = Q.units.filter(u => !u.remote).concat(others);
+    if(typeof logRemoteDowns === "function") logRemoteDowns(prevDown);
+    if(typeof relayNear === "function") relayNear();
     questSave(); render();
   });
 }
@@ -13730,6 +14059,7 @@ function applyTable(t){
   Q.markers = (t.markers || []).map(m => ({n: m.n, state: m.state, look: m.look || "", kind: "unknown"}));
   Q.units = Q.units.filter(u => u.side === "us")
     .concat((t.foes || []).map(f => Object.assign({}, f, {remote: true})));
+  Q.roster = t.roster || [];
   Q.seenTable = true;
   if(known && t.round > prev){
     Q.units.filter(u => u.side === "us" && !u.remote).forEach(u => {
