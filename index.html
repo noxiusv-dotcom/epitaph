@@ -597,6 +597,8 @@ body:has(#rolePick){overflow:hidden}
 .ma-card:disabled{opacity:.4;cursor:default}
 .ma-card.on{border-color:var(--gilt);background:var(--gilt-glow)}
 .ds-tick{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:14px;cursor:pointer}
+.tb-nextband{margin:8px 0 0;font-size:13px;color:var(--ash-dim)}
+.tb-nextband b{color:var(--gilt);font-size:15px;margin-left:6px}
 .ds-tick input{width:18px;height:18px;accent-color:var(--gilt)}
 .tb-pin.seen{border-color:var(--verdigris);color:var(--verdigris);border-style:dashed}
 @media (max-width:900px){
@@ -932,8 +934,8 @@ body.has-qbar #toast{bottom:82px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.25",
-    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung; 0.11.25: area effects (Blast, circles on the ground) hit every model in the area, friend or foe, the attacker included",
+    "version": "0.11.26",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung; 0.11.25: area effects (Blast, circles on the ground) hit every model in the area, friend or foe, the attacker included; 0.11.26: wording only. 'Activation' is now 'Turn' (a model's turn) and a side's turn is now its 'go'; no numbers changed",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -965,7 +967,9 @@ body.has-qbar #toast{bottom:82px}
       "oath": "oath (one unit of debt)",
       "obol": "Obol",
       "leader": "Oathbearer",
-      "leaderNote": "display name only; the trait id stays \"leader\". Enemy sides without the narrative call theirs \"the leader\""
+      "leaderNote": "display name only; the trait id stays \"leader\". Enemy sides without the narrative call theirs \"the leader\"",
+      "turn": "a model's turn: its go at spending its Actions. A model has 1 turn a round, one more for every full 70 points of cost (at most 4)",
+      "go": "a side's go: the side takes ceil(more/fewer) units' turns in a row (the larger side), then the other side takes its go"
     },
     "reskinNote": "A model may display its own name for any gear it carries; the stats and cost always come from the id. `examples` is fiction only and never affects play.",
     "ruleCategories": {
@@ -1219,8 +1223,8 @@ body.has-qbar #toast{bottom:82px}
       "squad"
     ],
     "squads": {
-      "rule": "activations = ceil(size/3), no points cap",
-      "eachActivation": "up to 3 models of the squad that have not acted this round, owner chooses; each activation has its own Actions including its own one Attack action for those models",
+      "rule": "turns = ceil(size/3), no points cap",
+      "eachActivation": "up to 3 models of the squad that have not acted this round, owner chooses; each turn has its own Actions including its own one Attack action for those models",
       "eachModelOncePerRound": true,
       "lastActivationMayBeSmaller": true,
       "bestSizes": [
@@ -1230,7 +1234,7 @@ body.has-qbar #toast{bottom:82px}
       ],
       "coherencyAndMoraleShared": true
     },
-    "groups": "side with more activations acts ceil(more/fewer) units per turn; recount at round start",
+    "groups": "side with more turns acts ceil(more/fewer) units per go; recount at round start",
     "attackActionsPerActivation": 1,
     "reactionsPerRound": {
       "per": "unit",
@@ -1240,12 +1244,12 @@ body.has-qbar #toast{bottom:82px}
   "round": {
     "steps": [
       "tempo",
-      "activations",
+      "turns",
       "end"
     ],
     "tempo": [
       "gain nerve",
-      "leaders roll opposed Wits; winner chooses who activates first; leaderless rolls d4"
+      "leaders roll opposed Wits; winner chooses who takes the first turn; leaderless rolls d4"
     ],
     "end": [
       "scenario events",
@@ -1282,26 +1286,26 @@ body.has-qbar #toast{bottom:82px}
     {
       "id": "charge",
       "name": "Charge",
-      "desc": "Move into contact; first melee attack this activation steps up and deals +1 damage.",
+      "desc": "Move into contact; first melee attack this turn steps up and deals +1 damage.",
       "stepUp": 1,
       "bonusDamage": 1
     },
     {
       "id": "attack",
       "name": "Attack",
-      "desc": "One melee or ranged attack. Once per activation.",
+      "desc": "One melee or ranged attack. Once per turn.",
       "limitPerActivation": 1
     },
     {
       "id": "aim",
       "name": "Aim",
-      "desc": "Next ranged attack this activation steps up.",
+      "desc": "Next ranged attack this turn steps up.",
       "stepUp": 1
     },
     {
       "id": "power",
       "name": "Power",
-      "desc": "Use a knack or cast a signature. Once per activation.",
+      "desc": "Use a knack or cast a signature. Once per turn.",
       "limitPerActivation": 1
     },
     {
@@ -1317,7 +1321,7 @@ body.has-qbar #toast{bottom:82px}
     {
       "id": "hold",
       "name": "Hold",
-      "desc": "End the activation early. (Gain a Ready token if no Attack was made.)"
+      "desc": "End the turn early. (Gain a Ready token if no Attack was made.)"
     }
   ],
   "reactions": {
@@ -1347,7 +1351,7 @@ body.has-qbar #toast{bottom:82px}
       }
     ],
     "readyAccess": [
-      "a unit that ends its activation without making an Attack gains a Ready token (squad: any of its activations)",
+      "a unit that ends its turn without making an Attack gains a Ready token (squad: any of its turns)",
       "Vigilant: starts each round with a Ready token"
     ]
   },
@@ -1376,7 +1380,7 @@ body.has-qbar #toast{bottom:82px}
         "id": "lastGasp",
         "name": "Last gasp",
         "strain": 2,
-        "desc": "One extra action this activation, not an Attack."
+        "desc": "One extra action this turn, not an Attack."
       }
     ],
     "riskDieInThrow": true,
@@ -1490,7 +1494,7 @@ body.has-qbar #toast{bottom:82px}
     },
     {
       "id": "shaken",
-      "desc": "Next activation: only Move away or into cover, or Recover. Can't react."
+      "desc": "Next turn: only Move away or into cover, or Recover. Can't react."
     },
     {
       "id": "pinned",
@@ -1538,16 +1542,16 @@ body.has-qbar #toast{bottom:82px}
     "minSize": 3,
     "maxSize": 10,
     "coherency": 5,
-    "activations": "see activation.squads",
+    "activations": "see turn.squads",
     "overkillCarries": false,
     "blastHitsEachModel": true,
     "fateRollPerModelsLost": 2,
     "sharedStrain": true,
     "cost": "per-model cost (including surcharge from the shared profile) x size, then minus squadDiscount; floor applies per model before the discount",
-    "attack": "one Attack action: every activating model that can attack rolls once against one target unit; each model rolls its own dice",
+    "attack": "one Attack action: every model taking its turn that can attack rolls once against one target unit; each model rolls its own dice",
     "rapid": "Rapid gives each model two attacks, both stepped down",
     "squadDiscount": 0.05,
-    "discountNote": "round 5: 5% fair at sizes 3/5/10 (52-58%) with ceil(size/3) activations; very steep - leave alone",
+    "discountNote": "round 5: 5% fair at sizes 3/5/10 (52-58%) with ceil(size/3) turns; very steep - leave alone",
     "surcharge": "counted once on the squad's shared profile (its upgrade count), then that surcharged price is paid per model"
   },
   "sizes": {
@@ -1591,7 +1595,7 @@ body.has-qbar #toast{bottom:82px}
     },
     {
       "id": "heavy",
-      "desc": "Can't shoot in an activation it Moved or Charged; no Snap shot."
+      "desc": "Can't shoot in an turn it Moved or Charged; no Snap shot."
     },
     {
       "id": "spread",
@@ -1862,7 +1866,7 @@ body.has-qbar #toast{bottom:82px}
       "id": "command",
       "name": "Command",
       "cost": 10,
-      "desc": "Action: a friendly unit within 15 cm that has already activated takes one non-Attack action now. Once per round."
+      "desc": "Action: a friendly unit within 15 cm that has already had its turn takes one non-Attack action now. Once per round."
     },
     {
       "id": "calledShot",
@@ -1874,7 +1878,7 @@ body.has-qbar #toast{bottom:82px}
       "id": "taunt",
       "name": "Taunt",
       "cost": 4,
-      "desc": "Action: an enemy within 20 cm passes Will or its next activation must target this model if able."
+      "desc": "Action: an enemy within 20 cm passes Will or its next turn must target this model if able."
     },
     {
       "id": "trapwise",
@@ -1898,7 +1902,7 @@ body.has-qbar #toast{bottom:82px}
       "id": "frenzy",
       "name": "Frenzy",
       "cost": 5,
-      "desc": "Once per battle: its melee Attack this activation makes 3 attacks; then gain 2 Strain."
+      "desc": "Once per battle: its melee Attack this turn makes 3 attacks; then gain 2 Strain."
     }
   ],
   "weapons": [
@@ -2543,7 +2547,7 @@ body.has-qbar #toast{bottom:82px}
       "levels": [
         {
           "level": 1,
-          "desc": "Target can't Move on its next activation."
+          "desc": "Target can't Move on its next turn."
         },
         {
           "level": 2,
@@ -2643,7 +2647,7 @@ body.has-qbar #toast{bottom:82px}
       ],
       "targets": "friendlyUnit",
       "countsAsAttack": false,
-      "desc": "The target counts as in cover until the caster's next activation.",
+      "desc": "The target counts as in cover until the caster's next turn.",
       "verified": "new in 0.8; unpriced guess"
     },
     {
@@ -2837,7 +2841,7 @@ body.has-qbar #toast{bottom:82px}
         "effect": "Caster gains 1 Strain. Power works if Will succeeded."
       }
     ],
-    "attackRule": "a power whose countsAsAttack is true uses up the activation's one Attack (for Upheaval, only at level 3)",
+    "attackRule": "a power whose countsAsAttack is true uses up the turn's one Attack (for Upheaval, only at level 3)",
     "knackRoll": {
       "stat": "will",
       "success": "will >= 4",
@@ -2879,7 +2883,7 @@ body.has-qbar #toast{bottom:82px}
       "systemTask": {
         "test": "wits",
         "successesNeeded": 2,
-        "attempts": "one Interact per model per activation, aimed at one chosen System",
+        "attempts": "one Interact per model per turn, aimed at one chosen System",
         "teamwork": "several models may work the same System; successes persist for the battle",
         "overflow": "a System is disabled the moment it reaches its successes; extra successes from that Interact are lost, not carried to another System"
       },
@@ -3631,7 +3635,7 @@ body.has-qbar #toast{bottom:82px}
       {
         "id": "cold",
         "trigger": "<= -10 C",
-        "effect": "A model that doesn't Move in its activation gains 1 Strain."
+        "effect": "A model that doesn't Move in its turn gains 1 Strain."
       },
       {
         "id": "dark",
@@ -4023,7 +4027,7 @@ body.has-qbar #toast{bottom:82px}
           "trapwise",
           "any ability or item that reveals"
         ],
-        "effect": "reveals each marker in range without triggering it, and says plainly whether it is SAFE or TRAPPED: decoys are removed, traps become visible (go round, or disarm; a trapped touch marker must be disarmed before it is opened), caches and objectives read safe, an ambush or hidden enemy is placed but stays unsprung and off the activation roster until set off",
+        "effect": "reveals each marker in range without triggering it, and says plainly whether it is SAFE or TRAPPED: decoys are removed, traps become visible (go round, or disarm; a trapped touch marker must be disarmed before it is opened), caches and objectives read safe, an ambush or hidden enemy is placed but stays unsprung and off the turn order until set off",
         "input": "player tells the app who used it and which marker numbers are in range",
         "noticed": "an ambush that is revealed may see who looked. The scenario gives each tread marker an alertness: unaware (never), watchful (the model that looked makes a Wits test, and a fail means they noticed), alert (they notice). A noticed ambush is set off at once"
       },
@@ -4402,7 +4406,7 @@ body.has-qbar #toast{bottom:82px}
       "name": "Frost",
       "cost": 4,
       "element": "cold",
-      "desc": "On a hit, the target may not Charge on its next activation and its Move is 4 cm shorter for that activation.",
+      "desc": "On a hit, the target may not Charge on its next turn and its Move is 4 cm shorter for that turn.",
       "examples": [
         "hoarfrost",
         "chilling touch",
@@ -4526,7 +4530,7 @@ body.has-qbar #toast{bottom:82px}
         "id": "hothead",
         "name": "Hothead",
         "cost": -3,
-        "desc": "At the start of its activation, if an enemy is within 15 cm and it is not Engaged, it must Charge that enemy unless it passes a Will test."
+        "desc": "At the start of its turn, if an enemy is within 15 cm and it is not Engaged, it must Charge that enemy unless it passes a Will test."
       },
       {
         "id": "slowReflexes",
@@ -4595,7 +4599,7 @@ body.has-qbar #toast{bottom:82px}
   },
   "hands": {
     "default": 2,
-    "rule": "Each model has hands (default 2). Weapons and a Shield need hands to be carried: one each, two for Two-handed. A model may carry any gear its hands allow, but still makes one Attack action per activation.",
+    "rule": "Each model has hands (default 2). Weapons and a Shield need hands to be carried: one each, two for Two-handed. A model may carry any gear its hands allow, but still makes one Attack action per turn.",
     "noHands": "a model with 0 hands (a worm, a turret) uses only natural weapons reskinned as Light or Unarmed, and cannot Interact that needs handling, unless given Tools",
     "animal": "a model with the Animal trait has 0 hands but its weapons are natural and take none; it carries no shield and cannot work things that need hands"
   },
@@ -4989,7 +4993,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 10:24";</script>
+<script>window.EP_BUILD = "13 Nov 11:05";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -5790,7 +5794,7 @@ function renderUnburied(b){
       <div class="bar"><i class="${over ? "over" : ""}" style="width:${pct}%"></i></div>
       <div class="gauge-line" style="margin-top:9px">
         <span class="chip">${nField} of ${b.members.length} fielded</span>
-        <span class="chip">${bandActs(b)} activations a round</span>
+        <span class="chip">${bandActs(b)} turns a round</span>
         ${b.cash || realmAvailable() ? `<span class="chip gilt">${b.cash || 0} Cash</span>` : ""}
         ${(b.reputation || 0) !== 0 ? `<span class="chip ${b.reputation > 0 ? "good" : "bad"}">${esc((repLevel(b) || {}).name || "")} ${signed(b.reputation)}</span>` : ""}
 
@@ -5859,7 +5863,7 @@ function renderUnburied(b){
         ${(m.traits || []).includes("leader") ? `<span class="chip gilt">${esc(leaderTerm())}</span>${oathChipHTML(m)}` : ""}
         ${n > 1 ? `<span class="chip">squad ×${n}</span>` : ""}
         <span class="chip">${effectiveMove(m)}cm</span>
-        <span class="chip">${activationsOf(m)} act</span>
+        <span class="chip">${activationsOf(m)} turn${activationsOf(m) === 1 ? "" : "s"}</span>
       </div>
       <div class="m-row2">
         ${icons}
@@ -6079,14 +6083,14 @@ function drawMember(){
     </div>
 
     <div class="slab">
-      <div class="head"><span class="eyebrow">${squadsOn() ? "How it deploys" : "Activations"}</span><span class="rule"></span>
-        <span class="chip gilt">${activationsOf(m)} activation${activationsOf(m) === 1 ? "" : "s"}</span></div>
+      <div class="head"><span class="eyebrow">${squadsOn() ? "How it deploys" : "Turns"}</span><span class="rule"></span>
+        <span class="chip gilt">${activationsOf(m)} turn${activationsOf(m) === 1 ? "" : "s"}</span></div>
       ${deploy}
       ${squadsOn() ? "" : `<p class="quiet" style="margin:0">Fields alone: ${unitCost(m)} points.</p>`}
       <p class="quiet" style="margin:9px 0 0" ${squadsOn() ? "" : "hidden"}>${isSquad(m)
-        ? memberCost(m) + " each × " + n + ", less " + (sq.squadDiscount * 100) + "% — <b>" + unitCost(m) + " points</b>. Activates " +
-          activationsOf(m) + " time" + (activationsOf(m) === 1 ? "" : "s") + " a round, up to three models each time. Coherency " + sq.coherency + "cm."
-        : "One activation per " + RS.activation.pointsPerActivation + " points, up to " + RS.activation.maxActivations + "."}</p>
+        ? memberCost(m) + " each × " + n + ", less " + (sq.squadDiscount * 100) + "% — <b>" + unitCost(m) + " points</b>. Takes " +
+          activationsOf(m) + " turn" + (activationsOf(m) === 1 ? "" : "s") + " a round, up to three models each turn. Coherency " + sq.coherency + "cm."
+        : "One turn per " + RS.activation.pointsPerActivation + " points, up to " + RS.activation.maxActivations + "."}</p>
     </div>
 
     ${gearSlab(m, "Weapons", "weapons")}
@@ -6678,12 +6682,16 @@ function questBegin(size, opts){
 function sideActs(side){
   return Q.units.filter(u => u.side === side && !u.hidden && !unitDown(u)).reduce((s, u) => s + u.acts, 0);
 }
-function questGroups(){
+/* The count is taken ONCE, at the start of the round ("recount at round start"). Someone going Down,
+   or arriving, mid-round changes it from the next round. */
+function liveGroups(){
   const a = sideActs("us"), b = sideActs("them");
   if(!a || !b) return {us: 1, them: 1, usTotal: a, themTotal: b};
   return a >= b ? {us: Math.ceil(a / b), them: 1, usTotal: a, themTotal: b}
                 : {us: 1, them: Math.ceil(b / a), usTotal: a, themTotal: b};
 }
+function freezeGroups(){ if(Q) Q.frozen = liveGroups(); }
+function questGroups(){ return (Q && Q.frozen) || liveGroups(); }
 function lostFraction(side){
   const us = Q.units.filter(u => u.side === side && !u.hidden);
   const start = us.reduce((s, u) => s + u.models.length, 0);
@@ -6733,8 +6741,9 @@ function questStep(){
     Q.nerve.us = Math.min(RS.nerve.cap, Q.nerve.us + gain("us"));
     Q.nerve.them = Math.min(RS.nerve.cap, Q.nerve.them + gain("them"));
     Q.units.forEach(u => u.used = 0);
+    freezeGroups();
     Q.step = "acts";
-    qlog("Round " + Q.round + " — Nerve gained, activations reset");
+    qlog("Round " + Q.round + " — Nerve gained, turns reset");
   } else if(Q.step === "acts"){
     Q.step = "end";
   } else {
@@ -7258,7 +7267,7 @@ function shakenSheet(p){
   const u = Q && Q.units.find(x => x.uid === p.uid);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">${esc(p.from || "A friend")} went Down beside you</div></div>
-    <div class="slab"><p class="lead" style="margin:0">${esc(u ? u.name : "You")} ${u ? "is" : "are"} <b>Shaken</b>: on the next activation only Move away or into cover, or Recover, and no reactions.
+    <div class="slab"><p class="lead" style="margin:0">${esc(u ? u.name : "You")} ${u ? "is" : "are"} <b>Shaken</b>: on the next turn only Move away or into cover, or Recover, and no reactions.
       If your Will test goes well, you shake it off.</p></div>
     <div class="sheet-actions" style="gap:8px;flex-wrap:wrap">
       <button class="btn" id="shOK" style="margin-left:0">Stay Shaken</button>
@@ -7307,18 +7316,26 @@ function breakSheet(p){
 /* ---- the Tempo roll: host only ---- */
 function tempoSheet(p){
   const g = p.gain || {};
+  const bands = unburiedBands();
+  let roller = bands.length ? bands[0].key : null;
   $("#sheet2In").innerHTML = `
     <div class="sheet-head"><div class="eyebrow">Round ${p.round}: roll Tempo</div></div>
     <div class="slab">
       <p class="lead" style="margin:0 0 8px">Nerve gained: the Unburied +${g.us || 0}, the enemy +${g.them || 0}.</p>
-      <p class="lead" style="margin:0 0 6px">Each side's leader rolls Wits against the other. The winner chooses who activates first. A side with no leader rolls a d4. A tie is rolled again.</p>
+      <p class="lead" style="margin:0 0 6px">Each side's leader rolls Wits against the other. The winner chooses who takes the first turn. A side with no leader rolls a d4. A tie is rolled again.</p>
+      ${bands.length > 1 ? `<p class="quiet" style="margin:0 0 6px">The players agree whose Oathbearer rolls for the Unburied. Which band rolled?</p>
+        <div class="ma-acts" style="margin-bottom:10px">${bands.map((b, i) => `<button class="chip ${i === 0 ? "gilt" : ""}" data-roller="${esc(b.key)}">${esc(b.label)}</button>`).join("")}</div>` : ""}
       <p class="quiet" style="margin:0">Who won?</p>
     </div>
     <div class="sheet-actions" style="gap:8px;flex-wrap:wrap">
       <button class="btn primary" id="tpUs" style="margin-left:0">The Unburied go first</button>
       <button class="btn" id="tpThem">The enemy go first</button></div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  const pick = side => { Q.first = side; Q.tempoPending = null; qlog("Round " + p.round + ": " + (side === "us" ? "the Unburied" : "the enemy") + " won Tempo"); questSave(); popDone(); };
+  $("#sheet2In").querySelectorAll("[data-roller]").forEach(b => b.onclick = () => {
+    roller = b.dataset.roller;
+    $("#sheet2In").querySelectorAll("[data-roller]").forEach(x => x.classList.toggle("gilt", x === b));
+  });
+  const pick = side => { Q.first = side; Q.tempoPending = null; freezeGroups(); if(roller && bands.length > 1){ Q.rollerBand = roller; qlog("Round " + p.round + ": " + (bands.find(b => b.key === roller) || {}).label + "'s leader rolled for the Unburied"); } qlog("Round " + p.round + ": " + (side === "us" ? "the Unburied" : "the enemy") + " won Tempo"); questSave(); popDone(); };
   $("#tpUs").onclick = () => pick("us");
   $("#tpThem").onclick = () => pick("them");
 }
@@ -7353,6 +7370,34 @@ function finishedSheet(p){
     if(typeof p.then === "function") p.then();
     popDone();
   };
+}
+
+/* ---- several bands on the Unburied side ----
+   One leader rolls Tempo for the whole side (the players agree who). Inside the side the bands then
+   take turns choosing the next unit; the tablet names whose turn it is. */
+function unburiedBands(){
+  const out = [], seen = new Set();
+  (Q.units || []).filter(u => u.side === "us" && !u.hidden).forEach(u => {
+    const k = u.owner || "me";
+    if(seen.has(k)) return; seen.add(k);
+    out.push({key: k, label: u.band || (u.remote ? "Another band" : (typeof band === "function" && band().name) || "The Unburied")});
+  });
+  return out;
+}
+/* Whose turn to choose the next unit: the band that has used the fewest turns this round; a tie goes to the band whose leader rolled. */
+function nextBand(){
+  const bands = unburiedBands(); if(bands.length < 2) return null;
+  const start = Math.max(0, bands.findIndex(b => b.key === Q.rollerBand));
+  let best = null;
+  bands.forEach((b, i) => {
+    const us = Q.units.filter(u => u.side === "us" && !u.hidden && (u.owner || "me") === b.key && !unitDown(u));
+    const left = us.reduce((n, u) => n + Math.max(0, u.acts - u.used), 0);
+    if(left <= 0) return;
+    const used = us.reduce((n, u) => n + Math.min(u.acts, u.used), 0);
+    const order = (i - start + bands.length) % bands.length;
+    if(!best || used < best.used || (used === best.used && order < best.order)) best = {b, used, order};
+  });
+  return best ? best.b : null;
 }
 
 /* ---- card.js ---- */
@@ -7542,7 +7587,7 @@ function combatTabHTML(m){
   return `${(m.weapons || []).length ? `
       <div class="slab">
         <div class="head"><span class="eyebrow">What it can do</span><span class="rule"></span>
-          <span class="quiet">one Attack an activation</span></div>
+          <span class="quiet">one Attack a turn</span></div>
         ${m.weapons.map(e => attackHTML(m, e)).join("")}
       </div>` : `
       <div class="slab"><p class="quiet" style="margin:0">Unarmed. It has no weapon.</p></div>`}
@@ -7639,8 +7684,8 @@ function drawCard(){
           isHurt(m) ? healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + (effWounds(m) * n) : effWounds(m),
           isHurt(m) ? "left" : (effWounds(m) !== m.wounds ? "was " + m.wounds : (n > 1 ? "each" : "")))}
       ${statCell(RSX.stat.move.name, effectiveMove(m) + "cm", armour && armour.moveMod ? "with armour" : "")}
-      ${statCell(RSX.stat.actions.name, m.actions, "an activation")}
-      ${statCell("Activations", activationsOf(m), "a round")}
+      ${statCell(RSX.stat.actions.name, m.actions, "a turn")}
+      ${statCell("Turns", activationsOf(m), "a round")}
       ${armour ? statCell("Armour", (RS.armour.find(a => a.id === bodyArmourId(m)) || {}).save || "—", skinOf(m, bodyArmourId(m), armour.name), bodyArmourId(m)) : ""}
       ${shield ? statCell("Shield", "\u2713", "melee steps down", shieldId(m)) : ""}
       ${m.size !== statDefault("size") ? statCell(RSX.stat.size.name, m.size.charAt(0).toUpperCase() + m.size.slice(1), "") : ""}
@@ -8629,12 +8674,11 @@ function questBarHTML(){
         <b>${Q.scenario ? esc(Q.scenario.name) + " · " : ""}Round ${Q.round}${
           Q.scenario && Q.scenario.rounds ? " of " + Q.scenario.rounds : ""}</b>
       </div>
-      ${Q.realm && !Q.host ? `<span class="chip" style="margin-left:auto;flex:none" title="Only the host closes a round">The host ends the turn</span>`
-        : `<button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">End turn ▸</button>`}
+      ${Q.realm && !Q.host ? "" : `<button class="btn sm primary" data-q="step" style="margin-left:auto;flex:none">End round ▸</button>`}
     </div>
     <div class="qbar-r">
       <button class="chip gilt" data-q="nerve">◆ ${Q.nerve.us} Nerve</button>
-      <span class="chip" title="The side with more activations acts several units per turn">${g.usTotal} acts · ${g.us} a turn</span>
+      <span class="chip" title="The side with more turns takes several units' turns in a go">${g.usTotal} turns · ${g.us} a go</span>
       <button class="chip" data-q="vp">VP ${Q.vp.us}–${Q.vp.them}</button>
       <button class="chip ${Q.markers.some(m => m.state === "hidden") ? "" : "good"}" data-q="markers">
         ◈ ${Q.markers.filter(m => m.state === "hidden").length} unknown</button>
@@ -8797,7 +8841,7 @@ function questStripHTML(m, u){
     </div>
 
     <div class="qs-row">
-      <button class="qp-btn" data-qp="act" ${spent || down ? "disabled" : ""}>Activate</button>
+      <button class="qp-btn" data-qp="act" ${spent || down ? "disabled" : ""}>Take turn</button>
       <button class="qp-btn ghost" data-qp="unact" ${!u.used ? "disabled" : ""}>undo</button>
       <button class="qp-btn" data-qp="push" ${down ? "disabled" : ""}
         title="A push costs 1 Strain; you burn out if the Risk die rolls under it">Push</button>
@@ -9126,7 +9170,7 @@ function openEnemyCard(uid){
     ${(u.protocol || []).length ? `<div class="slab">
       <div class="head"><span class="eyebrow">How it acts</span><span class="rule"></span></div>
       ${u.protocol.map(p => `<div class="says"><div class="says-d quiet">${esc(p)}</div></div>`).join("")}
-      <div class="sheet-actions" style="margin-top:10px"><button class="btn primary" id="ecAct" style="margin-left:0">Step through its activation</button></div>
+      <div class="sheet-actions" style="margin-top:10px"><button class="btn primary" id="ecAct" style="margin-left:0">Step through its turn</button></div>
     </div>` : ""}
     <div class="sheet-actions"><button class="btn primary" id="ecDone" style="margin-left:auto">Done</button></div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
@@ -9156,10 +9200,10 @@ function openFoes(){
         ${u.profile ? `<div class="says-d" style="margin-bottom:7px">${esc(enemyLine(u.profile))}</div>` : ""}
         ${(u.protocol || []).length ? `<div class="says-d quiet" style="margin-bottom:7px">${u.protocol.map(esc).join(" · ")}</div>` : ""}
         <div class="qs-row" style="margin-top:9px">
-          <button class="qp-btn" data-fact="${esc(u.uid)}" ${u.used >= u.acts ? "disabled" : ""}>Activate</button>
+          <button class="qp-btn" data-fact="${esc(u.uid)}" ${u.used >= u.acts ? "disabled" : ""}>Take turn</button>
           <button class="qp-btn ghost" data-funact="${esc(u.uid)}" ${!u.used ? "disabled" : ""}>undo</button>
         </div>
-        <p class="quiet" style="margin:5px 0 0">Marks one of its activations spent — move it, attack
+        <p class="quiet" style="margin:5px 0 0">Marks one of its turns spent — move it, attack
           with it, whatever its protocol says — not specifically that it moved.</p>
       </div>`).join("") : `<p class="quiet">Nothing against you yet.</p>`}
 
@@ -9453,7 +9497,7 @@ function openUnitSummary(u){
     <div class="slab">
       <div class="head"><span class="eyebrow">Right now</span><span class="rule"></span></div>
       <p class="lead" style="margin:0">Health ${h.now} of ${h.max}${u.models.length > 1 ? " across " + u.models.length + " models" : ""}.
-        ${u.used}/${u.acts} activations used.${u.strain ? " Strain " + u.strain + "." : ""}
+        ${u.used}/${u.acts} turns used.${u.strain ? " Strain " + u.strain + "." : ""}
         ${(u.cond || []).filter(c => c !== "leader").length ? " " + (u.cond || []).filter(c => c !== "leader").map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(", ") + "." : ""}</p>
     </div>
     ${(g.weapons || g.armour || g.items || g.traits || g.abilities || g.powers) ? `<div class="slab">
@@ -9463,7 +9507,7 @@ function openUnitSummary(u){
       : u.sight ? `<div class="slab eai-lore"><div class="head"><span class="eyebrow">What you see</span><span class="rule"></span></div><p class="serif">${esc(u.sight)}</p></div>` : ""}
     ${(u.protocol || []).length ? `<div class="slab"><div class="head"><span class="eyebrow">How it acts</span><span class="rule"></span></div>
       ${u.protocol.map(p => `<div class="says"><div class="says-d quiet">${esc(p)}</div></div>`).join("")}
-      ${u.side === "them" ? `<div class="sheet-actions" style="margin-top:10px"><button class="btn primary" id="usAct" style="margin-left:0">Step through its activation</button></div>` : ""}</div>` : ""}
+      ${u.side === "them" ? `<div class="sheet-actions" style="margin-top:10px"><button class="btn primary" id="usAct" style="margin-left:0">Step through its turn</button></div>` : ""}</div>` : ""}
     <div class="sheet-actions"><button class="btn primary" id="usDone" style="margin-left:auto">Done</button></div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#usX").onclick = $("#usDone").onclick = () => { closePicker(); render(); };
@@ -9499,7 +9543,7 @@ function tableUnitRow(u, mine){
   const clickable = !u.hidden;
   const canAct = !u.remote;       // a phone's own models are ticked on that phone
   return `<div class="tb-m ${acted || down ? "done" : ""} ${down ? "down" : ""}" ${clickable ? `data-tcard="${esc(u.uid)}" role="button" tabindex="0"` : ""}>
-    ${canAct ? `<button class="tb-t ${acted ? "on" : ""}" data-tact="${esc(u.uid)}" aria-label="Activated" ${down ? "disabled" : ""}>${acted ? "✓" : "○"}</button>`
+    ${canAct ? `<button class="tb-t ${acted ? "on" : ""}" data-tact="${esc(u.uid)}" aria-label="Turn taken" ${down ? "disabled" : ""}>${acted ? "✓" : "○"}</button>`
              : `<span class="tb-t ${acted ? "on" : ""} ro">${acted ? "✓" : "○"}</span>`}
     <div class="tb-n">${u.lead && typeof crownHTML === "function" ? crownHTML(13) : ""}${esc(u.name)}${u.models.length > 1 ? ` <small>×${u.models.length}</small>` : ""}
       ${u.boss ? bossMark(u) : ""}${tableStyle(u)}${conds}
@@ -9580,7 +9624,7 @@ function drawTable(){
     <button class="iconbtn" data-tq="theme" aria-label="Switch between light and dark" title="Light / dark">${(document.getElementById("btnTheme") || {}).innerHTML || "◐"}</button>
     ${s.name ? `<button class="btn sm" data-tq="brief">The brief</button>` : ""}
     <button class="btn sm ghost" data-tq="end">End quest</button>
-    ${isHost ? `<button class="btn primary" data-tq="step">End turn ▸</button>` : ""}
+    ${isHost ? `<button class="btn primary" data-tq="step">End round ▸</button>` : ""}
   </div>
   <div class="tb-main">
     <div class="tb-left">
@@ -9607,7 +9651,8 @@ function drawTable(){
         </div>
         <div class="tb-seq">${turns.length ? turns.map((t, i) => `<span class="tb-turn-c ${t.side}"><small>${i + 1}</small>${t.side === "us" ? "Unburied" : "Enemy"} ×${t.n}</span>`).join("<i>→</i>")
           : `<span class="quiet">Everyone has acted.</span>`}</div>
-        <p class="quiet" style="margin:6px 0 0">${g.usTotal} activations against ${g.themTotal}: the larger side acts ${Math.max(g.us, g.them)} units a turn.</p>
+        ${(() => { const nb = typeof nextBand === "function" ? nextBand() : null; return nb ? `<p class="tb-nextband"><span>Unburied choose next</span> <b>${esc(nb.label)}</b></p>` : ""; })()}
+        <p class="quiet" style="margin:6px 0 0">${g.usTotal} turns against ${g.themTotal}: the larger side takes ${Math.max(g.us, g.them)} units' turns in each go.</p>
       </div>
       <div class="tb-panel tb-units"><div data-keep class="tb-scroll" style="max-height:100%">
         <div class="tb-eb">The Unburied <i></i></div>
@@ -9626,7 +9671,7 @@ function drawTable(){
 
 /* One press closes the round: the Acts step, then the End step (events, burning, strain), and the next round opens with its Tempo. */
 function tableEndTurn(){
-  if(Q.realm && !Q.host){ toast("The host ends the turn"); return; }
+  if(Q.realm && !Q.host){ toast("The host ends the round"); return; }
   if(Q.step === "tempo") questStep();
   if(Q.step === "acts") questStep();
   if(Q.step === "end") questStep();         // the round turns over; anything that sprang is in Q.pending
@@ -9929,7 +9974,7 @@ function btRow(u){
   const effects = conds.map(id => byId[id]).filter(Boolean);
   return `<div class="bt-row ${sel ? "open" : ""} ${spent || down ? "done" : ""} ${f <= .5 && !down ? "hurt" : ""} ${down ? "down" : ""}" data-btrow="${esc(u.uid)}">
     <div class="bt-r1" data-btpick="${esc(u.uid)}" role="button" tabindex="0">
-      <button class="bt-tick ${spent ? "on" : ""}" data-btq="${esc(u.uid)}|${spent ? "unact" : "act"}" aria-label="${spent ? "Undo activation" : "Activate"}" ${down ? "disabled" : ""}>${spent ? "✓" : "○"}</button>
+      <button class="bt-tick ${spent ? "on" : ""}" data-btq="${esc(u.uid)}|${spent ? "unact" : "act"}" aria-label="${spent ? "Undo turn" : "Take a turn"}" ${down ? "disabled" : ""}>${spent ? "✓" : "○"}</button>
       <div class="bt-nm">
         <span class="bt-name">${m && isLeaderM(m) && typeof crownHTML === "function" ? crownHTML(14) : ""}${esc(u.name)}${u.models.length > 1 ? ` <small>×${u.models.length}</small>` : ""}</span>
         ${m && typeof styleBadge === "function" ? styleBadge(m, 13) : ""}
@@ -9941,7 +9986,7 @@ function btRow(u){
     <div class="bt-cd">${down ? `<span class="c bad">Down</span>` : ""}${conds.map(c => `<span class="c bad">${esc(c)}</span>`).join("")}${u.strain ? `<span class="c g">Strain ${u.strain}</span>` : ""}${u.acts > 1 ? `<span class="c">${u.used}/${u.acts} acts</span>` : ""}${u.ready ? `<span class="c g">Ready</span>` : ""}</div>
     ${sel ? `<div class="bt-ex">
       <div class="bt-ab">
-        <button class="p" data-btq="${esc(u.uid)}|act" ${spent || down ? "disabled" : ""}>Activate</button>
+        <button class="p" data-btq="${esc(u.uid)}|act" ${spent || down ? "disabled" : ""}>Take turn</button>
         <button data-btq="${esc(u.uid)}|push" ${down ? "disabled" : ""} title="A push costs 1 Strain">Push</button>
         <button data-btq="${esc(u.uid)}|recover" ${!u.strain && !conds.length ? "disabled" : ""}>Recover</button>
         <button data-btq="${esc(u.uid)}|unact" ${!u.used ? "disabled" : ""}>Undo</button>
@@ -9977,7 +10022,7 @@ function drawBattle(){
     <div class="bt-t1">
       <div class="bt-rd">Round ${Q.round}${s.rounds ? " of " + s.rounds : ""}<small>${esc(s.name || "The quest")}</small></div>
       <button class="iconbtn bt-theme" data-bt="theme" aria-label="Switch between light and dark" title="Light / dark">${(document.getElementById("btnTheme") || {}).innerHTML || "\u25d0"}</button>
-      ${isHost ? `<button class="btn primary bt-go" data-bt="step">End turn ▸</button>` : `<span class="chip bt-go" title="Only the host closes a round">The host ends the turn</span>`}
+      ${isHost ? `<button class="btn primary bt-go" data-bt="step">End round ▸</button>` : ""}
     </div>
     <div class="bt-t2">
       <button class="bt-st" data-bt="nerve"><b>${Q.nerve.us}</b><span>Nerve</span></button>
@@ -10807,7 +10852,7 @@ function openAdvance(mid, keepCat){
   const as = RSX.stat.actions;
   if(m.actions < as.max && as.upCosts[m.actions - as.default] !== undefined){
     offers.push({kind: "stat", label: as.name + " " + m.actions + " \u2192 " + (m.actions + 1),
-      note: "another action each activation",
+      note: "another action each turn",
       price: xpPrice(m, t => t.actions += 1), apply: t => t.actions += 1});
   }
   [["traits", "Traits"], ["abilities", "Abilities"], ["powers", "Powers"]].forEach(([field, label]) => {
@@ -12254,16 +12299,16 @@ function ruleCards(){
     L("Opposed", "Both roll, higher wins, a tie is nothing."),
     L("Other dice", "Risk die " + (d.riskDie || "d6") + " (rolled with a push or a power). Fate " + (d.fateDie || "d20") + ". Loot " + (d.lootDie || "d100") + ".")]},
 
-  {id: "round", group: "Turn", title: "A round", head: "Three steps: Tempo, Activations, End.", lines: [
-    L("Tempo", "Gain Nerve. Leaders roll opposed Wits; the winner chooses who activates first (no leader: d4)."),
-    L("Activations", "Sides alternate. The side with more activations acts several units a turn (the larger over the smaller, rounded up). Each unit's activations are spent one at a time."),
+  {id: "round", group: "Turn", title: "A round", head: "Three steps: Tempo, Turns, End.", lines: [
+    L("Tempo", "Gain Nerve. Leaders roll opposed Wits; the winner chooses who takes the first turn (no leader: d4)."),
+    L("Turns", "Sides alternate their goes. The side with more turns takes several units' turns in its go (the larger over the smaller, rounded up). A unit's turns are spread across the round, not taken back to back."),
     L("End", "Scenario events. Break tests if a threshold was crossed. Unused Ready is cleared. A model that did not push this round rests 1 Strain.")]},
 
-  {id: "activation", group: "Turn", title: "Your activation", head: "Spend your actions, in any order. One Attack and one Power per activation.", lines:
+  {id: "activation", group: "Turn", title: "Your turn", head: "Spend your Actions, in any order. One Attack and one Power per turn.", lines:
     act.map(a => L(a.name, a.desc))},
 
   {id: "reactions", group: "Turn", title: "Ready and reactions", head: "A Ready token lets a unit react once. Reacting costs only the token.", lines: [
-    L("Gain Ready", "End an activation without making an Attack. (Vigilant starts each round with one.) Lost at the End step."),
+    L("Gain Ready", "End a turn without making an Attack. (Vigilant starts each round with one.) Lost at the End step."),
     L("When", "An enemy in sight finishes a Move or Charge within " + (rx.range || 30) + " cm, or declares an attack against you."),
     ...(rx.list || []).map(r => L(r.name, r.desc))]},
 
@@ -12314,7 +12359,7 @@ function ruleCards(){
     L("If it fails", "The side withdraws next round and the battle ends after it. The other side scores the rout bonus."),
     L("Withdrawing", "A voluntary withdrawal counts as breaking.")]},
 
-  {id: "powers", group: "Mind", title: "Powers", head: "A Power action, once per activation.", lines: [
+  {id: "powers", group: "Mind", title: "Powers", head: "A Power action, once per turn.", lines: [
     L("Murmur", "One Power action, rolled like a weapon: Will " + (d.target || 4) + "+ works, Will " + (d.critical || 8) + "+ is a Critical and gives a bonus (Might, Reach or Linger). No risk, every round. An unwilling target may resist with Will " + (d.target || 4) + "+."),
     L("Reckoning", "Throw Will and the risk die together. Will " + (d.target || 4) + "+ works; Will " + (d.critical || 8) + "+ is a Critical: pick Double, Echo or Reach, and no Backlash. Once a battle, and again if it Downs an enemy."),
     L("Backlash", "If the risk die is no higher than the power's level."),
@@ -14070,7 +14115,7 @@ function applyTable(t){
       u.pushed = false;
       u.used = 0;
     });
-    qlog("Round " + t.round + " begins: activations reset");
+    qlog("Round " + t.round + " begins: turns reset");
     pushMyUnits();
     if(typeof toast === "function") toast("Round " + t.round + ": your models are ready again");
   }
