@@ -335,6 +335,9 @@ body.table-on{overflow:hidden}
 .tb-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--gilt-deep);
   background:linear-gradient(180deg,var(--panel-a),var(--stone-1))}
 .tb-ttl{font-family:"Cinzel",Georgia,serif;font-weight:600;font-size:17px;letter-spacing:.13em;line-height:1.15}
+.tb-code{display:flex;flex-direction:column;align-items:center;padding:3px 14px 4px;border:1px solid var(--gilt);background:rgba(201,162,39,.1);margin:0 6px}
+.tb-code span{font:600 8px Cinzel,serif;letter-spacing:.3em;color:var(--gilt-deep)}
+.tb-code b{font:600 30px/1.05 "JetBrains Mono",ui-monospace,Consolas,monospace;letter-spacing:.24em;padding-left:.24em;color:var(--gilt)}
 .tb-ttl small{display:block;font-weight:500;font-size:8.5px;letter-spacing:.24em;color:var(--gilt-deep);margin-top:2px}
 .tb-st{border:1px solid var(--edge);padding:4px 12px;text-align:center;background:transparent;color:inherit;font:inherit}
 .tb-st b{display:block;font:600 16px "Space Mono",monospace;color:var(--gilt)}
@@ -4965,7 +4968,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "12 Nov 21:15";</script>
+<script>window.EP_BUILD = "12 Nov 21:20";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -8982,7 +8985,8 @@ function drawTable(){
   <div class="tb-top">
     <button class="iconbtn" id="tbClose" aria-label="Back to the band">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg></button>
-    <div class="tb-ttl">${esc(s.name || "The quest")}<small>${Q.realm && Q.joinCode ? "JOIN CODE " + esc(Q.joinCode) : "ONE DEVICE"}${s.type ? " · " + esc(String(s.type).toUpperCase()) : ""}</small></div>
+    <div class="tb-ttl">${esc(s.name || "The quest")}<small>${Q.realm && Q.joinCode ? "SHARED TABLE" : "ONE DEVICE"}${s.type ? " · " + esc(String(s.type).toUpperCase()) : ""}</small></div>
+    ${Q.realm && Q.joinCode ? `<div class="tb-code" title="Players enter this number to join"><span>${isHost ? "JOIN CODE" : "TABLE"}</span><b>${esc(Q.joinCode)}</b></div>` : ""}
     <div class="tb-st"><b>${Q.round}${s.rounds ? " / " + s.rounds : ""}</b><span>Round</span></div>
     <div class="tb-st"><b>${Q.vp.us}–${Q.vp.them}</b><span>Victory</span></div>
     <button class="tb-st tb-btn" data-tq="nerve"><b>${Q.nerve.us}</b><span>Nerve</span></button>
@@ -13262,10 +13266,16 @@ function applyEvent(id, ev){
 }
 
 /* ---- hosting ---- */
+/* A number read aloud across a table: no 0 or O, 1 or I or L, so it cannot be misheard or misread. */
+function newJoinCode(){
+  const set = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let c = ""; for(let i = 0; i < 5; i++) c += set[Math.floor(Math.random() * set.length)];
+  return c;
+}
 function hostCurrentQuest(){
   Q.realm = uid();
   Q.host = true;
-  Q.joinCode = Q.realm.slice(0, 5).toUpperCase();
+  Q.joinCode = newJoinCode();
   questSave();
   tryWrite("quests/" + Q.realm + "/meta", {code: Q.joinCode, host: meId(), size: Q.size, at: Date.now()});
   pushTable(); pushMyUnits();
