@@ -601,6 +601,7 @@ body:has(#rolePick){overflow:hidden}
 .tb-nextband b{color:var(--gilt);font-size:15px;margin-left:6px}
 .ds-tick input{width:18px;height:18px;accent-color:var(--gilt)}
 .tb-pin.seen{border-color:var(--verdigris);color:var(--verdigris);border-style:dashed}
+.tb-carry{font:500 10.5px "Cinzel",serif;letter-spacing:.04em;color:var(--gilt);margin:1px 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:900px){
   #tableScreen{overflow:auto}
   .tb-main{display:block;overflow:visible;flex:none}
@@ -4993,7 +4994,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 12:11";</script>
+<script>window.EP_BUILD = "13 Nov 12:24";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -9585,6 +9586,7 @@ function tableStyle(u){
 
 function tableUnitRow(u, mine){
   const h = tableHealth(u), acted = u.used >= u.acts, down = unitDown(u);
+  const carry = u.side === "us" ? (u.remote ? (u.carrying || []) : (typeof heldFinds === "function" && typeof band === "function" ? heldFinds((band().members || []).find(x => x.id === u.uid) || {}).map(f => f.name) : [])) : [];
   const conds = (u.down ? `<span class="tb-cd bad">${esc(downWord(u))}</span>` : "") + (u.cond || []).filter(c => c !== "leader" && !(u.down && (c === "stabilised" || c === "marked"))).map(c => `<span class="tb-cd">${esc(c)}</span>`).join("");
   const foe = u.side === "them";
   const clickable = !u.hidden;
@@ -9595,6 +9597,7 @@ function tableUnitRow(u, mine){
     <div class="tb-n">${u.lead && typeof crownHTML === "function" ? crownHTML(13) : ""}${esc(u.name)}${u.models.length > 1 ? ` <small>×${u.models.length}</small>` : ""}
       ${u.boss ? bossMark(u) : ""}${tableStyle(u)}${conds}
       ${u.acts > 1 ? `<small>${u.used}/${u.acts}</small>` : ""}</div>
+    ${carry.length ? `<div class="tb-carry" title="Carrying: ${esc(carry.join(", "))}">✦ ${esc(carry.join(", "))}</div>` : ""}
     <div class="tb-bar"><i class="${h.cls}" style="width:${h.max ? Math.round(h.now / h.max * 100) : 0}%"></i></div>
     <div class="tb-h">${h.now}/${h.max}</div>
     <span class="tb-hp2"><button class="tb-hit" data-thit="${esc(u.uid)}" aria-label="Take 1 damage" ${down ? "disabled" : ""}>−1</button><button class="tb-hit up" data-theal="${esc(u.uid)}" aria-label="Give 1 Health back" ${h.now >= h.max ? "disabled" : ""}>+1</button></span>
@@ -14079,6 +14082,10 @@ function shareUnit(u){
   if(u.side === "us"){
     const m = band().members.find(x => x.id === u.uid);
     if(m && typeof unitGlance === "function") out.glance = unitGlance(m);
+    if(m && typeof heldFinds === "function"){
+      const c = heldFinds(m).map(f => f.name);
+      if(c.length) out.carrying = c;
+    }
   }
   return out;
 }
