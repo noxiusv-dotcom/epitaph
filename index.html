@@ -472,7 +472,7 @@ button.bt-st{cursor:pointer}
 .bt-note{font-size:12px;color:var(--ash-dim);margin-top:10px;display:grid;gap:5px}.bt-note b{color:var(--ash)}
 .bt-more{text-align:center;margin-top:10px}
 .bt-more button{background:none;border:0;color:var(--gilt-deep);font:500 10px "Cinzel",serif;letter-spacing:.16em;text-transform:uppercase;text-decoration:underline;cursor:pointer;padding:6px}
-.bt-dock{display:grid;grid-template-columns:repeat(6,1fr);background:var(--stone-1);border-top:1px solid var(--gilt-deep);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.bt-dock{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--stone-1);border-top:1px solid var(--gilt-deep);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
 .bt-dock button{background:none;border:0;color:var(--ash-dim);font:500 8px "Cinzel",serif;letter-spacing:.1em;text-transform:uppercase;display:grid;justify-items:center;gap:3px;padding:6px 0;position:relative;cursor:pointer}
 .bt-dock button svg{color:var(--gilt)}.bt-dock button:disabled{opacity:.35}
 .bt-dot{position:absolute;top:2px;right:30%;width:7px;height:7px;border-radius:50%;background:var(--rust)}
@@ -4993,7 +4993,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 11:43";</script>
+<script>window.EP_BUILD = "13 Nov 12:11";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -5695,10 +5695,18 @@ function setSize(m, size){
 function giveFound(m, what){
   if(typeof realmAvailable === "function" && realmAvailable() && typeof stashOf === "function"){
     /* finds go to the band's Armoury, to be handed out afterwards */
-    stashOf(band()).found.push(Object.assign({fid: uid(), by: m.name || ""}, what)); save(); return;
+    stashOf(band()).found.push(Object.assign({fid: uid(), by: m.name || "", holder: m.id}, what)); save(); return;
   }
   m.found = (m.found || []).concat([Object.assign({fid: uid()}, what)]);
   save();
+}
+/* What a model is carrying that it found: in camp that sits in the Armoury, tagged with who picked it up. */
+function heldFinds(m){
+  const own = m.found || [];
+  if(typeof realmAvailable === "function" && realmAvailable() && typeof stashOf === "function"){
+    return own.concat((stashOf(band()).found || []).filter(f => f.holder === m.id));
+  }
+  return own;
 }
 function dropFound(m, fid){
   m.found = (m.found || []).filter(f => f.fid !== fid);
@@ -5843,7 +5851,7 @@ function renderUnburied(b){
       nScars ? ic(I('<path d="M12 4v16M4 12h16"/>'), nScars, "bad", nScars + " scar" + (nScars > 1 ? "s" : "")) : "",
       isHurt(m) ? ic(I('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'), healthOf(m).reduce((s2, h) => s2 + h, 0) + "/" + m.wounds * n, "bad", "Health left") : "",
       m.xp ? ic(I('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'), m.xp, "gilt", m.xp + " XP to spend") : "",
-      (m.found || []).length ? ic(I('<path d="M12 3l8 5v8l-8 5-8-5V8z"/>'), m.found.length, "good", m.found.length + " found in the field") : "",
+      heldFinds(m).length ? ic(I('<path d="M12 3l8 5v8l-8 5-8-5V8z"/>'), heldFinds(m).length, "good", heldFinds(m).length + " found in the field") : "",
       (m.flaws || []).length ? ic(I('<path d="M12 4l9 16H3z"/>'), m.flaws.length, "bad", m.flaws.length + " flaw" + (m.flaws.length > 1 ? "s" : "")) : "",
       handsFree(m) < 0 ? ic("\u270b", handsUsed(m) + "/" + handsOf(m), "bad", "More gear than hands") : "",
       realmAvailable() && b.sealed ? (memberLocked(m) ? ic(lockIcon(true, 12), "", "", "Locked: changes only through XP and Cash")
@@ -7596,6 +7604,7 @@ function combatTabHTML(m){
     ${saysHTML(m, "Powers", "powers")}
     ${saysHTML(m, "Flaws", "flaws", "bad")}
     ${saysHTML(m, "Carried", "items")}
+    ${foundHTML(m)}
     ${sizeHTML(m)}`;
 }
 function storyTabHTML(m){
@@ -7606,7 +7615,7 @@ function storyTabHTML(m){
       <p class="serif" style="margin:8px 0 0;color:var(--ash-dim);font-size:13.5px;line-height:1.55">${esc(k.why)}</p></div>` : "",
     m.story ? `<div class="slab"><div class="head"><span class="eyebrow">Their story</span><span class="rule"></span></div>
       <p class="serif" style="margin:0;font-size:14px;line-height:1.6;color:var(--ash-dim)">${esc(m.story)}</p></div>` : "",
-    scarsHTML(m), foundHTML(m)].filter(Boolean);
+    scarsHTML(m)].filter(Boolean);
   return parts.length ? parts.join("") : `<div class="empty"><div class="big">Nothing written yet</div>
     <div class="quiet">Their story, scars and finds gather here as they play.</div></div>`;
 }
@@ -7763,18 +7772,19 @@ function hurtStripHTML(m){
 /* Things picked up in the field. Deliberately apart from bought gear: a model
    that finds a medkit does not become worth more points for having found it. */
 function foundHTML(m){
-  const f = m.found || [];
+  const f = typeof heldFinds === "function" ? heldFinds(m) : (m.found || []);
+  const inCamp = typeof realmAvailable === "function" && realmAvailable();
   if(!f.length) return "";
   return `
   <div class="slab">
     <div class="head"><span class="eyebrow">Found in the field</span><span class="rule"></span>
-      <span class="quiet">costs nothing</span></div>
+      <span class="quiet">${inCamp ? "carried now, kept in the Armoury afterwards" : "costs nothing"}</span></div>
     ${f.map(x => `
       <div class="says">
         <div class="says-n">${esc(x.name)}
           ${x.roll ? `<span class="chip mono">${esc(RS.dice.lootDie)} ${x.roll}</span>` : ""}
-          <button class="tiny" data-drop-found="${esc(x.fid)}" style="margin-left:auto"
-            aria-label="Leave it behind">\u00d7</button></div>
+          ${inCamp ? "" : `<button class="tiny" data-drop-found="${esc(x.fid)}" style="margin-left:auto"
+            aria-label="Leave it behind">\u00d7</button>`}</div>
         ${x.note ? `<div class="says-d">${esc(x.note)}</div>` : ""}
         ${x.from ? `<div class="says-d quiet">from ${esc(x.from)}</div>` : ""}
       </div>`).join("")}
@@ -9971,7 +9981,8 @@ const BT_ICON = {
   table:   '<rect x="3" y="4" width="18" height="14" rx="1"/><path d="M8 21h8M12 18v3"/>',
   battle:  '<path d="M6 18L18 6M15 5.5h3.5V9M8.5 12.5l3 3M4 20l3-3"/>',
   band:    '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5.5"/>',
-  end:     '<path d="M18 6L6 18M6 6l12 12"/>'
+  end:     '<path d="M18 6L6 18M6 6l12 12"/>',
+  armoury: '<rect x="3" y="10" width="18" height="10" rx="1"/><path d="M3 14h18M12 14v3M5 10a7 5 0 0114 0"/>'
 };
 const btIcon = k => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${BT_ICON[k]}</svg>`;
 
@@ -10156,6 +10167,7 @@ function drawDock(){
     <button data-dk="brief" class="${s.name ? "" : "dim"}">${btIcon("brief")}Brief${due ? `<i class="bt-dot"></i>` : ""}</button>
     <button data-dk="foes">${btIcon("foes")}Enemy</button>
     <button data-dk="markers">${btIcon("markers")}Markers</button>
+    ${typeof realmAvailable === "function" && realmAvailable() && typeof openArmoury === "function" ? `<button data-dk="armoury">${btIcon("armoury")}Armoury${armouryCount(band()) ? ` <small>${armouryCount(band())}</small>` : ""}</button>` : ""}
     <button data-dk="end">${btIcon("end")}End quest</button>`;
   el.querySelectorAll("[data-dk]").forEach(b => b.onclick = () => {
     switch(b.dataset.dk){
@@ -10164,6 +10176,7 @@ function drawDock(){
       case "brief":   if(Q.scenario && Q.scenario.name) openBrief(); else toast("This quest was started without a scenario, so there is no brief to read"); break;
       case "foes":    openFoes(); break;
       case "markers": openMarkers(); break;
+      case "armoury": openArmoury(); break;
       case "end":     askEnd(); break;
     }
   });
@@ -11917,6 +11930,7 @@ function putInStash(b, m, kind, id){
 
 function openArmoury(){
   const b = band(), st = stashOf(b), cat = k => catOf(k);
+  const inQuest = typeof questOn === "function" && questOn();       // in a battle: look, and pass finds on; gear is handed out at camp
   const rows = ARM_KINDS.map(([k, label]) => {
     const list = armouryList(b).filter(x => x.kind === k && cat(k)[x.id]);
     if(!list.length) return "";
@@ -11925,24 +11939,25 @@ function openArmoury(){
         return `<div class="grow" style="flex-wrap:wrap"><div class="grow-main" style="min-width:140px">
           <div class="grow-name">${esc(o.name)}${x.qty > 1 ? " ×" + x.qty : ""}</div>
           <div class="grow-sub">${esc(o.desc || "")}</div></div>
-          <div class="grow-r" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          ${inQuest ? "" : `<div class="grow-r" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">
             <button class="btn sm" data-ag="${k}|${esc(x.id)}">Give to…</button>
-            <button class="btn sm ghost" data-asell="${k}|${esc(x.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div></div>`; }).join("")}
+            <button class="btn sm ghost" data-asell="${k}|${esc(x.id)}">Sell — ${Math.floor(o.cost / 2)}</button></div>`}</div>`; }).join("")}
     </div>`; }).join("");
   const found = (st.found || []).map(f => `<div class="grow" style="flex-wrap:wrap"><div class="grow-main" style="min-width:140px">
       <div class="grow-name">${esc(f.name)}${f.roll ? ` <span class="chip mono">${esc(RS.dice.lootDie)} ${f.roll}</span>` : ""}</div>
       ${f.note ? `<div class="grow-sub">${esc(f.note)}</div>` : ""}
-      <div class="grow-sub">${f.by ? esc(f.by) + " found it" : ""}${f.from ? (f.by ? " at " : "from ") + esc(f.from) : ""}</div></div>
+      <div class="grow-sub">${f.by ? esc(f.by) + " found it" : ""}${f.from ? (f.by ? " at " : "from ") + esc(f.from) : ""}</div>
+      ${f.holder && inQuest ? `<div class="grow-sub">Carried by ${esc(((b.members || []).find(x => x.id === f.holder) || {}).name || "someone")}</div>` : ""}</div>
       <div class="grow-r" style="gap:6px">
-        <button class="btn sm" data-agf="${esc(f.fid)}">Give to…</button>
-        <button class="tiny" data-adf="${esc(f.fid)}" aria-label="Throw it away">×</button></div></div>`).join("");
+        <button class="btn sm" data-agf="${esc(f.fid)}">${inQuest ? "Pass to…" : "Give to…"}</button>
+        ${inQuest ? "" : `<button class="tiny" data-adf="${esc(f.fid)}" aria-label="Throw it away">×</button>`}</div></div>`).join("");
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="axX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">The Armoury</div>${cashChip(b)}</div>
-    <p class="lead">What the band owns that nobody is holding: the gear of the fallen, what was set down, and what was found.
-      Hand it to anyone who can bear it, or sell it for half its points.</p>
+    <p class="lead">${inQuest ? "In a battle you can look at what the band has found and pass a find to someone else. Weapons, armour and gear are handed out at camp."
+      : "What the band owns that nobody is holding: the gear of the fallen, what was set down, and what was found. Hand it to anyone who can bear it, or sell it for half its points."}</p>
     ${rows}
     ${found ? `<div class="slab" style="border-color:var(--gilt-deep)"><div class="head"><span class="eyebrow">Found in the field</span><span class="rule"></span><span class="quiet">free, give each to someone</span></div>${found}</div>` : ""}
     ${rows || found ? "" : `<div class="empty"><div class="big">The Armoury is empty</div>
@@ -11994,7 +12009,9 @@ function openArmouryGive(kind, id){
   $("#agX").onclick = openArmoury;
   $("#sheet2In").querySelectorAll("[data-go]").forEach(btn => btn.onclick = () => {
     const [mid, out] = btn.dataset.go.split("|"), m = b.members.find(x => x.id === mid); if(!m) return;
-    if(isFound){
+    if(isFound && typeof questOn === "function" && questOn()){
+      f.holder = m.id;                       // passed on in the battle: still in the Armoury, carried by someone else now
+    } else if(isFound){
       m.found = (m.found || []).concat([Object.assign({}, f)]); st.found = st.found.filter(x => x !== f);
     } else takeFromStash(b, m, kind, id, out || null);
     save(); toast((isFound ? f.name : o.name) + " → " + (m.name || "them")); openArmoury(); render();
