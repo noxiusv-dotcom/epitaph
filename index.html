@@ -588,6 +588,14 @@ body:has(#rolePick){overflow:hidden}
 .rc-l b{font:500 10px "Cinzel",serif;letter-spacing:.14em;text-transform:uppercase;color:var(--gilt);padding-top:2px}
 @media (max-width:420px){.rc-l{grid-template-columns:88px 1fr;gap:10px}}
 .ma-acts{display:flex;gap:8px;flex-wrap:wrap}
+.ma-cards{display:grid;gap:8px}
+.ma-card{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:var(--r-md);cursor:pointer;
+  background:var(--panel-a);border:1px solid var(--line);color:var(--ash);font:inherit}
+.ma-card b{display:block;font-family:"Cinzel",serif;font-size:13px;letter-spacing:.06em;color:var(--gilt);margin-bottom:3px}
+.ma-card span{display:block;font-size:13px;line-height:1.45;color:var(--ash-dim)}
+.ma-card:hover:not(:disabled){border-color:var(--gilt);box-shadow:0 0 0 2px var(--gilt-glow)}
+.ma-card:disabled{opacity:.4;cursor:default}
+.tb-pin.seen{border-color:var(--verdigris);color:var(--verdigris);border-style:dashed}
 @media (max-width:900px){
   #tableScreen{overflow:auto}
   .tb-main{display:block;overflow:visible;flex:none}
@@ -918,8 +926,8 @@ body.has-qbar #toast{bottom:82px}
 {
   "meta": {
     "name": "Epitaph",
-    "version": "0.11.23",
-    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35",
+    "version": "0.11.24",
+    "status": "co-design 0.11: answers the app's eleven asks after 0.10.5; loot table, camp rules, marker limits, trap and ambush effects, Unlucky redesign, Extra arms repriced; 0.11.18 adds the Animal trait (no hands, natural weapons); 0.11.20 (CC balance sim round 13): prices only, no rule text changed - Heavy support weapon 22 to 40, armour 4/14/18 to 8/22/28, minimum model cost 10 to 35; 0.11.24: suspicion markers are touch (opened by a search) or tread (set off by ending a move within 5 cm, or standing on the named area); a reveal reads safe or trapped and lets an ambush wait unsprung",
     "units": {
       "distance": "cm",
       "temperature": "C"
@@ -4001,18 +4009,19 @@ body.has-qbar #toast{bottom:82px}
           "nothing"
         ]
       },
-      "trigger": "a model that ends a move within 5 cm of an unrevealed marker resolves it: the player taps the marker number and the app reveals and applies the result",
+      "trigger": "TREAD marker (ground, a doorway, a named patch of terrain): a model that ends a move within 5 cm of it, or on or against the named area, sets it off; passing by without stopping does not. TOUCH marker (a cupboard, chest, body, device): standing beside it is safe; it only goes off when a model spends Interact to search it. The app taps the marker number and reveals and applies the result",
       "reveal": {
         "by": [
           "glimpse",
           "trapwise",
           "any ability or item that reveals"
         ],
-        "effect": "reveals each marker in range without triggering it; decoys are removed, traps become visible (can be avoided or disarmed), hidden units are placed",
-        "input": "player tells the app who used it and which marker numbers are in range"
+        "effect": "reveals each marker in range without triggering it, and says plainly whether it is SAFE or TRAPPED: decoys are removed, traps become visible (go round, or disarm; a trapped touch marker must be disarmed before it is opened), caches and objectives read safe, an ambush or hidden enemy is placed but stays unsprung and off the activation roster until set off",
+        "input": "player tells the app who used it and which marker numbers are in range",
+        "noticed": "an ambush that is revealed may see who looked. The scenario gives each tread marker an alertness: unaware (never), watchful (the model that looked makes a Wits test, and a fail means they noticed), alert (they notice). A noticed ambush is set off at once"
       },
-      "search": "a cache pays out only when a model in contact uses Interact on it (Wits test)",
-      "disarm": "a revealed trap in contact can be disarmed with Interact (Wits test; Tools step up)",
+      "search": "TOUCH marker: Interact in contact and a Wits test. Pass: a cache pays out; a trap is revealed without going off; an objective is found; a decoy is removed. Fail: a trap goes off as if set off; otherwise nothing is found this time and another Interact may try again",
+      "disarm": "a revealed trap in contact can be disarmed with Interact (Wits test; Tools or Trapwise step up). A failed disarm sets it off",
       "paperFallback": "without the app: shuffle face-down cards (Trap, Cache, Nothing, Ambush, ...) under the numbered markers and flip them in the same situations",
       "pvp": "markers are neutral; either side can trigger or reveal them",
       "limits": {
@@ -4023,6 +4032,11 @@ body.has-qbar #toast{bottom:82px}
         "cache": "one per 250 points of game size",
         "decoys": "at least one, and at least a quarter of all markers",
         "total": "max 8 markers"
+      },
+      "kinds": {
+        "touch": "cache, objective, trapped container, or an empty decoy. Looks like something you open or handle",
+        "tread": "hidden enemy, ambush, trapped ground, or an empty decoy. Looks like ground, a passage or a named area",
+        "look": "each marker has a short 'it looks like' line written by the scenario, the way someone walking round the place would spot it; it never says what is really there"
       }
     },
     "bandSize": {
@@ -4968,7 +4982,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "12 Nov 21:20";</script>
+<script>window.EP_BUILD = "13 Nov 08:07";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -6753,27 +6767,70 @@ function questStep(){
 /* ---- markers: numbered on the table, known only here ---- */
 function markerKinds(){
   const priced = id => (((RS.scenario.budget || {}).costs) || []).find(c => c.id === id) || {};
+  /* face: what a revealed marker reads on the table (safe, trapped or ambush).
+     how: touch = opened by a search, tread = set off by ending a move within 5 cm;
+     "either" kinds take whichever the scenario's look says. */
   return {
-    trapVisible:  {label: "Trap", hurt: 2,
+    trapVisible:  {label: "Trap", face: "Trapped", how: "either", hurt: 2,
       sprung: priced("trapVisible").desc || "Wits test or 2 damage.",
-      seen: "A trap, in plain view now. Go round it, or disarm it with Interact in contact (Wits; Tools step up)."},
-    trapHidden:   {label: "Hidden trap", hurt: 2,
+      seen: "TRAPPED. In plain view now. Stay outside 5 cm, or disarm it with Interact in contact (Wits test; Tools or Trapwise step up). A trapped container springs when opened, so disarm it first."},
+    trapHidden:   {label: "Hidden trap", face: "Trapped", how: "either", hurt: 2,
       sprung: "It springs. " + (priced("trapVisible").desc || "Wits test or 2 damage."),
-      seen: "A hidden trap, now visible. Go round it, or disarm it with Interact in contact."},
-    cache:        {label: "Cache", hurt: 0,
+      seen: "TRAPPED. It was hidden; now it is visible. Stay outside 5 cm, or disarm it with Interact in contact (Wits test; Tools or Trapwise step up). A trapped container springs when opened, so disarm it first."},
+    cache:        {label: "Cache", face: "Safe \u00b7 cache", how: "touch", hurt: 0,
       sprung: "A cache. It pays out only when a model in contact spends Interact on it (Wits test).",
-      seen: "A cache. Interact in contact to search it."},
-    hiddenUnit:   {label: "Hidden enemy", hurt: 0,
+      seen: "SAFE. A cache, not trapped. Interact in contact to search it (Wits test)."},
+    hiddenUnit:   {label: "Hidden enemy", face: "Ambush", how: "tread", hurt: 0,
       sprung: "Something was waiting here. Place it on the marker.",
-      seen: "A hidden enemy. Place it on the marker — it has not acted."},
-    ambushTrigger:{label: "Ambush", hurt: 0,
-      sprung: "Ambush. The reserve arrives — place it as the scenario says.",
-      seen: "An ambush trigger. Stepping within 5 cm brings the reserve in."},
-    objective:    {label: "Objective", hurt: 0,
-      sprung: "The objective is here.", seen: "The objective is here."},
-    nothing:      {label: "Nothing", hurt: 0,
-      sprung: "Nothing. Take the marker off the table.", seen: "A decoy. Take it off the table."}
+      seen: "AMBUSH. Something waits here. Place it on the marker if you want to plan around it. It does not act until the marker is set off (a model ends a move within 5 cm)."},
+    ambushTrigger:{label: "Ambush", face: "Ambush", how: "tread", hurt: 0,
+      sprung: "Ambush. The reserve arrives \u2014 place it as the scenario says.",
+      seen: "AMBUSH. Something waits here. It stays off the roster until the marker is set off (a model ends a move within 5 cm)."},
+    objective:    {label: "Objective", face: "Safe \u00b7 objective", how: "touch", hurt: 0,
+      sprung: "The objective is here.", seen: "SAFE. The objective is here."},
+    nothing:      {label: "Nothing", face: "Safe \u00b7 empty", how: "either",  hurt: 0,
+      sprung: "Nothing. Take the marker off the table.", seen: "SAFE. A decoy, nothing here. Take it off the table."}
   };
+}
+/* touch / tread / "either" (an old marker with no look). */
+function markerHow(m){
+  if(!m) return "either";
+  if(m.how === "touch" || m.how === "tread") return m.how;
+  const k = (markerKinds()[m.kind] || {}).how;
+  return k === "touch" || k === "tread" ? k : "either";
+}
+/* The scenario describes each spot (look, touch or tread, how alert). The kinds were
+   rolled blind, so deal them out to fit: cache and objective to touch spots, hidden
+   enemy and ambush to tread spots, traps and decoys to whatever is left. A kind with
+   no fitting spot takes any spot and the spot is rewritten to suit. */
+function dealMarkerKinds(markers, spots){
+  const K = markerKinds();
+  const kinds = markers.map(m => m.kind);
+  const free = spots.map((g, i) => i);
+  const how = i => (spots[i] && (spots[i].how === "touch" || spots[i].how === "tread")) ? spots[i].how : "either";
+  const out = new Array(spots.length).fill(null);
+  const take = (kind, want) => {
+    let pool = want === "either" ? free.slice() : free.filter(i => how(i) === want);
+    if(!pool.length) pool = free.filter(i => how(i) === "either");
+    if(!pool.length) pool = free.slice();
+    if(!pool.length) return;
+    const i = pool[Math.floor(Math.random() * pool.length)];
+    free.splice(free.indexOf(i), 1);
+    out[i] = kind;
+  };
+  const order = kinds.slice().sort((a, b) => ((K[a].how === "either") - (K[b].how === "either")));
+  order.forEach(kind => take(kind, K[kind].how));
+  markers.forEach((m, i) => {
+    const g = spots[i] || {};
+    m.kind = out[i] || m.kind;
+    const natural = (K[m.kind] || {}).how;
+    const own = how(i);
+    m.how = natural === "either" ? (own === "either" ? (Math.random() < 0.5 ? "touch" : "tread") : own) : natural;
+    const fits = own === "either" || own === m.how;
+    m.look = fits ? (g.look || "") : (m.how === "touch" ? "something that could be opened or searched" : "a patch of ground that looks wrong");
+    m.area = fits && m.how === "tread" ? !!g.area : false;
+    m.alert = g.alert || "watchful";
+  });
 }
 /* Marker limits, straight from scenario.secrets.limits rather than guessed:
      objective     exactly the battle type's count (+1 per player beyond the first),
@@ -6894,18 +6951,86 @@ function trapFailed(num, uid){
   qlog("Marker " + num + " — " + u.name + " failed the Wits test");
   return {label: "Trap", text: t, hurt: u.name};
 }
-function revealMarkers(nums){
+/* Looking (a spell or ability) reveals without setting anything off, and says so
+   plainly: safe, trapped or ambush. An ambush may see who looked: unaware never,
+   watchful asks the looker for a Wits test, alert always. */
+function revealMarkers(nums, uid){
   const out = [];
+  const u = uid ? Q.units.find(x => x.uid === uid) : null;
   nums.forEach(num => {
     const mk = Q.markers.find(x => x.n === num);
     if(!mk || mk.state === "gone") return;
     const k = markerKinds()[mk.kind];
+    const was = mk.state;
     if(mk.state === "hidden") mk.state = mk.kind === "nothing" ? "gone" : "seen";
-    out.push({n: num, label: k.label, text: k.seen});
+    const row = {n: num, label: k.face, text: k.seen};
+    if(mk.look) row.text = "Looks like " + mk.look + ". " + row.text;
+    if((mk.kind === "hiddenUnit" || mk.kind === "ambushTrigger") && was === "hidden"){
+      const hid = Q.units.find(x => x.side === "them" && x.hidden);
+      if(hid && hid.hint) row.text += " Prepare for: " + hid.hint + ".";
+      const al = mk.alert || "watchful";
+      if(al === "alert"){
+        row.text += " They were watching. They saw you look.";
+        row.sprung = resolveMarker(num, null);
+      } else if(al === "watchful"){
+        row.notice = {n: num, uid: u ? u.uid : ""};
+        row.text += " They may have seen you look.";
+      } else row.text += " They have no idea you looked.";
+    }
+    out.push(row);
   });
-  qlog("Revealed " + nums.join(", ") + " without setting them off");
+  qlog("Revealed " + nums.join(", ") + " without setting them off" + (u ? " (" + u.name + ")" : ""));
   questSave();
   return out;
+}
+/* The Wits test after a look: failed means the ambush noticed and springs now. */
+function lookNoticed(num, uid){
+  const r = resolveMarker(num, uid || null);
+  qlog("Marker " + num + " \u2014 they saw the look and sprang the ambush");
+  return r;
+}
+/* Disarm a revealed trap: Interact in contact, Wits test, Tools or Trapwise step up. */
+function disarmMarker(num, uid, passed){
+  const mk = Q.markers.find(x => x.n === num); if(!mk) return null;
+  const u = uid ? Q.units.find(x => x.uid === uid) : null;
+  if(passed){
+    mk.state = "gone";
+    qlog("Marker " + num + " \u2014 " + (u ? u.name : "someone") + " disarmed the trap");
+    questSave();
+    return {n: num, label: "Disarmed", text: "Disarmed. Take the marker off the table.", hurt: null};
+  }
+  qlog("Marker " + num + " \u2014 " + (u ? u.name : "someone") + " failed to disarm it");
+  return Object.assign({n: num}, resolveMarker(num, uid));
+}
+/* A search of a TOUCH marker, after the Wits test is rolled by hand. */
+function searchMarkerResult(num, uid, passed){
+  const mk = Q.markers.find(x => x.n === num); if(!mk) return null;
+  const u = uid ? Q.units.find(x => x.uid === uid) : null;
+  const who = u ? u.name : "Someone";
+  const trap = mk.kind === "trapVisible" || mk.kind === "trapHidden";
+  if(!passed){
+    if(trap && mk.state !== "seen"){
+      qlog("Marker " + num + " \u2014 " + who + " failed the Wits test searching it");
+      return Object.assign({n: num}, resolveMarker(num, uid));
+    }
+    qlog("Marker " + num + " \u2014 " + who + " found nothing this time");
+    questSave();
+    return {n: num, label: "Nothing yet", text: "Nothing turned up. Another Interact can try again.", hurt: null};
+  }
+  if(mk.kind === "cache"){ mk.state = mk.state === "hidden" ? "seen" : mk.state; return {n: num, open: true}; }
+  if(trap){
+    mk.state = "seen";
+    qlog("Marker " + num + " \u2014 " + who + " searched it and found a trap");
+    questSave();
+    return {n: num, label: "Trapped", text: markerKinds()[mk.kind].seen, hurt: null};
+  }
+  if(mk.kind === "nothing"){
+    mk.state = "gone";
+    qlog("Marker " + num + " \u2014 " + who + " searched it: empty");
+    questSave();
+    return {n: num, label: "Empty", text: "Safe. Nothing here. Take the marker off the table.", hurt: null};
+  }
+  return Object.assign({n: num}, resolveMarker(num, uid));
 }
 
 /* ---- card.js ---- */
@@ -8315,7 +8440,7 @@ function openMarkers(result){
   const K = markerKinds();
   const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));   // every player's, when shared
   const chip = m => {
-    const face = m.state === "hidden" ? "?" : K[m.kind].label;
+    const face = m.state === "hidden" ? "?" : ((K[m.kind] || {}).face || (K[m.kind] || {}).label || "Seen");
     return `<button class="mk ${m.state} ${mkPicked.has(m.n) ? "on" : ""}" data-mk="${m.n}"
       ${m.state === "gone" ? "disabled" : ""}><b>${m.n}</b><span>${esc(face)}</span></button>`;
   };
@@ -8327,11 +8452,11 @@ function openMarkers(result){
       </button><div class="eyebrow">Suspicion markers</div>
       <span class="chip">${Q.markers.filter(m => m.state === "hidden").length} unknown</span></div>
     <p class="lead">The table shows numbers and nothing else. What is under them stays here
-      until a model walks into one, or something looks.</p>
+      until a model moves up to one, searches one, or something looks.</p>
     <div class="mkgrid">${Q.markers.map(chip).join("")}</div>
 
     <div class="slab" style="margin-top:14px">
-      <div class="head"><span class="eyebrow">A model walked into it</span><span class="rule"></span></div>
+      <div class="head"><span class="eyebrow">A model moved up to it</span><span class="rule"></span></div>
       <p class="quiet" style="margin:0 0 9px">Pick one marker and whose model ended its move within 5 cm.
         Anything it does lands on that model.</p>
       <select class="input" id="mkWho" style="margin-bottom:10px">
@@ -8340,7 +8465,7 @@ function openMarkers(result){
       </select>
       <div class="sheet-actions">
         <button class="btn primary" id="mkGo" ${one ? "" : "disabled"} style="margin-left:0">
-          ${one ? "Walk into marker " + one : "Walk into marker …"}</button>
+          ${one ? "Move up to marker " + one : "Move up to marker …"}</button>
       </div>
     </div>
 
@@ -8365,10 +8490,7 @@ function openMarkers(result){
       </div>
     </div>
 
-    ${result && result.length ? `<div class="mkout">${result.map(r =>
-      `<div class="mkres"><b>Marker ${r.n !== undefined ? r.n : one} — ${esc(r.label)}</b>
-        <span>${esc(r.text)}</span>
-        ${r.pending ? `<button class="btn sm" data-fail="${r.pending.n}" data-failwho="${esc(r.pending.uid)}" style="margin:6px 0 0">Failed the Wits test</button>` : ""}</div>`).join("")}</div>` : ""}`;
+    ${result && result.length ? `<div class="mkout">${markerResultHTML(result.map(r => Object.assign({}, r, {label: "Marker " + (r.n !== undefined ? r.n : one) + " — " + (r.label || "")})))}</div>` : ""}`;
 
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#mkX").onclick = () => { mkPicked = new Set(); closePicker(); render(); };
@@ -8380,23 +8502,34 @@ function openMarkers(result){
   const who = $("#mkWho"); if(who) who.onchange = () => { mkWho = who.value || null; };
   const go = $("#mkGo");
   if(go) go.onclick = () => {
+    const tm = Q.markers.find(x => x.n === one);
+    if(tm && markerHow(tm) === "touch"){ const w = mkWho; mkPicked = new Set(); if(w) searchWho = w; openMarkerAct(one); return; }
     const r = resolveMarker(one, mkWho);
     mkPicked = new Set();
     openMarkers(r ? [Object.assign({n: one}, r)] : null);
     render();
     if(r && r.hurt) toast(r.hurt + " takes it");
   };
-  $("#sheet2In").querySelectorAll("[data-fail]").forEach(b2 => b2.onclick = () => {
-    const r = trapFailed(+b2.dataset.fail, b2.dataset.failwho);
-    openMarkers(r ? [Object.assign({n: +b2.dataset.fail}, r)] : null);
+  $("#sheet2In").querySelectorAll("[data-mfail]").forEach(b2 => b2.onclick = () => {
+    const r = trapFailed(+b2.dataset.mfail, b2.dataset.mfailwho);
+    openMarkers(r ? [Object.assign({n: +b2.dataset.mfail}, r)] : null);
     render();
   });
+  $("#sheet2In").querySelectorAll("[data-mnotice]").forEach(b2 => b2.onclick = () => {
+    const r = lookNoticed(+b2.dataset.mnotice, b2.dataset.mnwho);
+    openMarkers(r ? [Object.assign({n: +b2.dataset.mnotice}, r)] : null);
+    render();
+  });
+  $("#sheet2In").querySelectorAll("[data-munseen]").forEach(b2 => b2.onclick = () => {
+    qlog("Marker " + b2.dataset.munseen + " — the look went unseen");
+    openMarkers([{n: +b2.dataset.munseen, label: "Unseen", text: "They did not see you. The ambush stays waiting until a model ends a move within 5 cm."}]);
+  });
   $("#sheet2In").querySelectorAll("[data-search]").forEach(b2 => b2.onclick = () => {
-    mkPicked = new Set(); openSearch(+b2.dataset.search);
+    mkPicked = new Set(); openMarkerAct(+b2.dataset.search);
   });
   const see = $("#mkSee");
   if(see) see.onclick = () => {
-    const out = revealMarkers([...mkPicked]);
+    const out = revealMarkers([...mkPicked], mkWho);
     mkPicked = new Set();
     openMarkers(out); render();
   };
@@ -8418,6 +8551,10 @@ function rollCash(text){
   if(!m) return null;
   let t = 0; for(let i = 0; i < (+m[1] || 1); i++) t += 1 + Math.floor(Math.random() * +m[2]);
   return t;
+}
+function emptyCache(n){
+  const m = n ? Q.markers.find(x => x.n === n) : null;
+  if(m && m.kind === "cache") m.state = "gone";
 }
 function openSearch(markerN){
   const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));
@@ -8477,6 +8614,7 @@ function openSearch(markerN){
     if(searchCash && !$("#seName").value.trim() && !$("#seItem").value){
       const b = band(); b.cash = (b.cash || 0) + searchCash; save();
       const searchCashToast = "+" + searchCash + " Cash";
+      emptyCache(markerN);
       qlog((u ? u.name : "Someone") + " found " + searchCash + " Cash (" + RS.dice.lootDie + " " + searchRoll + ")");
       searchRoll = null; searchRow = null; searchCash = null; searchTrapText = "";
       questSave(); closePicker(); render(); toast(searchCashToast);
@@ -8496,6 +8634,7 @@ function openSearch(markerN){
       if(m) giveFound(m, what);
     }
     qlog((u ? u.name : "Someone") + " found " + what.name + (searchRoll ? " (" + RS.dice.lootDie + " " + searchRoll + ")" : ""));
+    emptyCache(markerN);
     searchRoll = null; searchRow = null; searchCash = null; searchTrapText = "";
     questSave(); closePicker(); render();
     toast((u ? u.name : "They") + " take " + what.name);
@@ -8934,14 +9073,14 @@ function tableMapHTML(){
     const p = markerSpot(m, i, Q.markers.length);
     const face = m.state === "hidden" ? "?" : m.n;
     return `<button class="tb-pin ${m.state}" style="left:${p.x}%;top:${p.y}%" data-tpin="${m.n}"
-      title="${esc(m.state === "hidden" ? "Marker " + m.n : "Marker " + m.n + " — " + (K[m.kind] || {}).label)}"
-      ${m.state === "gone" ? "disabled" : ""}>${m.state === "hidden" ? m.n : "◈"}<small>${m.state === "hidden" ? "" : esc((K[m.kind] || {}).label || "")}</small>${m.state === "gone" ? "" : `<i class="tb-lens">${LENS}</i>`}</button>`;
+      title="${esc(m.state === "hidden" ? "Marker " + m.n + (m.look ? " — " + m.look : "") : "Marker " + m.n + " — " + (K[m.kind] || {}).face)}"
+      ${m.state === "gone" ? "disabled" : ""}>${m.state === "hidden" ? m.n : "◈"}<small>${m.state === "hidden" ? "" : esc((K[m.kind] || {}).face || (K[m.kind] || {}).label || "")}</small>${m.state === "gone" ? "" : `<i class="tb-lens">${LENS}</i>`}</button>`;
   }).join("");
   const uses = "";
   return `<div class="tb-mapbox" ${tableBig ? "data-keep" : ""}><div class="tb-map">
     ${hasMap ? mapSVG(s.map, {theme: s.theme}) : `<div class="tb-nomap">No map was written for this quest.</div>`}
     ${pins}${uses}</div></div>
-    <div class="tb-legend"><span>${LENS} Search it, or look with a spell or ability</span><span>${GEARS} Work it: a door, switch or lever</span></div>`;
+    <div class="tb-legend"><span>${LENS} Search it, move up to it, or look with a spell or ability</span><span>${GEARS} Work it: a door, switch or lever</span></div>`;
 }
 
 function tableStoryHTML(){
@@ -8958,7 +9097,7 @@ function tableStoryHTML(){
     ${s.briefing && Q.round === 1 && !due.length && !log.length ? `<p class="tb-brief serif">${esc(s.briefing)}</p>` : ""}
     <div class="tb-story">
       ${log.length ? log.map(e => `<div class="tb-line ${finds.test(e.t) ? "hot" : ""}"><b>R${e.r}</b><span>${esc(e.t)}</span></div>`).join("")
-                   : `<p class="quiet" style="margin:0">Nothing has happened yet. Tap a marker on the map to search it, walk into it, or look.</p>`}
+                   : `<p class="quiet" style="margin:0">Nothing has happened yet. Tap a marker on the map to search it, move up to it, or look.</p>`}
     </div>
     ${timeline}`;
 }
@@ -9132,46 +9271,138 @@ function openUseAct(i){
   };
 }
 
-/* A marker was tapped: who is doing it, and what. Each choice goes through the
-   same call the marker sheet uses, so the rules stay in one place. */
-function openMarkerAct(n){
+/* A marker was tapped. What can be done depends on what it LOOKS like:
+   a touch marker (a cupboard, a body) is opened by a search and is safe to stand
+   beside; a tread marker (ground, a doorway, a named area) goes off when a model
+   ends a move within 5 cm. Looking with a spell or ability works on both and
+   sets nothing off. Each choice goes through the same calls the marker sheet
+   uses, so the rules stay in one place. */
+function markerRevealers(){
+  const out = [];
+  ["powers", "abilities"].forEach(k => (RS[k] || []).forEach(o => {
+    if(/suspicion marker/i.test(o.desc || "")){
+      const r = /within (\d+) cm/.exec(o.desc);
+      out.push({id: o.id, name: o.name, range: r ? +r[1] : null});
+    }
+  }));
+  return out;
+}
+function markerResultHTML(rows){
+  return (rows || []).map(r => `<div class="mkres"><b>${esc(r.label || "")}</b><span>${esc(r.text || "")}</span>
+    ${r.sprung ? `<span style="margin-top:6px">${esc(r.sprung.text || "")}</span>` : ""}
+    ${r.pending ? `<button class="btn sm" data-mfail="${r.pending.n}" data-mfailwho="${esc(r.pending.uid)}" style="margin:6px 0 0">Failed the Wits test</button>` : ""}
+    ${r.notice ? `<div class="ma-acts" style="margin-top:8px">
+        <button class="btn sm" data-mnotice="${r.notice.n}" data-mnwho="${esc(r.notice.uid)}" style="margin-left:0">Failed the Wits test: they saw</button>
+        <button class="btn sm" data-munseen="${r.notice.n}">Passed: unseen</button></div>` : ""}</div>`).join("");
+}
+function openMarkerAct(n, result){
   const m = Q.markers.find(x => x.n === n); if(!m) return;
   const K = markerKinds();
   const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));
   const mk = K[m.kind] || {};
+  const how = markerHow(m);                    // touch | tread | either (an old marker)
+  const hidden = m.state === "hidden", gone = m.state === "gone";
+  const trap = m.kind === "trapVisible" || m.kind === "trapHidden";
+  const known = !hidden;                       // revealed, or set off
+  const revs = markerRevealers();
+  const card = (id, icon, title, sub, off) => `<button class="ma-card" id="${id}" ${off ? "disabled" : ""}>
+      <b>${icon} ${title}</b><span>${sub}</span></button>`;
+  const cards = [];
+  if(how !== "tread"){
+    if(known && trap && m.state === "seen")
+      cards.push(card("maDis", "\u2692", "Disarm it", "Interact in contact and a Wits test (Tools or Trapwise step up). A failed disarm sets it off.", gone));
+    else
+      cards.push(card("maSearch", "\u2315", "Search it", how === "either" ? "Interact in contact. Roll the loot die for a cache." : "Interact in contact and a Wits test. Standing beside it is safe; a trap only springs if the search fails.", gone || m.state === "sprung"));
+  }
+  if(how !== "touch"){
+    if(known && trap && m.state === "seen" && how === "tread")
+      cards.push(card("maDis", "\u2692", "Disarm it", "Interact in contact and a Wits test (Tools or Trapwise step up). A failed disarm sets it off.", gone));
+    cards.push(card("maWalk", "\u21e2", known && m.state === "seen" ? "Set it off" : "Move up to it", "A model ended a move within 5 cm" + (m.area ? ", or is on the area" : "") + ". Passing by without stopping is fine.", gone || m.state === "sprung"));
+  }
+  if(how === "touch" && known && trap && m.state === "seen")
+    cards.push(card("maWalk", "\u21e2", "Open it anyway", "Springs the trap on whoever opens it.", gone));
+  if(hidden)
+    cards.push(card("maUse", "\u2726", "Look with a spell or ability", "Shows whether it is safe or trapped without setting it off.", false));
+  const seenLine = result && result.length ? "" : known ? `<p class="lead" style="margin:0 0 12px">${esc(mk.seen || "")}</p>` : `<p class="quiet" style="margin:0 0 12px">You cannot tell what this is from here.</p>`;
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="maX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-      <div class="eyebrow">Marker ${n}${m.state === "hidden" ? "" : " · " + esc(mk.label || "")}</div></div>
-    ${m.where ? `<p class="lead" style="margin:0 0 12px">${esc(m.where)}</p>` : ""}
-    <div class="slab">
+      <div class="eyebrow">Marker ${n}${known ? " \u00b7 " + esc(mk.face || mk.label || "") : ""}</div></div>
+    ${m.look ? `<p class="lead" style="margin:0 0 4px">Looks like ${esc(m.look)}.</p>` : ""}
+    ${m.where ? `<p class="quiet" style="margin:0 0 12px">${esc(m.where)}${m.area ? " (an area: anywhere on it counts)" : ""}</p>` : ""}
+    ${seenLine}
+    ${gone ? "" : `<div class="slab">
       <div class="field" style="margin-bottom:12px"><label>Who is doing it</label>
         <select class="input" id="maWho">${standing.map(u => `<option value="${esc(u.uid)}" ${searchWho === u.uid ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select></div>
-      <div class="field" style="margin-bottom:12px"><label>With what (for a spell or ability)</label>
-        <input class="input" id="maWith" maxlength="60" placeholder="Glimpse, Trapwise, a lantern…"></div>
-      <div class="ma-acts">
-        <button class="btn primary" id="maSearch" style="margin-left:0" ${m.state === "gone" ? "disabled" : ""}>Search it</button>
-        <button class="btn" id="maUse" ${m.state !== "hidden" ? "disabled" : ""}>Use a spell or ability</button>
-        <button class="btn" id="maWalk" ${m.state === "gone" ? "disabled" : ""}>Walk into it</button>
+      <div class="ma-cards">${cards.join("")}</div>
+      <div id="maLookBox" hidden>
+        <div class="field" style="margin:12px 0 8px"><label>With what</label>
+          <select class="input" id="maWith">
+            ${revs.map(r => `<option value="${esc(r.name)}">${esc(r.name)}${r.range ? " (within " + r.range + " cm)" : ""}</option>`).join("")}
+            <option value="">Something else (an item or a scrap)</option></select></div>
+        <input class="input" id="maWithText" maxlength="60" placeholder="what was it?" hidden style="margin-bottom:8px">
+        <div class="ma-acts"><button class="btn primary" id="maLookGo" style="margin-left:0">Look</button></div>
       </div>
-      <p class="quiet" style="margin:10px 0 0">Search: a cache pays out to whoever spends Interact on it. A spell or ability looks without setting anything off. Walking in sets it off.</p>
-    </div>`;
+    </div>`}
+    <div id="maOut">${markerResultHTML(result)}</div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
   $("#maX").onclick = () => { closePicker(); render(); };
-  const who = () => $("#maWho").value;
-  $("#maSearch").onclick = () => { searchWho = who(); openSearch(n); };
-  $("#maUse").onclick = () => {
-    const u = Q.units.find(x => x.uid === who()), using = $("#maWith").value.trim();
-    qlog((u ? u.name : "Someone") + (using ? " used " + using + " on" : " looked at") + " marker " + n);
-    const out = revealMarkers([n]);
-    openMarkers(out); render();
-  };
-  $("#maWalk").onclick = () => {
+  const who = () => ($("#maWho") || {}).value || "";
+  const out = rows => { openMarkerAct(n, rows); render(); };
+  const show = r => out(r ? [r] : null);
+  const hook = (id, fn) => { const b = $("#" + id); if(b) b.onclick = fn; };
+  hook("maSearch", () => {
+    searchWho = who();
+    if(how === "either"){ openSearch(n); return; }       // an old marker: the old way
+    openMarkerTest(n, "Search", "Interact in contact and a Wits test.", (ok) => {
+      const r = searchMarkerResult(n, who(), ok);
+      if(r && r.open){ openSearch(n); return; }
+      show(r);
+    });
+  });
+  hook("maDis", () => {
+    searchWho = who();
+    openMarkerTest(n, "Disarm", "Interact in contact and a Wits test. Tools or Trapwise step it up.", ok => show(disarmMarker(n, who(), ok)));
+  });
+  hook("maWalk", () => {
     const r = resolveMarker(n, who());
-    mkPicked = new Set();
-    openMarkers(r ? [Object.assign({n}, r)] : null); render();
-  };
+    show(r ? Object.assign({n}, r) : null);
+  });
+  hook("maUse", () => { $("#maLookBox").hidden = false; $("#maUse").disabled = true; });
+  const wsel = $("#maWith");
+  if(wsel) wsel.onchange = () => { $("#maWithText").hidden = !!wsel.value; };
+  hook("maLookGo", () => {
+    const u = Q.units.find(x => x.uid === who());
+    const using = (wsel && wsel.value) || ($("#maWithText").value || "").trim();
+    qlog((u ? u.name : "Someone") + (using ? " used " + using + " on" : " looked at") + " marker " + n);
+    show(revealMarkers([n], who())[0]);
+  });
+  $("#sheet2In").querySelectorAll("[data-mfail]").forEach(b => b.onclick = () => show(trapFailed(+b.dataset.mfail, b.dataset.mfailwho)));
+  $("#sheet2In").querySelectorAll("[data-mnotice]").forEach(b => b.onclick = () => {
+    const r = lookNoticed(+b.dataset.mnotice, b.dataset.mnwho);
+    out(r ? [Object.assign({n: +b.dataset.mnotice}, r)] : null);
+  });
+  $("#sheet2In").querySelectorAll("[data-munseen]").forEach(b => b.onclick = () => {
+    qlog("Marker " + b.dataset.munseen + " \u2014 the look went unseen");
+    const o = $("#maOut"); if(o) o.innerHTML = `<div class="mkres"><b>Unseen</b><span>They did not see you. The ambush stays waiting; set it off only when a model ends a move within 5 cm.</span></div>`;
+  });
+}
+/* The Wits test for a search or a disarm is rolled by hand: the app asks how it went. */
+function openMarkerTest(n, what, how, done){
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head">
+      <button class="iconbtn" id="mtX" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="17" height="17"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="eyebrow">${esc(what)} marker ${n}</div></div>
+    <p class="lead">${esc(how)} Roll it at the table, then say how it went.</p>
+    <div class="ma-acts">
+      <button class="btn primary" id="mtOk" style="margin-left:0">Passed</button>
+      <button class="btn" id="mtNo">Failed</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#mtX").onclick = () => openMarkerAct(n);
+  $("#mtOk").onclick = () => done(true);
+  $("#mtNo").onclick = () => done(false);
 }
 
 /* ---- battleview.js ---- */
@@ -12145,6 +12376,20 @@ ${sealed ? `
              naming a map feature if it suits, and "x" and "y" (0 to 100, the same map
              coordinates as the terrain) for where the marker stands: beside the feature it names, in the open, never
              inside a wall. Do NOT say what is under them.
+             Also give each one "look": what it looks like to someone walking round the place who
+             spots it, four to ten words, concrete ("a cupboard with a bent hinge", "a cord strung
+             across the doorway", "a body slumped behind the pews"). It must never say or hint what is
+             really there: a trapped cupboard looks like any cupboard. A mission that sends the band
+             to find a particular thing ("fetch the ledger from the vestry safe") gives that marker
+             a plain look that names it.
+             "how" is "touch" for something a person opens or handles (a cupboard, chest, crate, body,
+             device, shelf, lectern) or "tread" for ground and passages (a doorway, a floor plate, rubble,
+             a dark stairwell, a cord, a patch of mud). Aim for at least one of each and no more than
+             two thirds of either. A tread marker may cover an AREA: set "area": true and name the terrain
+             piece in "where" (the whole rubble pile, the stairwell), otherwise it is just the spot
+             around the marker. A tread marker also gets "alert": how wary anything lying in wait there
+             would be: "unaware", "watchful" or "alert" (mostly "watchful"; "alert" only where a guard
+             would plainly be listening).
 
   enemy      ${enemy} points of them, from the catalogue below, by id. A unit is one profile
              fielded as several identical models; cost is the profile cost times the count.
@@ -12219,7 +12464,8 @@ ${sealed ? '"mystery":{"question":"...","truth":"...","finale":"...","envelopes"
  "specialRules":["..."],"twist":"...",
  "woundFlavour":[{"cause":"...","text":"...","scar":"...","epithets":["...","...","..."],"epitaphs":["...","...","..."]}],
  "namings":{"boss":[{"who":"...","options":["...","...","..."]}],"survived":["...","...","..."]},
- "markers":[{"n":1,"where":"...","x":50,"y":50}],
+ "markers":[{"n":1,"where":"...","look":"a cupboard with a bent hinge","how":"touch","x":50,"y":50},
+            {"n":2,"where":"...","look":"a cord across the doorway","how":"tread","area":false,"alert":"watchful","x":30,"y":60}],
  "enemy":[{"name":"...","count":3,"boss":false,"hidden":false,"sight":"what any warrior sees across the field","rank":"only for the boss","known":false,"lore":"only if known","hint":"only if hidden \u2014 what to prepare, no name",
    "deploy":"only if not hidden \u2014 where it starts",
    "stats":{"fight":"d6","aim":"d6","will":"d6","wits":"d6","move":12,"wounds":5,"actions":2},
@@ -12393,7 +12639,11 @@ function legaliseScenario(raw, ctx){
   for(let i = 1; i <= ctx.markers; i++){
     const mk = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
     const px = mk ? +mk.x : NaN, py = mk ? +mk.y : NaN;
-    out.markers.push(Object.assign({n: i, where: mk ? str(mk.where, 120) : ""},
+    const how = mk && (mk.how === "touch" || mk.how === "tread") ? mk.how : "";
+    out.markers.push(Object.assign({n: i, where: mk ? str(mk.where, 120) : "",
+      look: mk ? str(mk.look, 90) : "", how,
+      area: how === "tread" && !!(mk && mk.area),
+      alert: how === "tread" && mk && ["unaware", "watchful", "alert"].includes(mk.alert) ? mk.alert : "watchful"},
       isFinite(px) && isFinite(py) && mk.x !== null && mk.y !== null ? {x: num(px, 4, 96, 50), y: num(py, 4, 96, 50)} : {}));
   }
 
@@ -12664,7 +12914,7 @@ function scenarioHTML(s, all){
     <div class="head"><span class="eyebrow">Markers</span><span class="rule"></span>
       <span class="quiet">what is under them stays with you</span></div>
     ${s.markers.map(m => `<div class="grow"><div class="grow-main">
-      <div class="grow-name">${m.n}</div><div class="grow-sub">${esc(m.where || "wherever suits")}</div>
+      <div class="grow-name">${m.n}</div><div class="grow-sub">${esc(m.where || "wherever suits")}${m.look ? `<br><i>Looks like ${esc(m.look)}</i>` : ""}${m.how ? ` <span class="chip">${m.how === "touch" ? "touch" : (m.area ? "tread, area" : "tread")}</span>` : ""}</div>
     </div></div>`).join("")}
   </div>
 
@@ -13101,6 +13351,8 @@ function startFromScenario(s, campDone){
   try{ Q.scenarioSource = JSON.parse(JSON.stringify(s)); }catch(e){ Q.scenarioSource = null; }
   /* the generator's placements, over the app's own secret contents */
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g){ m.where = g.where; if(typeof g.x === "number"){ m.x = g.x; m.y = g.y; } } });
+  /* the kinds were rolled blind: deal them out to fit what each spot looks like */
+  if(typeof dealMarkerKinds === "function") dealMarkerKinds(Q.markers, s.markers);
   s.enemy.forEach(u => {
     /* squads are parked: a pack of N is N separate units, each with its own activation */
     const split = squadsOn() ? 1 : Math.max(1, u.count || 1);
@@ -13232,7 +13484,7 @@ function pushTable(){
   tryWrite("quests/" + Q.realm + "/table", {
     round: Q.round, step: Q.step, size: Q.size,
     vp: Q.vp, nerve: Q.nerve,
-    markers: Q.markers.map(m => ({n: m.n, state: m.state})),   // never the kind
+    markers: Q.markers.map(m => ({n: m.n, state: m.state, look: m.look || ""})),   // never the kind
     foes: Q.units.filter(u => u.side === "them").map(shareUnit),
     at: Date.now()
   });
@@ -13327,7 +13579,7 @@ function applyTable(t){
   const prev = Q.round, known = Q.seenTable;
   Q.round = t.round; Q.step = t.step; Q.size = t.size;
   Q.vp = t.vp || Q.vp; Q.nerve = t.nerve || Q.nerve;
-  Q.markers = (t.markers || []).map(m => ({n: m.n, state: m.state, kind: "unknown"}));
+  Q.markers = (t.markers || []).map(m => ({n: m.n, state: m.state, look: m.look || "", kind: "unknown"}));
   Q.units = Q.units.filter(u => u.side === "us")
     .concat((t.foes || []).map(f => Object.assign({}, f, {remote: true})));
   Q.seenTable = true;
