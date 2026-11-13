@@ -4993,7 +4993,7 @@ body.has-qbar #toast{bottom:82px}
   }
 }
 </script>
-<script>window.EP_BUILD = "13 Nov 11:05";</script>
+<script>window.EP_BUILD = "13 Nov 11:32";</script>
 <script>
 /* ---- core-rules.js ---- */
 /* ===================================================================
@@ -7051,7 +7051,7 @@ function searchMarkerResult(num, uid, passed){
     questSave();
     return {n: num, label: "Nothing yet", text: "Nothing turned up. Another Interact can try again.", hurt: null};
   }
-  if(mk.kind === "cache"){ mk.state = mk.state === "hidden" ? "seen" : mk.state; return {n: num, open: true}; }
+  if(mk.kind === "cache" || (mk.find && mk.find.name && mk.kind === "objective")){ mk.state = mk.state === "hidden" ? "seen" : mk.state; return {n: num, open: true}; }
   if(trap){
     mk.state = "seen";
     qlog("Marker " + num + " \u2014 " + who + " searched it and found a trap");
@@ -7135,7 +7135,7 @@ function infoSheet(title, text){
 
 /* ---- going Down ---- */
 const DOWN_WORDS = {
-  down: "Down",
+  down: "Down · not stabilised",
   stabilised: "Down · stabilised",
   dragged: "Down · dragged",
   finished: "Down · finished"
@@ -9043,90 +9043,127 @@ function rollCash(text){
 }
 function emptyCache(n){
   const m = n ? Q.markers.find(x => x.n === n) : null;
-  if(m && m.kind === "cache") m.state = "gone";
+  if(m && (m.kind === "cache" || m.find)) m.state = m.kind === "objective" ? "sprung" : "gone";
 }
+/* What a find can be called: any item, weapon or suit in the catalogue. */
+function findCat(id){ return catOf("items")[id] || catOf("weapons")[id] || catOf("armour")[id] || null; }
+let searchOpened = false, searchFor = null;
+/* Searching a cache. Only what the roll needs is shown. A marker the scenario planned a find for
+   (the thing the story is about) never rolls: it just holds what the writer put there. */
 function openSearch(markerN){
+  if(searchFor !== markerN){ searchFor = markerN; searchRoll = null; searchRow = null; searchCash = null; searchTrapText = ""; searchOpened = false; }
   const standing = Q.units.filter(u => u.side === "us" && !unitDown(u));
   if(!searchWho && standing.length) searchWho = standing[0].uid;
+  const mk = markerN ? Q.markers.find(x => x.n === markerN) : null;
+  const planned = mk && mk.find && mk.find.name ? mk.find : null;
+  const row = searchRow;
+  /* what is being offered, as one thing the screen and the button can both read */
+  let offer = null;                       // {kind: cash|item|choice|pick|text|planned|nothing, ...}
+  if(planned && searchOpened) offer = {kind: "planned"};
+  else if(row){
+    if(searchCash) offer = {kind: "cash"};
+    else if(row.item) offer = {kind: "item", id: row.item};
+    else if(row.itemChoice) offer = {kind: "choice", ids: row.itemChoice};
+    else if(row.itemMaxCost) offer = {kind: "pick", max: row.itemMaxCost, kinds: [].concat(row.itemKind || [])};
+    else offer = {kind: "text"};
+  }
+  const pickList = () => {
+    const kinds = offer.kinds || [];
+    const out = [];
+    if(kinds.includes("weapon")) (RS.weapons || []).filter(w => w.cost <= offer.max && w.id !== "bareHands").forEach(w => out.push(w));
+    if(kinds.includes("armour")) (RS.armour || []).filter(w => w.cost <= offer.max).forEach(w => out.push(w));
+    return out;
+  };
+  let body = "";
+  if(offer){
+    if(offer.kind === "planned"){
+      body = `<p class="lead" style="margin:0 0 6px"><b>${esc(planned.name)}</b></p>
+        ${planned.note ? `<p class="says-d" style="margin:0 0 8px">${esc(planned.note)}</p>` : ""}
+        ${planned.cash ? `<p class="says-d" style="margin:0 0 8px">And ${planned.cash} Cash.</p>` : ""}`;
+    } else {
+      body = `<p class="lead" style="margin:0 0 6px"><b>${esc(row.result)}</b></p>
+        ${searchCash ? `<p class="says-d" style="margin:0 0 8px">Rolled: <b>${searchCash} Cash</b>.</p>` : ""}
+        ${searchTrapText ? `<p class="says-d" style="margin:0 0 8px">${esc(searchTrapText)}</p>` : ""}
+        ${offer.kind === "item" ? `<p class="says-d" style="margin:0 0 8px">${esc((findCat(offer.id) || {}).desc || "")}</p>` : ""}
+        ${offer.kind === "choice" ? `<div class="field" style="margin:0 0 8px"><label>Which one?</label><select class="input" id="seItem">
+            ${offer.ids.map(id => `<option value="${esc(id)}">${esc((findCat(id) || {}).name || id)} \u2014 ${esc((findCat(id) || {}).desc || "")}</option>`).join("")}</select></div>` : ""}
+        ${offer.kind === "pick" ? `<div class="field" style="margin:0 0 8px"><label>Pick one, worth up to ${offer.max} points</label><select class="input" id="seItem">
+            ${pickList().map(w => `<option value="${esc(w.id)}">${esc(w.name)} \u2014 ${w.cost} pts</option>`).join("")}</select></div>` : ""}`;
+    }
+  }
+  const giveLabel = !offer ? "" : offer.kind === "cash" ? "Add " + searchCash + " Cash to the band" : offer.kind === "text" ? "Done" : "They take it";
+  const canName = offer && ["planned", "item", "choice", "pick"].includes(offer.kind);
   $("#sheet2In").innerHTML = `
     <div class="sheet-head">
       <button class="iconbtn" id="seX" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="17" height="17"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button><div class="eyebrow">Searching${markerN ? " marker " + markerN : ""}</div></div>
-    <p class="lead">A cache pays out only when a model in contact spends Interact on it
-      and passes a Wits test. Then roll ${RS.dice.lootDie} for what is in it.</p>
-
+    ${offer ? "" : `<p class="lead">${planned ? "The scenario put something here." : "A cache pays out only when a model in contact spends Interact on it and passes a Wits test. Then roll " + RS.dice.lootDie + " for what is in it."}</p>`}
     <div class="slab" style="margin-top:14px">
-      <div class="field" style="margin-bottom:11px"><label>Who searched it</label>
+      ${standing.length > 1 ? `<div class="field" style="margin-bottom:11px"><label>Who searched it</label>
         <select class="input" id="seWho">
           ${standing.map(u => `<option value="${esc(u.uid)}" ${searchWho === u.uid ? "selected" : ""}>${esc(u.name)}</option>`).join("")}
-        </select></div>
-      <div class="sheet-actions" style="margin-bottom:11px">
-        <button class="btn" id="seRoll" style="margin-left:0">Roll ${RS.dice.lootDie}</button>
-        ${searchRoll ? `<span class="chip gilt mono" style="font-size:15px">${searchRoll}</span>` : ""}
-      </div>
-      ${searchRow ? `<p class="lead" style="margin:0 0 11px"><b>${esc(searchRow.result)}</b>
-        ${searchCash ? `<br>Rolled: <b>${searchCash} Cash</b>.` : ""}
-        ${searchTrapText ? `<br>${esc(searchTrapText)}` : ""}
-        ${searchRow.itemChoice ? `<br>Finder chooses one of the listed items below.` : ""}
-        ${searchRow.itemMaxCost ? `<br>Pick from the gear list, worth up to ${searchRow.itemMaxCost} points, in the box below.` : ""}</p>` : ""}
-      <div class="field" style="margin-bottom:11px"><label>What they found</label>
-        <input class="input" id="seName" maxlength="50" placeholder="a coil of wire, a wet ledger, someone's teeth"></div>
-      <div class="field" style="margin-bottom:11px"><label>Or something from the list</label>
-        <select class="input" id="seItem">
-          <option value="">nothing from the list</option>
-          ${Object.values(catOf("items")).map(o => `<option value="${esc(o.id)}" ${searchRow && searchRow.item === o.id ? "selected" : ""}>${esc(o.name)} \u2014 ${esc(o.desc)}</option>`).join("")}
-        </select></div>
-      <div class="field"><label>A note, if it needs one</label>
-        <input class="input" id="seNote" maxlength="90" placeholder="what it does, or where it came from"></div>
-      <div class="sheet-actions" style="margin-top:12px">
-        <button class="btn primary" id="seGive" style="margin-left:0">${searchCash ? "Add " + searchCash + " Cash to the band" : "They take it"}</button></div>
+        </select></div>` : ""}
+      ${offer ? body : `<div class="sheet-actions" style="margin-bottom:4px">
+        <button class="btn primary" id="${planned ? "seOpen" : "seRoll"}" style="margin-left:0">${planned ? "Open it" : "Roll " + RS.dice.lootDie}</button></div>`}
+      ${offer && !planned && searchRoll ? `<p class="quiet" style="margin:0 0 8px">${RS.dice.lootDie}: ${searchRoll}</p>` : ""}
+      ${canName ? `<details style="margin:6px 0 10px"><summary class="quiet" style="cursor:pointer">Give it your own name or a note</summary>
+        <div class="field" style="margin:8px 0"><label>Called</label><input class="input" id="seName" maxlength="50" placeholder="what the table calls it"></div>
+        <div class="field"><label>A note</label><input class="input" id="seNote" maxlength="90" placeholder="where it came from, what it does"></div></details>` : ""}
+      ${offer ? `<div class="sheet-actions" style="margin-top:10px"><button class="btn primary" id="seGive" style="margin-left:0">${esc(giveLabel)}</button></div>` : ""}
     </div>`;
   $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
-  $("#seX").onclick = () => { searchRoll = null; searchRow = null; searchCash = null; searchTrapText = ""; closePicker(); render(); };
-  $("#seWho").onchange = e => searchWho = e.target.value;
-  $("#seRoll").onclick = () => {
+  const reset = () => { searchRoll = null; searchRow = null; searchCash = null; searchTrapText = ""; searchOpened = false; searchFor = null; };
+  $("#seX").onclick = () => { reset(); closePicker(); render(); };
+  const who = () => ($("#seWho") || {}).value || searchWho;
+  if($("#seWho")) $("#seWho").onchange = e => searchWho = e.target.value;
+  const open = $("#seOpen"); if(open) open.onclick = () => { searchWho = who(); searchOpened = true; openSearch(markerN); };
+  const roll = $("#seRoll");
+  if(roll) roll.onclick = () => {
     searchRoll = 1 + Math.floor(Math.random() * (dieNum(RS.dice.lootDie) || 100));
-    searchWho = $("#seWho").value;
+    searchWho = who();
     searchRow = lootRow(searchRoll);
-    if(searchRow) searchCash = rollCash(searchRow.result);
-    else searchCash = null;
+    searchCash = searchRow ? rollCash(searchRow.result) : null;
+    searchTrapText = "";
     if(searchRow && /trapped/i.test(searchRow.result)){
       const u = Q.units.find(x => x.uid === searchWho);
-      if(u){ hurtUnit(u, 1, "trapped cache"); searchTrapText = u.name + " takes 1 damage, no save."; }
-    } else searchTrapText = "";
+      if(u){
+        if(u.remote && typeof sendEvent === "function" && Q.host){ sendEvent(u.uid, {damage: 1, why: "a trapped cache"}); }
+        else hurtUnit(u, 1, "trapped cache");
+        searchTrapText = u.name + " takes 1 damage, no save.";
+      }
+    }
     openSearch(markerN);
   };
-  $("#seGive").onclick = () => {
-    const uidSel = $("#seWho").value;
+  const give = $("#seGive");
+  if(give) give.onclick = () => {
+    const uidSel = who();
     const u = Q.units.find(x => x.uid === uidSel);
-    if(searchCash && !$("#seName").value.trim() && !$("#seItem").value){
+    const nm = ($("#seName") || {}).value ? $("#seName").value.trim() : "", nt = ($("#seNote") || {}).value ? $("#seNote").value.trim() : "";
+    const finish = (msg, log) => { qlog(log); reset(); emptyCache(markerN); questSave(); closePicker(); render(); toast(msg); };
+    const who2 = u ? u.name : "Someone";
+    if(offer.kind === "cash"){
       const b = band(); b.cash = (b.cash || 0) + searchCash; save();
-      const searchCashToast = "+" + searchCash + " Cash";
-      emptyCache(markerN);
-      qlog((u ? u.name : "Someone") + " found " + searchCash + " Cash (" + RS.dice.lootDie + " " + searchRoll + ")");
-      searchRoll = null; searchRow = null; searchCash = null; searchTrapText = "";
-      questSave(); closePicker(); render(); toast(searchCashToast);
-      return;
+      return finish("+" + searchCash + " Cash", who2 + " found " + searchCash + " Cash (" + RS.dice.lootDie + " " + searchRoll + ")");
     }
-    const itemId = $("#seItem").value;
-    const listed = itemId ? catOf("items")[itemId] : null;
-    const name = ($("#seName").value.trim()) || (listed ? listed.name : "");
-    if(!name && !listed){ toast("Say what they found"); return; }
-    const what = {name: name || listed.name, id: itemId || null,
-                  note: $("#seNote").value.trim() || (listed ? listed.desc : ""),
-                  roll: searchRoll || null, from: markerN ? "marker " + markerN : "the field"};
+    if(offer.kind === "text") return finish("Noted", who2 + " searched: " + row.result.replace(/\.$/, "") + " (" + RS.dice.lootDie + " " + searchRoll + ")");
+    let what;
+    if(offer.kind === "planned"){
+      if(planned.cash){ const b = band(); b.cash = (b.cash || 0) + planned.cash; save(); }
+      const cat = planned.item ? findCat(planned.item) : null;
+      what = {name: nm || planned.name, id: planned.item || null, note: nt || planned.note || (cat ? cat.desc : ""), roll: null, from: markerN ? "marker " + markerN : "the field"};
+    } else {
+      const id = offer.kind === "item" ? offer.id : ($("#seItem") || {}).value;
+      const cat = findCat(id);
+      what = {name: nm || (cat ? cat.name : row.result), id: id || null, note: nt || (cat ? cat.desc : ""), roll: searchRoll || null, from: markerN ? "marker " + markerN : "the field"};
+    }
     if(u && u.remote && typeof sendEvent === "function"){
       sendEvent(u.uid, {found: what, why: "found " + what.name});
     } else {
       const m = band().members.find(x => x.id === uidSel);
       if(m) giveFound(m, what);
     }
-    qlog((u ? u.name : "Someone") + " found " + what.name + (searchRoll ? " (" + RS.dice.lootDie + " " + searchRoll + ")" : ""));
-    emptyCache(markerN);
-    searchRoll = null; searchRow = null; searchCash = null; searchTrapText = "";
-    questSave(); closePicker(); render();
-    toast((u ? u.name : "They") + " take " + what.name);
+    finish(who2 + " takes " + what.name, who2 + " found " + what.name + (searchRoll ? " (" + RS.dice.lootDie + " " + searchRoll + ")" : ""));
   };
 }
 
@@ -9939,6 +9976,25 @@ const BT_ICON = {
 const btIcon = k => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${BT_ICON[k]}</svg>`;
 
 /* The one place a model's tracker buttons do their work, shared with the full card. */
+/* Recover removes one thing; if more than one applies, ask which. */
+function askRecover(u, opts){
+  const label = {strain: "Remove 1 Strain (now " + u.strain + ")", shaken: "Remove Shaken", pinned: "Remove Pinned"};
+  const sub = {strain: "Closer to burnout, but nothing else changes.", shaken: "Shaken: only Move away or into cover, or Recover, and no reactions.", pinned: "Pinned: attacks against them step down, and they cannot Move."};
+  $("#sheet2In").innerHTML = `
+    <div class="sheet-head"><div class="eyebrow">${esc(u.name)} recovers</div></div>
+    <p class="lead" style="margin:0 0 12px">One Recover removes one of these. Which?</p>
+    <div class="ma-cards">${opts.map(o => `<button class="ma-card" data-rec="${o}"><b>${esc(label[o])}</b><span>${esc(sub[o])}</span></button>`).join("")}</div>
+    <div class="sheet-actions"><button class="btn ghost" id="rcX" style="margin-left:0">Cancel</button></div>`;
+  $("#sheet2").classList.add("show"); $("#scrim2").classList.add("show");
+  $("#rcX").onclick = closePicker;
+  $("#sheet2In").querySelectorAll("[data-rec]").forEach(btn => btn.onclick = () => {
+    questDo(u, "recover", btn.dataset.rec);
+    closePicker(); questSave();
+    if(typeof drawBattle === "function") try{ drawBattle(); }catch(e){}
+    if(typeof cardId !== "undefined" && cardId) try{ drawCard(); }catch(e){}
+    render();
+  });
+}
 function questDo(u, what, a, c){
   if(what === "hp" && +c > 0 && typeof finishedBlock === "function" && finishedBlock(u)){
     askFinishedOverride(u, "heal", () => { questDo(u, what, a, c); questSave(); });
@@ -9950,10 +10006,17 @@ function questDo(u, what, a, c){
   else if(what === "unact") u.used = Math.max(0, u.used - 1);
   else if(what === "push"){ u.pushed = true; strainUnit(u, 1); }
   else if(what === "recover"){
-    /* One Recover: 1 Strain, or Shaken, or Pinned. Not all three. */
-    if(u.strain > 0) u.strain--;
-    else if((u.cond || []).includes("shaken")) u.cond = u.cond.filter(x => x !== "shaken");
-    else if((u.cond || []).includes("pinned")) u.cond = u.cond.filter(x => x !== "pinned");
+    /* One Recover removes ONE thing, and the player chooses: 1 Strain, or Shaken, or Pinned. */
+    const opts = [];
+    if(u.strain > 0) opts.push("strain");
+    if((u.cond || []).includes("shaken")) opts.push("shaken");
+    if((u.cond || []).includes("pinned")) opts.push("pinned");
+    const pick = a || (opts.length === 1 ? opts[0] : null);
+    if(!pick && opts.length > 1){ askRecover(u, opts); return; }
+    if(pick === "strain" && u.strain > 0) u.strain--;
+    else if(pick === "shaken") u.cond = (u.cond || []).filter(x => x !== "shaken");
+    else if(pick === "pinned") u.cond = (u.cond || []).filter(x => x !== "pinned");
+    if(pick) qlog(u.name + " recovers: " + (pick === "strain" ? "1 Strain" : pick));
   }
   else if(what === "cond"){
     u.cond = u.cond || [];
@@ -12882,6 +12945,11 @@ ${sealed ? `
              really there: a trapped cupboard looks like any cupboard. A mission that sends the band
              to find a particular thing ("fetch the ledger from the vestry safe") gives that marker
              a plain look that names it.
+             "find": only for a marker where the story needs something to be found: the thing the mission
+             is about, a clue, a keepsake, a key. {"name":"what it is","note":"one sentence on it","item":"an item id from
+             the catalogue or empty","cash":0,"critical":true}. A marker with a find is always a touch marker (something you
+             search) and always pays out exactly that, with no dice. Give a find to at most two markers and only where the
+             story would fall apart without it; every other marker is just rolled for loot, and the dice can give nothing.
              "how" is "touch" for something a person opens or handles (a cupboard, chest, crate, body,
              device, shelf, lectern) or "tread" for ground and passages (a doorway, a floor plate, rubble,
              a dark stairwell, a cord, a patch of mud). Aim for at least one of each and no more than
@@ -13146,11 +13214,14 @@ function legaliseScenario(raw, ctx){
     const mk = (Array.isArray(raw.markers) ? raw.markers : []).find(x => +(x && x.n) === i);
     const px = mk ? +mk.x : NaN, py = mk ? +mk.y : NaN;
     const how = mk && (mk.how === "touch" || mk.how === "tread") ? mk.how : "";
+    const fd = mk && mk.find && typeof mk.find === "object" && str(mk.find.name, 60).trim() ? {name: str(mk.find.name, 60).trim(), note: str(mk.find.note, 200),
+      item: (catOf("items")[mk.find.item] ? mk.find.item : ""), cash: num(mk.find.cash, 0, 60, 0), critical: !!mk.find.critical} : null;
     out.markers.push(Object.assign({n: i, where: mk ? str(mk.where, 120) : "",
       look: mk ? str(mk.look, 90) : "", how,
       area: how === "tread" && !!(mk && mk.area),
       alert: how === "tread" && mk && ["unaware", "watchful", "alert"].includes(mk.alert) ? mk.alert : "watchful"},
       mk && mk.kind ? {kind: str(mk.kind, 20)} : {},
+      fd ? {find: fd, how: "touch"} : {},
       isFinite(px) && isFinite(py) && mk.x !== null && mk.y !== null ? {x: num(px, 4, 96, 50), y: num(py, 4, 96, 50)} : {}));
   }
 
@@ -13861,6 +13932,12 @@ function startFromScenario(s, campDone){
   Q.markers.forEach((m, i) => { const g = s.markers[i]; if(g){ m.where = g.where; if(typeof g.x === "number"){ m.x = g.x; m.y = g.y; } } });
   /* the kinds were rolled blind: deal them out to fit what each spot looks like */
   if(typeof dealMarkerKinds === "function") dealMarkerKinds(Q.markers, s.markers);
+  /* a planted find: that marker is something to search, and holds exactly what the writer put there */
+  (s.markers || []).forEach((g, i) => {
+    const m = Q.markers[i]; if(!m || !g || !g.find || !g.find.name) return;
+    if(m.kind !== "cache" && m.kind !== "objective"){ m.kind = "cache"; }
+    m.how = "touch"; m.find = g.find;
+  });
   /* a hand-written test scenario may fix what lies under a marker ("kind"); the AI never does */
   (s.markers || []).forEach((g, i) => {
     const m = Q.markers[i], K = markerKinds();
